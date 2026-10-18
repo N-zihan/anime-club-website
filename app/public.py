@@ -921,7 +921,8 @@ def qualifying_vote_female(contest_id):
                            phase=_calc_current_phase(contest),
                            gender='female',
                            existing_votes=existing_votes,
-                           vote_totals=vote_totals)
+                           vote_totals=vote_totals,
+                           supabase_url=os.getenv('SUPABASE_URL', ''))
 
 
 @public_bp.route('/contest/<int:contest_id>/qualifying/male')
@@ -966,7 +967,8 @@ def qualifying_vote_male(contest_id):
                            phase=_calc_current_phase(contest),
                            gender='male',
                            existing_votes=existing_votes,
-                           vote_totals=vote_totals)
+                           vote_totals=vote_totals,
+                           supabase_url=os.getenv('SUPABASE_URL', ''))
 
 
 @public_bp.route('/contest/<int:contest_id>/qualifying/submit', methods=['POST'])
@@ -1199,9 +1201,8 @@ def group_vote_female(contest_id):
                            gender='female',
                            round_type='group',
                            voted_matches=voted_matches,
-                           vote_totals=vote_totals)
-
-
+                           vote_totals=vote_totals,
+                           supabase_url=os.getenv('SUPABASE_URL', ''))
 @public_bp.route('/contest/<int:contest_id>/group/male')
 def group_vote_male(contest_id):
     """小组赛投票 - 男组"""
@@ -1262,7 +1263,8 @@ def group_vote_male(contest_id):
                            gender='male',
                            round_type='group',
                            voted_matches=voted_matches,
-                           vote_totals=vote_totals)
+                           vote_totals=vote_totals,
+                           supabase_url=os.getenv('SUPABASE_URL', ''))
 
 
 @public_bp.route('/contest/<int:contest_id>/group/submit', methods=['POST'])

@@ -1,4 +1,4 @@
-.alert {
+﻿.alert {
     padding: 12px 20px;
     border-radius: 12px;
     margin-bottom: 16px;
@@ -1328,4 +1328,4 @@ button.btn-delete {
     cursor: pointer;
     padding: 0;
     font: inherit;
-}
+}/* Navbar icons */`n.nav-icon {`n    font-size: 1.4rem;`n    vertical-align: middle;`n}`n`n`nav-right
