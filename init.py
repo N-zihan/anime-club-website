@@ -16,6 +16,7 @@ from sqlalchemy import inspect, text
 
 from app import create_app, db
 from app.utils import get_supabase
+from app.video_proxy import init_video_proxy
 
 app = create_app()
 
@@ -135,6 +136,14 @@ def main():
 
     added_cols = ensure_columns()
     created_buckets = ensure_buckets()
+    
+    # 初始化视频代理系统
+    try:
+        with app.app_context():
+            init_video_proxy()
+        log('✓ 视频代理系统初始化完成')
+    except Exception as e:
+        log(f'✗ 视频代理系统初始化失败: {e}')
 
     try:
         report_orphans()

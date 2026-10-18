@@ -13,3 +13,9 @@ playwright-report/
 # 纵深防御：虚拟环境目前靠 virtualenv 自动生成的 .venv/.gitignore（内容 *）排除，
 # 一旦该文件被删/重建失败，332MB 的 .venv 就会被 git 和 vercel CLI 直传吃进去。
 .venv/
+
+# 团队脚手架与本地临时产物（不入库）
+team-reports/
+verification/
+instance/
+tmp*

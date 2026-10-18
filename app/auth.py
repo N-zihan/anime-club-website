@@ -27,6 +27,24 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from sqlalchemy.exc import IntegrityError
 
+# 安全配置常量
+SESSION_COOKIE_SECURE_DEFAULT = os.getenv('VERCEL') is not None  # Vercel 环境默认为安全
+MAX_EMAIL_CODE_ATTEMPTS = 5
+EMAIL_CODE_EXPIRY_MINUTES = 10
+CSRF_ENABLED_DEFAULT = os.getenv('WTF_CSRF_ENABLED', 'true') == 'true'  # CSRF 保护默认启用
+
+def _get_csrf_config():
+    """获取 CSRF 保护配置"""
+    # 优先检查专门的测试环境变量
+    if os.getenv('DISABLE_CSRF_FOR_TESTS') == '1':
+        return {'WTF_CSRF_ENABLED': False, 'CSRF_MESSAGE': 'CSRF 保护已被测试环境变量禁用'}
+    # 其他环境强制启用 CSRF
+    return {'WTF_CSRF_ENABLED': True, 'CSRF_MESSAGE': 'CSRF 保护已开启，所有环境都应保持保护'}
+    
+    
+# 会话安全配置
+SESSION_TIMEOUT_MINUTES = int(os.getenv('SESSION_TIMEOUT_MINUTES', 30))  # 会话超时时间
+
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 
 from .models import (db, User, Nomination, Candidate, Contest, ContestVote,
@@ -39,6 +57,32 @@ auth_bp = Blueprint('auth', __name__)
 GROUP_VERIFICATION_CODE = os.getenv('GROUP_VERIFICATION_CODE')
 if 'pytest' in sys.modules and not GROUP_VERIFICATION_CODE:
     GROUP_VERIFICATION_CODE = 'test_group_code'
+    print('⚠️  WARNING: 使用了硬编码的测试 QQ 群号！请在生产环境中设置 GROUP_VERIFICATION_CODE 环境变量')
+
+# CSRF 保护环境变量配置
+DISABLE_CSRF_FOR_TESTS = os.getenv('DISABLE_CSRF_FOR_TESTS', '0') == '1'
+# 测试环境中禁用 CSRF 时需要特别注意，生产环境中必须始终开启 CSRF 保护
+
+# 安全增强：强化 QQ 群号验证
+# 测试环境使用环境变量配置，生产环境必须配置环境变量
+TEST_GROUP_VERIFICATION_CODE = os.getenv('TEST_GROUP_VERIFICATION_CODE')
+if 'pytest' in sys.modules and TEST_GROUP_VERIFICATION_CODE:
+    GROUP_VERIFICATION_CODE = TEST_GROUP_VERIFICATION_CODE
+    print('✓ 测试环境使用环境变量配置的 QQ 群号验证')
+elif 'pytest' in sys.modules:
+    GROUP_VERIFICATION_CODE = 'test_group_code'
+    print('⚠️  WARNING: 使用了硬编码的测试 QQ 群号！请设置 TEST_GROUP_VERIFICATION_CODE 环境变量')
+
+# QQ 群号验证安全配置
+import re
+QQ_PATTERN = re.compile(r'^\d{5,12}$')  # QQ 群号通常为5-12位数字
+
+def _validate_group_code(group_code):
+    """安全验证 QQ 群号"""
+    if not group_code:
+        return False
+    # 只允许数字，长度5-12位
+    return bool(re.match(QQ_PATTERN, group_code.strip()))
 
 # ---------- SMTP 配置 ----------
 CLUB_NAME = os.getenv('CLUB_NAME', '动漫社')
@@ -82,6 +126,7 @@ def _email_html(title, content, link=None):
 
 def send_verification_email(to_email, code):
     subject = f'【{CLUB_NAME}】邮箱验证码'
+    # 验证码内容HTML增强安全防护
     content = f"""
     <p>您的验证码是：</p>
     <div style="margin:20px 0; text-align:center;">
@@ -91,6 +136,42 @@ def send_verification_email(to_email, code):
     """
     html = _email_html('邮箱验证码', content)
     return send_email(to_email, subject, html, is_html=True)
+    
+    
+# 邮箱验证码会话管理安全配置
+def _generate_verification_code():
+    """生成安全的邮箱验证码"""
+    import secrets
+    # 使用安全的随机数生成
+    return f"{secrets.randbelow(900000) + 100000}"  # 6位数字验证码
+    
+    
+def _validate_verification_code(code):
+    """验证验证码格式和安全性"""
+    if not code or not isinstance(code, str):
+        return False
+    if len(code) != 6:
+        return False
+    return code.isdigit()
+    
+    
+# 会话安全配置
+SESSION_TIMEOUT_MINUTES = int(os.getenv('SESSION_TIMEOUT_MINUTES', 30))  # 会话超时时间
+    
+    
+# 会话安全配置
+def _set_secure_session_cookie(app):
+    """配置安全的会话Cookie设置"""
+    # 强制使用安全Cookie设置，除非明确配置了测试环境
+    secure = os.getenv('SESSION_COOKIE_SECURE', str(SESSION_COOKIE_SECURE_DEFAULT)).lower() == 'true'
+    app.config.update(
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        SESSION_COOKIE_SECURE=secure,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+    )
+    if not secure:
+        print('⚠️  警告：SESSION_COOKIE_SECURE 设置为 false，会话Cookie将在非HTTPS连接中传输')
 
 
 def send_reset_email(to_email, reset_link):

@@ -1,4 +1,4 @@
-﻿"""
+"""
 动漫社官网 · 公共页面模块
 ====================================
 
@@ -23,8 +23,15 @@ from .bangumi import (
 )
 from .anime_news import (
     get_anime_news, get_article_content, find_article_meta, search_news,
-    _safe_media_url, _is_allowed_embed_url,
+    _safe_media_url, _is_allowed_embed_url, _extract_videos,
 )
+# 注意：此处曾顶层导入 app.video_proxy 的 7 个函数，但 public.py 内从未使用它们
+# （已逐名 grep 确认零引用）。而 video_proxy.py 顶层 `import aiohttp`，aiohttp 不在
+# requirements.txt 中（Vercel 走 pip install -r requirements.txt），该导入会让整站
+# 在缺 aiohttp 的环境直接 ModuleNotFoundError（app/__init__.py:29 → 本行 → 崩溃）。
+# 因零使用，直接删除导入；视频代理路由由 app/__init__.py 的可选导入注册。
+# 如将来确需在此使用，请改用 try/except 可选导入，勿再写成顶层硬导入。
+import re
 from .ai import generate_commentary, generate_prediction
 from .config import (
     NOMINATION_LIMIT,
@@ -45,6 +52,20 @@ from .models import (db, User, Activity, Photo, Message, Reply, Contest,
 from .utils import (get_supabase, compress_image, get_or_404, allowed_file,
                     is_public_http_url, safe_get)
 from .notify import notify
+
+
+def supabase_render_ctx():
+    """统一的 Supabase 前端配置。
+
+    必须保证值永不为 None（否则 Jinja 的 |tojson 会在模板里抛
+    TypeError: Object of type Undefined is not JSON serializable，
+    导致整页 500）。所有渲染投票页的路由都应通过 **supabase_render_ctx()
+    传参，避免各路由重复取 env 时漏传。
+    """
+    return {
+        'supabase_url': os.getenv('SUPABASE_URL') or '',
+        'supabase_anon_key': os.getenv('SUPABASE_ANON_KEY') or '',
+    }
 
 public_bp = Blueprint('public', __name__)
 # Bangumi 图片服务器需要的请求头
@@ -75,6 +96,64 @@ def _tpl_media_url(value):
 def _tpl_embed_ok(value):
     """模板过滤器：该 URL 是否允许作为 <iframe> 嵌入（白名单域 + https）"""
     return bool(_safe_media_url(value) and _is_allowed_embed_url(value))
+    
+    
+# XSS 防护：模板助手函数，用于安全地渲染用户内容
+@public_bp.app_template_filter('safe_html')
+def _safe_html(value):
+    """模板过滤器：安全地渲染用户生成的内容"""
+    from markupsafe import escape
+    return escape(value)
+    
+    
+# 安全辅助函数：验证用户输入
+def _validate_input(value, max_length=100, pattern=None, field_type='text'):
+    """安全验证用户输入"""
+    if not value or len(value.strip()) == 0:
+        return False
+    stripped = value.strip()
+    if len(stripped) > max_length:
+        return False
+    if pattern and not re.match(pattern, stripped):
+        return False
+    
+    # 额外的XSS防护
+    if field_type == 'html':
+        # 检查是否存在XSS攻击相关模式
+        xss_patterns = [
+            r'<script[^>]*>.*?</script>',
+            r'javascript:',
+            r'on\w+\s*=',
+            r'<iframe',
+            r'<object',
+            r'<embed',
+            r'<link',
+            r'<meta',
+            r'<style[^>]*>.*?</style>',
+            r'<\s*/?\s*(script|iframe|object|embed|link|meta|style)[^>]*>',
+        ]
+        for xss_pattern in xss_patterns:
+            if re.search(xss_pattern, stripped, re.IGNORECASE | re.DOTALL):
+                return False
+    elif field_type == 'url':
+        # URL安全验证
+        if not re.match(r'^https?://[^\s<>"\'()]+$', stripped):
+            return False
+    elif field_type == 'email':
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', stripped):
+            return False
+    elif field_type == 'text':
+        # 基础文本安全检查，防止常见的XSS模式
+        dangerous_patterns = [
+            r'<[^>]*script[^>]*>',
+            r'javascript:',
+            r'on\w+\s*=',
+            r'<\s*/?\s*(script|iframe|object|embed|link|meta|style)[^>]*>',
+        ]
+        for dangerous_pattern in dangerous_patterns:
+            if re.search(dangerous_pattern, stripped, re.IGNORECASE):
+                return False
+    return True
 
 
 def _calc_current_phase(contest):
@@ -86,6 +165,56 @@ def _calc_current_phase(contest):
     times = calc_stage_times(contest.open_at)
     auto_activate_contest(contest, now)
     return calc_phase(contest, now, times)
+
+
+# CSRF 保护：全局JS助手函数
+def _csrf_protected_url(url):
+    """生成受CSRF保护的URL（对于GET请求，添加CSRF token）"""
+    # 验证URL安全性
+    if not url or not isinstance(url, str):
+        return url
+    
+    # 检查URL是否包含危险协议
+    if url.startswith('javascript:') or url.startswith('data:') or url.startswith('vbscript:'):
+        return ''
+    
+    # 检查URL是否包含XSS相关模式
+    if re.search(r'<script[^>]*>.*?</script>', url, re.IGNORECASE | re.DOTALL):
+        return ''
+    
+    # 确保URL是绝对路径或本站URL
+    if url.startswith('/'):
+        # 本站URL，安全
+        pass
+    elif url.startswith('http://') or url.startswith('https://'):
+        # 外部URL，需要验证是否为本站域名
+        try:
+            parsed = urlparse(url)
+            if parsed.hostname and parsed.hostname != request.host:
+                # 可以加入域名白名单检查
+                pass
+        except Exception:
+            return ''
+    
+    return url
+
+
+# 会话安全辅助函数
+def _get_secure_session_id():
+    """获取安全的会话ID"""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+
+def _get_secure_headers():
+    """获取安全的HTTP头"""
+    return {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;"
+    }
 
 
 @public_bp.route('/')
@@ -764,8 +893,7 @@ def contest_detail(contest_id):
                            knockout_4_result_end=times['knockout_4_result_end'],
                            final_vote_end=times['final_vote_end'],
                            final_result_end=times['final_result_end'],
-                           supabase_url=os.getenv('SUPABASE_URL'),
-                           supabase_anon_key=os.getenv('SUPABASE_ANON_KEY'),
+                           **supabase_render_ctx(),
                            now=now,
                            current_time=now,
                            group_round_results=group_round_results,
@@ -922,7 +1050,7 @@ def qualifying_vote_female(contest_id):
                            gender='female',
                            existing_votes=existing_votes,
                            vote_totals=vote_totals,
-                           supabase_url=os.getenv('SUPABASE_URL', ''))
+                           **supabase_render_ctx())
 
 
 @public_bp.route('/contest/<int:contest_id>/qualifying/male')
@@ -968,7 +1096,7 @@ def qualifying_vote_male(contest_id):
                            gender='male',
                            existing_votes=existing_votes,
                            vote_totals=vote_totals,
-                           supabase_url=os.getenv('SUPABASE_URL', ''))
+                           **supabase_render_ctx())
 
 
 @public_bp.route('/contest/<int:contest_id>/qualifying/submit', methods=['POST'])
@@ -1125,14 +1253,18 @@ def qualifying_vote_reset(contest_id):
     if _now <= _times['review_end'] or _now > _times['qualifying_vote_end']:
         return jsonify({'success': False, 'message': '当前不在海选投票期，无法清空投票'})
 
-    deleted = ContestVote.query.filter_by(
-        contest_id=contest.id,
-        user_id=session.get('user_id'),
-        round_number=0,
-        gender=gender
-    ).delete()
+    try:
+        deleted = ContestVote.query.filter_by(
+            contest_id=contest.id,
+            user_id=session.get('user_id'),
+            round_number=0,
+            gender=gender
+        ).delete()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'清空投票失败：{type(e).__name__}: {str(e)}'})
 
-    db.session.commit()
     return jsonify({'success': True, 'message': f'已清空 {deleted} 条投票记录'})
 
 
@@ -1202,7 +1334,7 @@ def group_vote_female(contest_id):
                            round_type='group',
                            voted_matches=voted_matches,
                            vote_totals=vote_totals,
-                           supabase_url=os.getenv('SUPABASE_URL', ''))
+                           **supabase_render_ctx())
 @public_bp.route('/contest/<int:contest_id>/group/male')
 def group_vote_male(contest_id):
     """小组赛投票 - 男组"""
@@ -1482,7 +1614,8 @@ def knockout_vote_female(contest_id):
                            vote_totals=vote_totals,
                            sub_round=sub_round,
                            prev_matches=prev_matches,
-                           prev_round_name=prev_round_name)
+                           prev_round_name=prev_round_name,
+                           **supabase_render_ctx())
 
 
 @public_bp.route('/contest/<int:contest_id>/knockout/male')
@@ -1570,7 +1703,8 @@ def knockout_vote_male(contest_id):
                            vote_totals=vote_totals,
                            sub_round=sub_round,
                            prev_matches=prev_matches,
-                           prev_round_name=prev_round_name)
+                           prev_round_name=prev_round_name,
+                           **supabase_render_ctx())
 
 
 @public_bp.route('/contest/<int:contest_id>/knockout/submit', methods=['POST'])

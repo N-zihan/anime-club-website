@@ -89,5 +89,26 @@ if os.getenv('TESTING') == '1':
 # ====================================
 
 
+# ====== 生产环境可选：显式开关式表结构同步（默认关闭）======
+# app/models.py 新增的 video_hosts / video_cache / video_proxy_logs 三张表，
+# 线上库不会自动出现（旧逻辑只在 TESTING=1 时建表），相关功能会直接 500。
+# 这里提供一个"只在显式设置时才跑"的开关，默认绝不执行任何 DDL。
+#
+# 用法（本地/一次性运维，不要在 Vercel 上长期开启）：
+#     INIT_DB=1 python run.py
+#
+# 局限：db.create_all() 只新建"缺失的表"，不会给已存在的 user 表补列。
+#       补列请执行 docs/sql/v4.15.2_add_video_proxy_and_session.sql，
+#       或运行既有的运维脚本 python init.py。
+# 为什么不默认开启：Vercel Serverless 每次冷启动都是新实例，常驻 create_all
+#       会拖慢冷启动并额外占用 Supabase 免费计划的连接配额。
+if os.getenv('INIT_DB') == '1':
+    with app.app_context():
+        print("INIT_DB=1：正在按 app/models.py 同步数据库表结构（幂等，只新建缺失的表）...")
+        db.create_all()
+        print("已按 INIT_DB=1 同步表结构")
+# ==========================================================
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

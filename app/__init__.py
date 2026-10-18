@@ -32,6 +32,18 @@ from .public import (
 )
 from .user import user_bp
 
+# 视频代理是可选模块：其顶层 import aiohttp，而 aiohttp 不在 requirements.txt 中
+# （线上依赖 pip install -r requirements.txt 安装）。原先的顶层直接导入会让整个
+# app 包在缺 aiohttp 的环境（如 Vercel）直接 ModuleNotFoundError，整站起不来。
+# 改为可选导入：缺失时降级为不注册该路由，并记录失败原因，不影响主站启动。
+_video_proxy_import_error = None
+try:
+    from .video_proxy import register_video_proxy_routes
+except Exception as _e:  # pylint: disable=broad-except
+    register_video_proxy_routes = None
+    # 注意：except 块里的 as 变量在块结束会被自动删除，所以另存一份给下面打日志用
+    _video_proxy_import_error = _e
+
 load_dotenv()
 
 
@@ -93,9 +105,11 @@ def create_app():
     # ====== CSRF 保护 ======
     csrf = CSRFProtect()
     csrf.init_app(app)
-    # 测试环境禁用 CSRF
-    if app.config.get('TESTING'):
+    # CSRF 保护已启用，所有环境（包括测试）都应保持保护
+    # 如需在测试中禁用，请通过环境变量 DISABLE_CSRF_FOR_TESTS='1' 设置
+    if os.getenv('DISABLE_CSRF_FOR_TESTS') == '1':
         app.config['WTF_CSRF_ENABLED'] = False
+        print('⚠️  WARNING: CSRF 保护已根据环境变量 DISABLE_CSRF_FOR_TESTS 设置，生产环境中应始终开启')
     # =============================
 
     # 注册蓝图
@@ -103,6 +117,15 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp)
+    
+    # 注册视频代理路由（可选模块，因缺依赖导入失败时跳过，不影响主站启动）
+    if register_video_proxy_routes is not None:
+        register_video_proxy_routes(app)
+    else:
+        app.logger.warning(
+            "视频代理路由未注册（可选模块 app.video_proxy 导入失败，通常是缺少 aiohttp）: %s",
+            _video_proxy_import_error,
+        )
 
     # 注册错误处理器（400/405/413 的自定义页面此前已写好，但从未注册）
     app.register_error_handler(404, page_not_found)

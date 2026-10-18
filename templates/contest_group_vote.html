@@ -347,8 +347,8 @@
         {% if session.user_id %}
         // 用 tojson 而不是裸插进 '...' 字符串：一旦 key/URL 含引号即 XSS
         const supabase = window.supabase.createClient(
-            {{ supabase_url|tojson }},
-            {{ supabase_anon_key|tojson }}
+            {{ (supabase_url or "")|tojson }},
+            {{ (supabase_anon_key or "")|tojson }}
         );
         const channel = supabase
             .channel('votes-channel')

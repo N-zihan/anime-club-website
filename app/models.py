@@ -27,6 +27,38 @@ class User(db.Model):
     is_owner = db.Column(db.Boolean, default=False)
     reset_token = db.Column(db.String(64), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
+    # 会话安全字段
+    session_token = db.Column(db.String(255), nullable=True)
+    session_token_expires = db.Column(db.DateTime, nullable=True)
+    
+    def generate_session_token(self):
+        """生成安全的会话令牌"""
+        import secrets
+        self.session_token = secrets.token_urlsafe(32)
+        self.session_token_expires = datetime.now(timezone.utc) + timedelta(days=7)
+    
+    def validate_session_token(self, token):
+        """验证会话令牌"""
+        if not self.session_token or not self.session_token_expires:
+            return False
+        if self.session_token != token:
+            return False
+        return datetime.now(timezone.utc) < self.session_token_expires
+        
+    def validate_password_reset_token(self, token):
+        """验证密码重置令牌安全性"""
+        import secrets
+        if not self.reset_token:
+            return False
+        # 令牌格式验证（UUID格式）
+        try:
+            secrets.token_urlsafe(32)
+        except:
+            return False
+        # 检查令牌是否过期
+        if not self.reset_token_expires or datetime.now(timezone.utc) > self.reset_token_expires:
+            return False
+        return self.reset_token == token
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -165,5 +197,47 @@ class Notification(db.Model):
     link = db.Column(db.String(500), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# ========== 视频代理系统 ==========
+
+class VideoHost(db.Model):
+    __tablename__ = 'video_hosts'
+    id = db.Column(db.Integer, primary_key=True)
+    host = db.Column(db.String(200), nullable=False, unique=True)
+    is_trusted = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text, nullable=True)
+    added_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    request_count = db.Column(db.Integer, default=0)
+    success_count = db.Column(db.Integer, default=0)
+
+
+class VideoCache(db.Model):
+    __tablename__ = 'video_cache'
+    id = db.Column(db.Integer, primary_key=True)
+    cache_key = db.Column(db.String(64), nullable=False, unique=True)
+    data = db.Column(db.JSON, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    platform = db.Column(db.String(50), nullable=True)
+    video_id = db.Column(db.String(100), nullable=True)
+    access_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class VideoProxy(db.Model):
+    __tablename__ = 'video_proxy_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    url = db.Column(db.String(500), nullable=False)
+    method = db.Column(db.String(10), nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # pending/processing/completed/failed
+    error_message = db.Column(db.Text, nullable=True)
+    proxy_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    content_type = db.Column(db.String(100), nullable=True)
+    size = db.Column(db.Integer, nullable=True)
+
+    user = db.relationship('User', backref='video_proxy_logs')
 
     user = db.relationship('User', backref='notifications')

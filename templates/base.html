@@ -1,8 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.bangumi.com https://api.github.com; frame-ancestors 'none'; base-uri 'self';">
     <meta content="Sv5yDeDt3X" name="sogou_site_verification"/>
     <meta content="codeva-mVPCgddV5r" name="baidu-site-verification"/>
     <link href="{{ url_for('static', filename='css/style.css') }}?v=5" rel="stylesheet">
@@ -22,7 +23,11 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url_root }}">
     <meta property="og:image" content="{{ request.url_root }}static/images/icon-512.png">
-    <meta name="twitter:card" content="summary"></head>
+    <meta name="twitter:card" content="summary">
+    
+    <!-- Cloudflare Turnstile 验证码修复 -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
 <body>
 <!-- ====== CSRF Token（所有表单通过 {{ csrf_token() }} 使用） ====== -->
 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
@@ -910,6 +915,19 @@
                 }
             });
         }
+    });
+</script>
+
+<!-- 安全增强 - 禁用复制粘贴敏感信息 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 禁止复制 CSRF 令牌值（已在隐藏字段中，增加额外安全层）
+        document.querySelectorAll('input[name="csrf_token"]').forEach(function(input) {
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('autocapitalize', 'off');
+            input.setAttribute('spellcheck', 'false');
+        });
     });
 </script>
 
