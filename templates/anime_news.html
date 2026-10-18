@@ -7,8 +7,8 @@
     数据来源：ANN / MAL / Crunchyroll / Comic Book 等多家媒体
 </p>
 
-<!-- 搜索框 -->
-<div style="display:flex; gap:8px; margin-bottom:16px;">
+<!-- 搜索框（搜索历史面板锚点由下方 task-9 脚本按需插入，避免与并行改动冲突） -->
+<div id="newsSearchRow" style="display:flex; gap:8px; margin-bottom:16px;">
     <input type="text" id="newsSearchInput" placeholder="搜索新闻（支持中文，如：药屋、海贼王）"
            autocomplete="off"
            style="flex:1; padding:10px 16px; border:1px solid var(--border-color); border-radius:24px; font-size:0.95rem; background: var(--bg-input); color: var(--text-primary);">
@@ -60,6 +60,26 @@
 .news-title a:hover { color: #4a90d9; }
 .news-excerpt { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 600px) { .news-thumb { width: 90px; height: 60px; } .news-title { font-size: 0.95rem; } }
+
+/* ===== 搜索历史面板（task-9）：颜色一律走 CSS 变量，兼容深夜模式 ===== */
+#searchHistoryPanel {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    z-index: 1000; max-height: 340px; overflow-y: auto;
+}
+#searchHistoryPanel[hidden] { display: none; }
+#searchHistoryPanel .sh-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 4px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; }
+#searchHistoryPanel .sh-clear { min-height: 44px; padding: 0 12px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; border-radius: 8px; }
+#searchHistoryPanel .sh-clear:hover { background: var(--bg-code); color: var(--text-primary); }
+#searchHistoryPanel .sh-row { display: flex; align-items: stretch; }
+#searchHistoryPanel .sh-row.sh-active { background: var(--bg-code); }
+#searchHistoryPanel .sh-item { flex: 1; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; background: transparent; border: none; cursor: pointer; text-align: left; color: var(--text-primary); font-size: 0.9rem; overflow: hidden; }
+#searchHistoryPanel .sh-item:hover { background: var(--bg-code); }
+#searchHistoryPanel .sh-icon { flex-shrink: 0; opacity: 0.7; }
+#searchHistoryPanel .sh-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#searchHistoryPanel .sh-del { flex-shrink: 0; width: 44px; min-height: 44px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; border-radius: 8px; }
+#searchHistoryPanel .sh-del:hover { background: var(--bg-code); color: var(--text-primary); }
 </style>
 
 <script>
@@ -213,6 +233,7 @@
         const q = searchInput.value.trim();
         if (!q) return;
         searchKeyword = q;
+        try { window.__recordSearchHistory && window.__recordSearchHistory(q); } catch (e) { /* 历史记录失败绝不影响搜索 */ }
 
         filterBtns.forEach(function (b) {
             b.style.background = 'var(--bg-code)';
@@ -287,6 +308,197 @@
 
     // 卡片点击已由链接 href 负责，无需额外绑定
     load('', false);
+})();
+</script>
+
+<script>
+/* ===== 搜索历史（task-9）：自包含 IIFE，纯前端 localStorage，零网络请求、零日志 ===== */
+(function () {
+    'use strict';
+
+    var STORAGE_KEY = 'anime_news_search_history_v1';
+    var MAX_ITEMS = 10;
+
+    var input = document.getElementById('newsSearchInput');
+    var row = document.getElementById('newsSearchRow');
+    if (!input || !row) return;
+
+    var searchBtn = document.getElementById('newsSearchBtn');
+
+    /* localStorage 安全包裹：隐私模式 / 配额满 / 被策略禁用时静默降级为「无历史」 */
+    var store = {
+        available: true,
+        read: function () {
+            if (!store.available) return [];
+            try {
+                var raw = window.localStorage.getItem(STORAGE_KEY);
+                if (!raw) return [];
+                var arr = JSON.parse(raw);
+                if (!Array.isArray(arr)) return [];
+                var out = [];
+                for (var i = 0; i < arr.length && out.length < MAX_ITEMS; i++) {
+                    var v = arr[i];
+                    if (typeof v !== 'string') continue;   /* 严格白名单：只接受字符串 */
+                    v = v.trim();
+                    if (v && out.indexOf(v) === -1) out.push(v);
+                }
+                return out;
+            } catch (e) { store.available = false; return []; }
+        },
+        write: function (list) {
+            if (!store.available) return false;
+            try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; }
+            catch (e) { store.available = false; return false; }
+        }
+    };
+
+    var items = store.read();
+
+    /* 由脚本设置定位上下文，避免改动原有那一行布局的内联样式 */
+    row.style.position = 'relative';
+
+    var panel = document.createElement('div');
+    panel.id = 'searchHistoryPanel';
+    panel.hidden = true;
+    panel.setAttribute('role', 'listbox');
+    panel.setAttribute('aria-label', '搜索历史');
+    row.appendChild(panel);
+
+    var activeIndex = -1;
+
+    function isOpen() { return panel.hidden === false; }
+
+    function closePanel() {
+        panel.hidden = true;
+        activeIndex = -1;
+        input.setAttribute('aria-expanded', 'false');
+    }
+
+    function openPanel() {
+        if (!items.length) { closePanel(); return; }
+        panel.hidden = false;
+        activeIndex = -1;
+        input.setAttribute('aria-expanded', 'true');
+    }
+
+    function highlight(idx) {
+        var rows = panel.querySelectorAll('.sh-row');
+        for (var i = 0; i < rows.length; i++) { rows[i].classList.toggle('sh-active', i === idx); }
+        activeIndex = idx;
+        if (idx >= 0 && rows[idx]) { rows[idx].scrollIntoView({ block: 'nearest' }); }
+    }
+
+    /* 渲染：关键词是用户完全可控的字符串 —— 一律 textContent，绝不 innerHTML 拼接 */
+    function render() {
+        while (panel.firstChild) { panel.removeChild(panel.firstChild); }
+
+        var header = document.createElement('div');
+        header.className = 'sh-header';
+        var label = document.createElement('span');
+        label.textContent = '搜索历史';
+        var clearAll = document.createElement('button');
+        clearAll.type = 'button';
+        clearAll.className = 'sh-clear';
+        clearAll.textContent = '清空';
+        clearAll.setAttribute('aria-label', '清空全部搜索历史');
+        clearAll.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            items = [];
+            store.write(items);
+            render();
+            closePanel();
+        });
+        header.appendChild(label);
+        header.appendChild(clearAll);
+        panel.appendChild(header);
+
+        items.forEach(function (keyword, idx) {
+            var rowEl = document.createElement('div');
+            rowEl.className = 'sh-row';
+
+            var itemBtn = document.createElement('button');
+            itemBtn.type = 'button';
+            itemBtn.className = 'sh-item';
+            itemBtn.setAttribute('role', 'option');
+            itemBtn.setAttribute('aria-selected', 'false');
+            itemBtn.setAttribute('title', keyword);
+            var icon = document.createElement('span');
+            icon.className = 'sh-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = '\uD83D\uDD51';
+            var text = document.createElement('span');
+            text.className = 'sh-text';
+            text.textContent = keyword;              /* ← 关键：textContent，免疫 XSS */
+            itemBtn.appendChild(icon);
+            itemBtn.appendChild(text);
+            itemBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                input.value = keyword;
+                closePanel();
+                if (searchBtn) { searchBtn.click(); }   /* 复用既有搜索入口，不重写 doSearch */
+            });
+
+            var delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'sh-del';
+            delBtn.textContent = '\u00D7';
+            delBtn.setAttribute('aria-label', '删除这条搜索历史');
+            delBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                items.splice(idx, 1);
+                store.write(items);
+                render();
+                if (!items.length) { closePanel(); }
+            });
+
+            rowEl.appendChild(itemBtn);
+            rowEl.appendChild(delBtn);
+            panel.appendChild(rowEl);
+        });
+    }
+
+    /* 记录一次搜索：去重 + 提到最前 + 截断到上限 */
+    function record(keyword) {
+        var k = String(keyword == null ? '' : keyword).trim();
+        if (!k) return;
+        var next = [k];
+        for (var i = 0; i < items.length; i++) { if (items[i] !== k) { next.push(items[i]); } }
+        items = next.slice(0, MAX_ITEMS);
+        store.write(items);
+        render();
+        if (document.activeElement === input) { openPanel(); }
+    }
+
+    window.__recordSearchHistory = record;
+
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', 'searchHistoryPanel');
+
+    input.addEventListener('focus', function () { if (items.length) { openPanel(); } });
+    input.addEventListener('click', function () { if (items.length && !isOpen()) { openPanel(); } });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            if (isOpen()) { e.preventDefault(); e.stopPropagation(); closePanel(); }
+            return;
+        }
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }   /* 回车交给既有监听器 */
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isOpen()) { openPanel(); if (isOpen()) { highlight(0); } return; }
+        var last = items.length - 1;
+        if (e.key === 'ArrowDown') { highlight(activeIndex >= last ? 0 : activeIndex + 1); }
+        else { highlight(activeIndex <= 0 ? last : activeIndex - 1); }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (isOpen() && !row.contains(e.target)) { closePanel(); }
+    });
+
+    render();
 })();
 </script>
 

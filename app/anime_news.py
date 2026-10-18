@@ -47,6 +47,9 @@ _CACHE_TTL = 1800
 
 _translate_cache = {}  # 翻译缓存（有上限，进程重启后清空）
 
+# 翻译缓存命中计数（便于验证「按页懒翻译」没有被反复触发、也没退化成全量翻译）
+_translate_stats = {'cache_hit': 0, 'cache_miss': 0, 'api_calls': 0}
+
 _article_cache = {}
 _ARTICLE_TTL = 172800
 
@@ -107,6 +110,11 @@ def _cache_items(cache):
         return list(cache.items())
 
 _UA = 'Mozilla/5.0 (compatible; nanyi-anime-club/1.0)'
+# 抓取原文页用的真实浏览器 UA：部分站点对 "compatible; bot" 一律 403/断连
+_UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+               '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
+# 原文抓取超时：实测多数站点 1-3s 内返回，15s 只是把偶发断连拖成用户可感的卡顿
+_ARTICLE_FETCH_TIMEOUT = 10
 
 # 阿里云机器翻译端点
 _ALIYUN_MT_ENDPOINT = 'https://mt.aliyuncs.com/'
@@ -159,6 +167,8 @@ def _aliyun_call(text, source='en', target='zh'):
 
     params['Signature'] = signature
 
+    _translate_stats['api_calls'] += 1
+
     try:
         res = requests.get(_ALIYUN_MT_ENDPOINT, params=params, timeout=8)
         data = res.json()
@@ -188,8 +198,10 @@ def _translate_batch(texts):
         cached = _cache_get(_translate_cache, t)
         if cached:
             result[t] = cached
+            _translate_stats['cache_hit'] += 1
         else:
             to_translate.append(t)
+            _translate_stats['cache_miss'] += 1
 
     if not to_translate:
         return result
@@ -302,6 +314,48 @@ _CORPUS_RETRY_MAX = 600
 _corpus_fail_streak = 0
 
 
+class _CorpusUnavailable:
+    """语料「不可用」的显式标记（区别于「成功但确实没有数据」）。
+
+    `[]` 同时代表「上游说没有新闻」和「上游挂了」，调用方无法区分。
+    失败路径统一返回本单例，调用方用 `is` 判断即可走各自的兜底分支，
+    不会再出现「一个空列表掩盖了上游异常」的情况。
+    """
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    # ★ 迭代协议兼容：本单例是为了让「失败」与「确实没有数据」可区分而引入的，
+    #   但历史上所有调用方都按「返回 list」的契约写（for / 切片 / len）。
+    #   漏改一处调用方就会 TypeError → 详情页 500（t5-audit 实测复现过
+    #   find_article_meta 这一处）。这里把单例伪装成空序列，使任何「按列表消费」
+    #   的旧调用方自动安全降级为空语料，而不是崩溃。
+    def __iter__(self):
+        return iter(())
+
+    def __len__(self):
+        return 0
+
+    def __bool__(self):
+        return False
+
+    def __getitem__(self, index):
+        # 切片与索引都按空序列处理：绝不抛 TypeError 让上层 500
+        if isinstance(index, slice):
+            return []
+        raise IndexError(index)
+
+    def __repr__(self):
+        return '<CORPUS_UNAVAILABLE>'
+
+
+_CORPUS_UNAVAILABLE = _CorpusUnavailable()
+
+
 def _corpus_backoff_active(now=None):
     """上游语料是否处于退避窗口内（用于避免紧接着再打一次上游白等超时）"""
     now = now or datetime.now()
@@ -309,8 +363,36 @@ def _corpus_backoff_active(now=None):
     return bool(until and now < until)
 
 
+def _corpus_fail(now, reason):
+    """所有语料失败路径的唯一出口（异常 / JSON 解析失败 / 结构异常 都要走这里）。
+
+    统一做三件事：
+      1) 进入指数退避（60s→600s），避免上游抖动时每个请求都白等一次 12s 超时；
+      2) 优先复用 last-known-good 语料（stale-while-error），新闻页/搜索不会变空；
+      3) 只有从未成功抓到过语料时，才返回 _CORPUS_UNAVAILABLE 让调用方兜底。
+    原实现的缺陷：`if not isinstance(arts, list): return []` 这条早返回既不用
+    stale 也不进退避，于是「上游 HTTP 200 但结构异常」时列表会变空、
+    且每个请求都重打上游。
+    """
+    global _corpus_fail_streak
+    print(f'>>> 搜索语料不可用（{reason}）')
+    delay = min(_CORPUS_RETRY_MAX, _CORPUS_RETRY_BASE * (2 ** _corpus_fail_streak))
+    _corpus_fail_streak += 1
+    _cache_set(_cache, _CORPUS_BACKOFF_KEY, now + timedelta(seconds=delay), _CACHE_MAX)
+
+    stale = _cache_get(_cache, _CORPUS_STALE_KEY)
+    if stale:
+        print(f'>>> 复用上次成功语料（{len(stale)} 条），退避 {delay}s')
+        return stale
+    return _CORPUS_UNAVAILABLE
+
+
 def _get_search_corpus():
-    """获取搜索语料（标题已译）。空语料做短时负缓存，避免上游抖动时反复超时"""
+    """获取搜索语料（标题已译）。
+
+    返回：list（成功，可能为空=上游确实没有新闻）
+          _CORPUS_UNAVAILABLE（失败且无历史语料可复用）
+    """
     global _corpus_fail_streak
     now = datetime.now()
     entry = _cache_get(_cache, _CORPUS_KEY)
@@ -327,59 +409,107 @@ def _get_search_corpus():
                         a['excerpt_zh'] = excerpt_map[e]
             return arts
 
-    # 退避窗口内不再打上游：有历史语料就直接续用（stale-while-error），
-    # 否则返回空让调用方走兜底分支。
+    # 退避窗口内不再打上游：复用历史语料，没有历史才报不可用。
     if _corpus_backoff_active(now):
         stale = _cache_get(_cache, _CORPUS_STALE_KEY)
         if stale:
             return stale
-        return []
+        return _CORPUS_UNAVAILABLE
 
     try:
         res = requests.get(f'{ANI_NEWS_API}/api/news', params={'limit': 100}, timeout=12)
         data = res.json()
-        arts = data.get('data') if isinstance(data, dict) else None
-        if not isinstance(arts, list):
-            return []
-        arts = [a for a in arts if isinstance(a, dict)]
+    except Exception as e:
+        # 网络异常 / JSON 解析失败
+        return _corpus_fail(now, f'{type(e).__name__}: {e}')
 
-        # 只批量翻译标题：摘要不额外翻译，控制冷启动耗时
-        titles = [a.get('title') for a in arts if a.get('title')]
-        if titles:
+    arts = data.get('data') if isinstance(data, dict) else None
+    if not isinstance(arts, list):
+        # ★ 结构异常（例如上游返回 {"error":"maintenance"}）也必须走统一失败出口：
+        #   原先这里直接 return []，导致列表变空且退避不生效。
+        return _corpus_fail(now, f'响应结构异常: {type(data).__name__}')
+
+    arts = [a for a in arts if isinstance(a, dict)]
+
+    # 只批量翻译标题：摘要不额外翻译，控制冷启动耗时
+    titles = [a.get('title') for a in arts if a.get('title')]
+    if titles:
+        try:
             zh = _translate_batch(titles)
             for a in arts:
                 if a.get('title'):
                     a['title_zh'] = zh.get(a['title'], a['title'])
+        except Exception as e:
+            # 翻译失败不算语料失败：语料本身可用，降级为原文标题
+            print(f'>>> 语料标题翻译失败（降级用原文）: {e}')
 
-        if arts:
-            _cache_set(_cache, _CORPUS_KEY, (arts, now + timedelta(seconds=_CORPUS_TTL)), _CACHE_MAX)
-            _cache_set(_cache, _CORPUS_STALE_KEY, arts, _CACHE_MAX)
-            _cache_pop(_cache, _CORPUS_BACKOFF_KEY)
-            _corpus_fail_streak = 0
-        return arts
-    except Exception as e:
-        print(f'>>> 搜索语料拉取失败: {e}')
-        # 指数退避：连续失败时最长 10 分钟不再打上游
-        delay = min(_CORPUS_RETRY_MAX, _CORPUS_RETRY_BASE * (2 ** _corpus_fail_streak))
-        _corpus_fail_streak += 1
-        _cache_set(_cache, _CORPUS_BACKOFF_KEY, now + timedelta(seconds=delay), _CACHE_MAX)
+    if arts:
+        _cache_set(_cache, _CORPUS_KEY, (arts, now + timedelta(seconds=_CORPUS_TTL)), _CACHE_MAX)
+        _cache_set(_cache, _CORPUS_STALE_KEY, arts, _CACHE_MAX)
+        _cache_pop(_cache, _CORPUS_BACKOFF_KEY)
+        _corpus_fail_streak = 0
+    # 注意：arts 为空时**不进失败出口**——上游正常响应「确实没有新闻」不同于上游故障，
+    # 不应触发退避，也不应污染 last-known-good。
+    return arts
 
-        # ★ 关键修复：原实现在这里无条件写入 ([], now+60s)，把上一次成功抓到的
-        #   语料覆盖成空。上游持续抖动时，列表页与搜索会长时间只显示空态
-        #   （每次失败还要额外等一次 12s 超时 + 一次 15s 上游重试）。
-        #   现在：有历史语料就续用，只有从未成功过才做短时负缓存。
-        stale = _cache_get(_cache, _CORPUS_STALE_KEY)
-        if stale:
-            return stale
-        _cache_set(_cache, _CORPUS_KEY, ([], now + timedelta(seconds=delay)), _CACHE_MAX)
-        return []
+
+def _ensure_translated(articles, translate_excerpt=True):
+    """统一翻译补充：保证返回的每条都有 title_zh / excerpt_zh（有原文时）。
+
+    ★ 为什么要有这个函数：站点有**三条**取新闻的路径（直连上游 / 本地语料切片 /
+    搜索），历史上翻译覆盖不一致 —— 直连路径翻标题+摘要，语料切片与搜索只翻标题，
+    于是用户看到「第一页有翻译，翻页和搜索没翻译」。把「翻译补充」收敛到唯一入口，
+    以后新增路径只要调用它，就不会再漏翻译。
+
+    性能约定：
+      - 只翻译**传入的这一页**（通常 ≤20 条），绝不翻译全量语料；
+      - 完全复用 _translate_cache（键为原文），已译过的不会重复计费；
+      - 标题与摘要一次批量提交，减少往返。
+    """
+    if not articles:
+        return articles
+
+    pending = []
+    for a in articles:
+        if not isinstance(a, dict):
+            continue
+        title = a.get('title')
+        excerpt = a.get('excerpt')
+        if title and not a.get('title_zh'):
+            pending.append(title)
+        if translate_excerpt and excerpt and not a.get('excerpt_zh'):
+            pending.append(excerpt)
+
+    if pending:
+        try:
+            zh = _translate_batch(pending)
+        except Exception as e:          # 翻译失败不能让整个列表接口失败
+            print(f'>>> 列表翻译补充失败（降级用原文）: {e}')
+            zh = {}
+
+        for a in articles:
+            if not isinstance(a, dict):
+                continue
+            title = a.get('title')
+            excerpt = a.get('excerpt')
+            if title:
+                a['title_zh'] = a.get('title_zh') or zh.get(title, title)
+            if translate_excerpt and excerpt:
+                a['excerpt_zh'] = a.get('excerpt_zh') or zh.get(excerpt, excerpt)
+
+    return articles
 
 
 def find_article_meta(url):
     """按链接查找文章元数据：先查搜索语料，再回退已缓存列表；找不到返回 None"""
     if not url:
         return None
-    for a in _get_search_corpus():
+    # 显式判哨兵（双保险）：单例本身已实现空序列协议，这里再判一次让意图明确，
+    # 也避免将来有人给单例加了成员导致语义漂移。
+    corpus = _get_search_corpus()
+    if corpus is _CORPUS_UNAVAILABLE:
+        corpus = []
+    for a in corpus:
         if (a.get('link') or a.get('url')) == url:
             return a
     cache_items = [(k, v) for k, v in _cache_items(_cache) if str(k).startswith('news_')]
@@ -410,8 +540,13 @@ def get_anime_news(limit=20, tag=None, cursor=None):
         offset = _decode_cursor(cursor) if cursor else 0
         if offset is not None and offset >= 0:
             corpus = _get_search_corpus()
-            if corpus:
+            # 显式区分「上游确实没有新闻」（[]）与「语料不可用」（哨兵对象）
+            if isinstance(corpus, list) and corpus:
                 page = corpus[offset:offset + limit]
+                # ★ 懒翻译：语料只预翻了标题，这里按需补齐**当前页**的标题+摘要。
+                #   只翻这一页（≤20 条）并复用 _translate_cache，绝不翻全量 100 条，
+                #   否则冷启动会被翻译拖垮（这正是上一版「只翻标题」的取舍来源）。
+                page = _ensure_translated(page)
                 has_more = offset + limit < len(corpus)
                 next_cursor = _encode_cursor(offset + limit) if has_more else None
                 result = (page, {'total': len(corpus), 'hasMore': has_more,
@@ -442,24 +577,8 @@ def get_anime_news(limit=20, tag=None, cursor=None):
         elif isinstance(data, list):
             articles = data
 
-        # ★ 标题 + 摘要一次批量翻译
-        if articles:
-            all_texts = []
-            for a in articles:
-                if a.get('title'):
-                    all_texts.append(a['title'])
-                if a.get('excerpt'):
-                    all_texts.append(a['excerpt'])
-
-            if all_texts:
-                translated = _translate_batch(all_texts)
-                for a in articles:
-                    t = a.get('title', '')
-                    e = a.get('excerpt', '')
-                    if t:
-                        a['title_zh'] = translated.get(t, t)
-                    if e:
-                        a['excerpt_zh'] = translated.get(e, e)
+        # ★ 走统一的翻译补充入口（标题 + 摘要），与语料切片/搜索路径保持一致
+        articles = _ensure_translated(articles)
 
         result = (articles, meta)
         _cache_set(_cache, cache_key, (result, now + timedelta(seconds=_CACHE_TTL)), _CACHE_MAX)
@@ -503,7 +622,10 @@ def search_news(keyword, limit=50):
             kw_future = pool.submit(_translate_keyword, keyword)
         articles = corpus_future.result()
 
-    # 语料不可用时回退已缓存的列表数据
+    # 语料不可用（哨兵）或确实为空时，回退已缓存的列表数据。
+    # 注意必须用 isinstance 判断：哨兵对象是「真值」，直接遍历会遍历到对象本身。
+    if not isinstance(articles, list):
+        articles = []
     if not articles:
         cache_items = [(k, v) for k, v in _cache_items(_cache) if str(k).startswith('news_')]
         if cache_items:
@@ -515,6 +637,10 @@ def search_news(keyword, limit=50):
                 articles = cached_articles
 
     keywords = [keyword.lower()]
+
+    # 回退后仍可能不是 list（极端情况），统一保证可迭代
+    if not isinstance(articles, list):
+        articles = []
 
     # 关键词翻译已在语料拉取时并行执行，这里只取结果
     if kw_future is not None:
@@ -544,6 +670,9 @@ def search_news(keyword, limit=50):
     # 不缓存空结果：避免首次搜索无数据后，后续相同关键词也永远返回空
     if not results:
         return []
+
+    # ★ 搜索结果同样补齐翻译（标题+摘要）：否则用户看到「搜索出来的新闻没翻译」
+    results = _ensure_translated(results)
 
     # 缓存搜索结果 (5分钟)
     _cache_set(_cache, cache_key, (results, now + timedelta(minutes=5)), _CACHE_MAX)
@@ -801,6 +930,18 @@ def _extract_videos(soup, base_url, title):
     """
     videos = []
 
+    # 地区分流（Lead 决策 2026-10-17）：用户反馈「油管要翻墙，视频播不出来」。
+    # cn 域（bilibili/b23.tv/acfun）国内可直连，模板可自动嵌 iframe；
+    # overseas 域（youtube/vimeo 等）国内被墙，自动嵌只会得到一个纯黑空框，
+    # 必须默认不嵌、给明确提示 + 点击后才注入 iframe。
+    cn_hosts = ('bilibili.com', 'b23.tv', 'acfun.cn')
+
+    def _region_of(u):
+        h = (urlsplit(u).hostname or '').lower()
+        return 'cn' if h == 'bilibili.com' or h.endswith('.bilibili.com') \
+            or h in cn_hosts or any(h == d or h.endswith('.' + d) for d in cn_hosts) \
+            else 'overseas'
+
     # 1) <iframe src>：白名单播放器
     for tag in soup.find_all('iframe'):
         raw = tag.get('src') or tag.get('data-src') or ''
@@ -816,14 +957,16 @@ def _extract_videos(soup, base_url, title):
             # 注意此处**只信 URL 结构，不发起任何请求**（无 oEmbed、无 SSRF）。
             videos.append({'type': 'iframe', 'url':
                            f'https://www.youtube.com/embed/{yt_id}',
-                           'embed': True, 'label': 'YouTube'})
+                           'embed': True, 'label': 'YouTube',
+                           'region': 'overseas'})
             continue
         if _looks_like_video_embed(abs_url):
             host = (urlsplit(abs_url).hostname or '').lower()
             label = 'Bilibili' if 'bilibili' in host else (
                 'Vimeo' if 'vimeo' in host else 'YouTube' if 'youtu' in host else host)
             videos.append({'type': 'iframe', 'url': abs_url,
-                           'embed': True, 'label': label})
+                           'embed': True, 'label': label,
+                           'region': _region_of(abs_url)})
 
     # 2) <video src> / <source src>：视频直链，只能外链播放
     for tag in soup.find_all(['video', 'source']):
@@ -833,10 +976,12 @@ def _extract_videos(soup, base_url, title):
             continue
         if _is_allowed_embed_url(abs_url) and _looks_like_video_embed(abs_url):
             videos.append({'type': 'iframe', 'url': abs_url,
-                           'embed': True, 'label': '视频播放器'})
+                           'embed': True, 'label': '视频播放器',
+                           'region': _region_of(abs_url)})
         elif _is_direct_video_file(abs_url):
             videos.append({'type': 'video', 'url': abs_url,
-                           'embed': False, 'label': '视频文件'})
+                           'embed': False, 'label': '视频文件',
+                           'region': _region_of(abs_url)})
 
     # 3) og:video / og:video:url / og:video:secure_url / twitter:player meta
     for meta in soup.find_all('meta'):
@@ -848,12 +993,14 @@ def _extract_videos(soup, base_url, title):
             continue
         if _is_allowed_embed_url(abs_url) and _looks_like_video_embed(abs_url):
             videos.append({'type': 'iframe', 'url': abs_url,
-                           'embed': True, 'label': '视频播放器'})
+                           'embed': True, 'label': '视频播放器',
+                           'region': _region_of(abs_url)})
         else:
             # 任意域的 og:video 允许作为「外链」返回（如原站自托管 mp4），
             # 但 embed=False，模板绝不能把它渲染成 iframe。
             videos.append({'type': 'meta', 'url': abs_url,
-                           'embed': False, 'label': title or '原站视频'})
+                           'embed': False, 'label': title or '原站视频',
+                           'region': _region_of(abs_url)})
 
     return _dedupe_videos(videos)
 
@@ -861,10 +1008,26 @@ def _extract_videos(soup, base_url, title):
 # ============================================================
 # 新闻正文
 # ============================================================
-def get_article_content(url):
-    """抓取原文章正文并翻译成中文"""
-    if not url:
+def get_article_content(url, fail_reason=None):
+    """抓取原文章正文并翻译成中文
+
+    返回 dict，成功时新增两个**供前端做状态反馈**的字段（向后兼容，旧调用方
+    只读 title/content/images/videos 不受影响）：
+      - 'status': 'ok' | 'translated_failed' —— 正文拿到了，但翻译降级成了原文
+      - 'reason': 失败/降级的人类可读原因（用于详情页提示，不含内部异常原文）
+    返回 None 表示**抓取完全失败**（网络/被拦/正文过短），调用方应给出重试入口。
+
+    fail_reason：可选 list，失败时回填一条**用户可读**的原因分类
+    （'网络超时' / '连接被中断' / '原站拒绝访问' / '正文过短' / '解析失败'），
+    供视图层原样传给模板做提示——但绝不把内部异常文本透给用户。
+    """
+    def _bail(reason):
+        if fail_reason is not None:
+            fail_reason.append(reason)
         return None
+
+    if not url:
+        return _bail('链接无效')
 
     now = datetime.now()
     cached_article = _cache_get(_article_cache, url)
@@ -874,14 +1037,30 @@ def get_article_content(url):
             return data
 
     try:
-        res = safe_get(url, headers={'User-Agent': _UA}, timeout=15)
+        # 真实浏览器 UA + Accept-Language：部分站点（MyAnimeList 等）对
+        # 非浏览器 UA 直接 403/断连，这是「部分正文抓取失败」的一个诱因。
+        res = safe_get(url, headers={
+            'User-Agent': _UA_BROWSER,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8',
+        }, timeout=_ARTICLE_FETCH_TIMEOUT)
         if res is None:
-            print('>>> 抓取原文被拦截（非公网地址或重定向过多）')
-            return None
+            # safe_get 返回 None：网络中断 / 非公网地址 / 重定向过多。
+            # 实测本环境对 news.google.com 跳转与部分 CDN 会频繁断连，
+            # 这属于**上游传输层不稳定**，不是 SSRF 校验误伤（已取证）。
+            print('>>> 抓取原文失败（safe_get 返回 None：网络中断或地址被拦）')
+            return _bail('原站连接失败')
         res.raise_for_status()
+    except requests.exceptions.Timeout:
+        return _bail('网络超时')
+    except requests.exceptions.HTTPError as e:
+        code = getattr(getattr(e, 'response', None), 'status_code', None)
+        return _bail('原站拒绝访问' if code in (401, 403, 429) else '原站返回错误')
+    except requests.exceptions.ConnectionError:
+        return _bail('连接被中断')
     except Exception as e:
         print(f'>>> 抓取原文失败: {e}')
-        return None
+        return _bail('网络请求失败')
 
     try:
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -905,7 +1084,7 @@ def get_article_content(url):
         )
 
         if not article:
-            return None
+            return _bail('无法识别正文区域')
 
         paragraphs = []
         for p in article.find_all(['p', 'h2', 'h3']):
@@ -923,10 +1102,19 @@ def get_article_content(url):
         full_text = '\n\n'.join(cleaned[:40])
 
         if len(full_text) < 100:
-            return None
+            # 阈值保留（防把导航栏短文本当正文），但要区分「抓到了但太短」
+            # 与「压根没抓到」，否则用户无法判断该不该重试。
+            return _bail('正文过短')
 
-        # 翻译正文
-        translated = _translate_article(full_text)
+        # 翻译正文；stats 用于区分「译好」与「翻译失败降级为原文」
+        stats = {}
+        try:
+            translated = _translate_article(full_text, stats=stats)
+        except TypeError:
+            # 兼容「单参数签名」的旧实现/测试桩，不能因为多了个可选参数就崩
+            translated = _translate_article(full_text)
+            stats.setdefault('ok', True)
+            stats.setdefault('failed', 0)
 
         # 提取文章中所有 https 图片链接
         images = []
@@ -951,6 +1139,9 @@ def get_article_content(url):
             # 'videos' 元素形如 {'type','url','embed','label'}，
             # 仅 embed=True 的白名单项允许被模板渲染成 iframe。
             'videos': videos,
+            # 状态反馈（问题 9）：翻译失败时 content 是原文，必须让前端知道
+            'status': 'ok' if stats.get('ok', True) else 'translated_failed',
+            'reason': '' if stats.get('ok', True) else '翻译服务不可用，当前显示原文',
         }
         _cache_set(_article_cache, url, (result, now + timedelta(seconds=_ARTICLE_TTL)), _ARTICLE_MAX)
         return result
@@ -958,19 +1149,37 @@ def get_article_content(url):
     except Exception as e:
         print(f'>>> 解析原文失败: {e}')
         traceback.print_exc()
-        return None
+        return _bail('正文解析失败')
 
 
-def _translate_article(text):
-    """翻译整篇文章。按段落分批调用阿里云，各批次并发执行。"""
+def _translate_article(text, stats=None):
+    """翻译整篇文章。按段落分批调用阿里云，各批次并发执行。
+
+    stats：可选 dict，回填 {'ok': bool, 'failed': int}，供调用方区分
+    「翻译成功」与「翻译失败已降级为原文」——用户看到英文时必须能知道原因。
+    """
     paragraphs = [p for p in text.split('\n\n') if p.strip()]
     if not paragraphs:
+        if stats is not None:
+            stats['ok'] = True
+            stats['failed'] = 0
         return text
 
     BATCH_SIZE = 5  # 每批 5 段
+    failed_batches = [0]
+    failed_lock = threading.Lock()
+
+    def _mark_failed():
+        with failed_lock:
+            failed_batches[0] += 1
 
     def _run_batch(batch):
-        """翻译一批段落，返回译文片段列表"""
+        """翻译一批段落，返回**与输入段数等长**的译文片段列表。
+
+        ★ 段落结构修复：原实现整批拼成一段翻译后返回 [translated]，再用 '\n\n'
+        把「批次」连起来，于是同一批内的 5 个段落被压成一段（用户看到正文
+        「一大坨」）。现在优先按行还原；行数对不上就逐段翻译，保证段落不粘连。
+        """
         joined = '\n'.join(batch)
 
         # 超过单次限制的批次拆成单段处理
@@ -980,13 +1189,33 @@ def _translate_article(text):
                 if len(p) > _ALIYUN_SINGLE_MAX:
                     p = p[:_ALIYUN_SINGLE_MAX]
                 single = _aliyun_call(p)
-                parts.append(single if single else p)
+                if single:
+                    parts.append(single)
+                else:
+                    _mark_failed()
+                    parts.append(p)
             return parts
 
         translated = _aliyun_call(joined)
-        if translated:
-            return [translated]
-        return ['\n'.join(batch)]
+        if not translated:
+            _mark_failed()
+            return list(batch)
+
+        # 行数与段数一致 → 逐段还原（保结构且省调用）
+        lines = translated.split('\n')
+        if len(lines) == len(batch):
+            return [ln.strip() or orig for ln, orig in zip(lines, batch)]
+
+        # 行数不符（阿里云可能吃掉/合并换行）→ 逐段单独翻译，绝不把段落粘连
+        parts = []
+        for p in batch:
+            single = _aliyun_call(p)
+            if single:
+                parts.append(single)
+            else:
+                _mark_failed()
+                parts.append(p)
+        return parts
 
     jobs = [paragraphs[i:i + BATCH_SIZE]
             for i in range(0, len(paragraphs), BATCH_SIZE)]
@@ -995,4 +1224,7 @@ def _translate_article(text):
     with ThreadPoolExecutor(max_workers=min(4, len(jobs))) as pool:
         chunk_lists = list(pool.map(_run_batch, jobs))
 
+    if stats is not None:
+        stats['failed'] = failed_batches[0]
+        stats['ok'] = failed_batches[0] == 0
     return '\n\n'.join(chunk for chunks in chunk_lists for chunk in chunks)

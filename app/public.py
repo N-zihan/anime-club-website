@@ -1,4 +1,4 @@
-"""
+﻿"""
 动漫社官网 · 公共页面模块
 ====================================
 
@@ -79,7 +79,8 @@ def _tpl_embed_ok(value):
 
 def _calc_current_phase(contest):
     """计算赛事当前 phase（投票页面用）"""
-    if contest.open_at and contest.open_at.tzinfo is not None:
+    # 统一 naive datetime：contest.open_at 来自数据库，统一去掉 tzinfo
+    if contest.open_at and hasattr(contest.open_at, 'tzinfo') and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
     now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
     times = calc_stage_times(contest.open_at)
@@ -389,6 +390,9 @@ def anime_news_article():
                 'url': safe_url,
                 'label': v.get('label') or '视频',
                 'type': v.get('type') or 'video',
+                # 地区分流：cn=国内可直连（bilibili/b23.tv/acfun），
+                # overseas=youtube/vimeo 等（国内被墙，自动嵌只会得到黑框）
+                'region': v.get('region') or 'overseas',
             }
             # embed 只认「白名单域」这一硬条件，不信任上游传来的 embed 标志
             if _is_allowed_embed_url(safe_url):
@@ -411,6 +415,10 @@ def anime_news_article():
 
     embed_videos = _dedupe(embed_videos)
     link_videos = _dedupe(link_videos)
+    # 地区分流：只有国内可直连的播放器才自动嵌 iframe；海外源（YouTube 等）
+    # 默认给「点击后加载」卡片，绝不让被墙的 16:9 黑框自动出现在页面上。
+    cn_videos = [v for v in embed_videos if v.get('region') == 'cn']
+    overseas_videos = [v for v in embed_videos if v.get('region') != 'cn']
 
     # 中文来源映射（保留一些品牌词）
     source_zh_map = {
@@ -432,6 +440,8 @@ def anime_news_article():
                            videos=embed_videos + link_videos,
                            embed_videos=embed_videos,
                            link_videos=link_videos,
+                           cn_videos=cn_videos,
+                           overseas_videos=overseas_videos,
                            fetch_failed=(data is None),
                            source_zh=source_zh)
 

@@ -6,6 +6,7 @@
   3) 服务端二次复核真的独立（伪造 embed=True + 非白名单域 → 不得渲染 iframe）
   4) 语料退避：失败时保留 last-known-good，退避窗口内不再发请求
   5) 模板无 |safe（视频路径）
+  6) ★ 语料哨兵值 `_CORPUS_UNAVAILABLE` 的调用方契约（不得让详情页 500）
 """
 import pytest
 
@@ -201,14 +202,12 @@ def test_corpus_retains_last_known_good_on_exception(monkeypatch):
         f'退避窗口内仍然打了上游（{n_before} → {calls["n"]}）'
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason='已知缺陷(T5发现)：HTTP 200 但 JSON 结构异常时，第342-343行 `if not isinstance(arts, list): return []` '
-           '早返回，绕过 stale 回退与退避；新闻列表会被清空且每次请求都重打上游。'
-           '修复后本用例会 XPASS（strict），请移除该 xfail 标记。',
-)
 def test_corpus_retains_last_known_good_on_malformed_payload(monkeypatch):
-    """结构异常（HTTP 200 但 data 非列表 / 缺 data 键）也必须走 stale + 退避。"""
+    """结构异常（HTTP 200 但 data 非列表 / 缺 data 键）也必须走 stale + 退避。
+
+    ✅ 2026-10-17 复验通过：t3-news 已把异常路径与结构异常路径统一到
+    `_corpus_fail()` 单一出口，原 `return []` 早返回已消除。xfail 标记已摘除。
+    """
     def second():
         class _R:
             @staticmethod
@@ -268,3 +267,62 @@ def test_video_section_has_no_safe_filter():
     # 反向确认：iframe 的 src 用的是 media_url 过滤器且以 embed_ok 为条件
     assert '|media_url' in body, '未使用 media_url 过滤器净化视频 URL'
     assert 'embed_ok' in body, '未使用 embed_ok 做白名单判定'
+
+
+# ===========================================================================
+# 6) ★ 语料哨兵值 _CORPUS_UNAVAILABLE 的调用方契约
+#    t3-news 引入哨兵对象后，find_article_meta() 第 428 行仍直接 for 循环它，
+#    实测 TypeError → 新闻详情页 500。修好后本用例会自动 XPASS。
+# ===========================================================================
+def _sentinel():
+    s = getattr(anime_news, '_CORPUS_UNAVAILABLE', None)
+    if s is None:
+        pytest.skip('尚未引入 _CORPUS_UNAVAILABLE 哨兵')
+    return s
+
+
+def test_sentinel_is_iterable_for_legacy_consumers():
+    """哨兵对象必须可迭代（返回空），否则任何漏改的旧消费方都会 TypeError。"""
+    s = _sentinel()
+    try:
+        items = list(s)
+    except TypeError as e:
+        pytest.fail(f'哨兵不可迭代，旧调用方（find_article_meta）会崩: {e}')
+    assert items == [], f'哨兵迭代应为空: {items!r}'
+
+
+def test_find_article_meta_survives_unavailable_corpus(monkeypatch):
+    """语料不可用时 find_article_meta 必须安全降级返回 None，不得抛 TypeError。
+
+    ✅ 复验通过：哨兵已实现空序列协议（__iter__/__len__/__bool__/__getitem__），
+    且 find_article_meta 另加显式 `is _CORPUS_UNAVAILABLE` 双保险。xfail 已摘除。
+    """
+    s = _sentinel()
+    monkeypatch.setattr(anime_news, '_get_search_corpus', lambda: s, raising=False)
+    result = anime_news.find_article_meta('https://news.nanyi-anime-club.top/post/1')
+    assert result is None, f'期望降级为 None，实际 {result!r}'
+
+
+def test_article_page_returns_200_when_corpus_unavailable(client, monkeypatch):
+    """★ 端到端：语料不可用但正文抓取成功时，详情页必须 200 而不是 500。
+
+    ✅ 复验通过：原 TypeError('_CorpusUnavailable' object is not iterable) 已消除。
+    xfail 已摘除。注意必须同时打桩 safe_get，否则会真的联网抓取。
+    """
+    s = _sentinel()
+    payload = {'title': 'T', 'content': 'c' * 200, 'images': [], 'videos': []}
+
+    class _Res:
+        text = '<html><head><title>T</title></head><body></body></html>'
+        status_code = 200
+
+        def raise_for_status(self):
+            return None
+
+    monkeypatch.setattr(anime_news, 'get_article_content', lambda url: payload, raising=False)
+    monkeypatch.setattr(anime_news, '_get_search_corpus', lambda: s, raising=False)
+    monkeypatch.setattr(anime_news, 'safe_get', lambda url, **kw: _Res(), raising=False)
+
+    resp = client.get('/anime_news/article',
+                      query_string={'url': 'https://news.nanyi-anime-club.top/post/1'})
+    assert resp.status_code == 200, f'详情页在哨兵态下返回 HTTP {resp.status_code}'
