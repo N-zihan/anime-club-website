@@ -1287,12 +1287,14 @@ def group_vote_female(contest_id):
 
     candidates = {c.id: c for c in contest.candidates.all()}
 
-    # 时区修复
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
     now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
     times = calc_stage_times(contest.open_at)
+
+    # 计算当前阶段和轮次
+    phase = _calc_current_phase(contest)
     round_number = None
     if now <= times['group_round_1_end']:
         round_number = 1
@@ -1301,41 +1303,43 @@ def group_vote_female(contest_id):
     elif now <= times['group_round_3_end']:
         round_number = 3
 
-    # 用户已投场次
+    # 投票期数据
     voted_matches = []
-    if session.get('user_id') and round_number:
-        existing = ContestVote.query.filter_by(
-            contest_id=contest.id,
-            user_id=session.get('user_id'),
-            round_number=round_number,
-            gender='female'
-        ).all()
-        voted_matches = [f'{v.group_index}_{v.match_index}' for v in existing]
-
-    # 本轮所有候选人的总票数
     vote_totals = {}
     if round_number:
+        if session.get('user_id'):
+            existing = ContestVote.query.filter_by(
+                contest_id=contest.id, user_id=session.get('user_id'),
+                round_number=round_number, gender='female'
+            ).all()
+            voted_matches = [f'{v.group_index}_{v.match_index}' for v in existing]
+
         vote_totals = dict(
-            db.session.query(
-                ContestVote.candidate_id,
-                db.func.sum(ContestVote.weight)
-            ).filter(
+            db.session.query(ContestVote.candidate_id, db.func.sum(ContestVote.weight))
+            .filter(
                 ContestVote.contest_id == contest.id,
                 ContestVote.round_number == round_number,
                 ContestVote.gender == 'female'
             ).group_by(ContestVote.candidate_id).all()
         )
 
+    # ★ 公示期数据（解决暂无数据的问题）
+    group_round_results = None
+    overall_ranking_female = None
+    overall_ranking_male = None
+    if phase in ['group_round_1_result', 'group_round_2_result', 'group_round_3_result']:
+        group_round_results, overall_ranking_female, overall_ranking_male = prepare_group_round_data(contest, phase)
+
     return render_template('contest_group_vote.html',
-                           contest=contest,
-                           groups=groups,
-                           candidates=candidates,
-                           phase=_calc_current_phase(contest),
-                           gender='female',
-                           round_type='group',
-                           voted_matches=voted_matches,
-                           vote_totals=vote_totals,
-                           **supabase_render_ctx())
+                           contest=contest, groups=groups, candidates=candidates,
+                           phase=phase, gender='female', round_type='group',
+                           voted_matches=voted_matches, vote_totals=vote_totals,
+                           group_round_results=group_round_results,
+                           overall_ranking_female=overall_ranking_female,
+                           overall_ranking_male=overall_ranking_male,
+                           **supabase_render_ctx())  # ★ 统一注入
+
+
 @public_bp.route('/contest/<int:contest_id>/group/male')
 def group_vote_male(contest_id):
     """小组赛投票 - 男组"""
@@ -1357,6 +1361,8 @@ def group_vote_male(contest_id):
 
     now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
     times = calc_stage_times(contest.open_at)
+
+    phase = _calc_current_phase(contest)
     round_number = None
     if now <= times['group_round_1_end']:
         round_number = 1
@@ -1366,38 +1372,38 @@ def group_vote_male(contest_id):
         round_number = 3
 
     voted_matches = []
-    if session.get('user_id') and round_number:
-        existing = ContestVote.query.filter_by(
-            contest_id=contest.id,
-            user_id=session.get('user_id'),
-            round_number=round_number,
-            gender='male'
-        ).all()
-        voted_matches = [f'{v.group_index}_{v.match_index}' for v in existing]
-
     vote_totals = {}
     if round_number:
+        if session.get('user_id'):
+            existing = ContestVote.query.filter_by(
+                contest_id=contest.id, user_id=session.get('user_id'),
+                round_number=round_number, gender='male'
+            ).all()
+            voted_matches = [f'{v.group_index}_{v.match_index}' for v in existing]
+
         vote_totals = dict(
-            db.session.query(
-                ContestVote.candidate_id,
-                db.func.sum(ContestVote.weight)
-            ).filter(
+            db.session.query(ContestVote.candidate_id, db.func.sum(ContestVote.weight))
+            .filter(
                 ContestVote.contest_id == contest.id,
                 ContestVote.round_number == round_number,
                 ContestVote.gender == 'male'
             ).group_by(ContestVote.candidate_id).all()
         )
 
+    group_round_results = None
+    overall_ranking_female = None
+    overall_ranking_male = None
+    if phase in ['group_round_1_result', 'group_round_2_result', 'group_round_3_result']:
+        group_round_results, overall_ranking_female, overall_ranking_male = prepare_group_round_data(contest, phase)
+
     return render_template('contest_group_vote.html',
-                           contest=contest,
-                           groups=groups,
-                           candidates=candidates,
-                           phase=_calc_current_phase(contest),
-                           gender='male',
-                           round_type='group',
-                           voted_matches=voted_matches,
-                           vote_totals=vote_totals,
-                           supabase_url=os.getenv('SUPABASE_URL', ''))
+                           contest=contest, groups=groups, candidates=candidates,
+                           phase=phase, gender='male', round_type='group',
+                           voted_matches=voted_matches, vote_totals=vote_totals,
+                           group_round_results=group_round_results,
+                           overall_ranking_female=overall_ranking_female,
+                           overall_ranking_male=overall_ranking_male,
+                           **supabase_render_ctx())  # ★ 男组也改了，不会 500 了
 
 
 @public_bp.route('/contest/<int:contest_id>/group/submit', methods=['POST'])

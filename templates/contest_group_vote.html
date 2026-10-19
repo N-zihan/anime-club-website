@@ -3,9 +3,14 @@
 {% block content %}
 
 {% if phase in ['group_round_1', 'group_round_2', 'group_round_3'] %}
+{% if 'round_1' in phase %}{% set round_num = 1 %}
+{% elif 'round_2' in phase %}{% set round_num = 2 %}
+{% elif 'round_3' in phase %}{% set round_num = 3 %}
+{% else %}{% set round_num = 0 %}{% endif %}
+
 <h2>小组赛：{{ contest.title }}</h2>
 <p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
-<p style="color: var(--text-secondary);">当前轮次：第 <strong>{{ phase.split('_')[-1]|int }}</strong> 轮（共3轮）</p>
+<p style="color: var(--text-secondary);">当前轮次：第 <strong>{{ round_num }}</strong> 轮（共3轮）</p>
 <p style="color: var(--text-secondary);">每轮每组有 <strong>2场</strong> 对决，每场可投 <strong>1票</strong>，共可投 <strong>16票</strong></p>
 
 {% if groups %}
@@ -14,7 +19,6 @@
 <div style="background: var(--bg-card); border-radius:12px; padding:16px; margin-bottom:20px; border:1px solid var(--border-color);">
     <h4 style="margin:0 0 12px 0; color: var(--text-primary);">{{ ['A','B','C','D','E','F','G','H'][group_index] }}组</h4>
 
-    {% set round_num = phase.split('_')[-1]|int %}
     {% if round_num == 1 %}
     {% set pairs = [(group[0], group[1]), (group[2], group[3])] %}
     {% elif round_num == 2 %}
@@ -162,7 +166,11 @@
 </script>
 
 {% elif phase in ['group_round_1_result', 'group_round_2_result', 'group_round_3_result'] %}
-{% set round_num = phase.split('_')[-1]|int %}
+{% if 'round_1' in phase %}{% set round_num = 1 %}
+{% elif 'round_2' in phase %}{% set round_num = 2 %}
+{% elif 'round_3' in phase %}{% set round_num = 3 %}
+{% else %}{% set round_num = 0 %}{% endif %}
+
 <h3>小组赛第{{ round_num }}轮公示</h3>
 <p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
 
@@ -343,12 +351,12 @@
 <script>
     (function () {
         const contestId = {{ contest.id }};
-        const currentRound = {{ phase.split('_')[-1]|int }};
-        {% if session.user_id %}
-        // 用 tojson 而不是裸插进 '...' 字符串：一旦 key/URL 含引号即 XSS
+        const currentRound = {{ 1 if 'round_1' in phase else (2 if 'round_2' in phase else (3 if 'round_3' in phase else 0)) }};
+
+        {% if session.user_id and supabase_url and supabase_anon_key %}
         const supabase = window.supabase.createClient(
-            {{ (supabase_url or "")|tojson }},
-            {{ (supabase_anon_key or "")|tojson }}
+            {{ supabase_url|tojson }},
+            {{ supabase_anon_key|tojson }}
         );
         const channel = supabase
             .channel('votes-channel')
