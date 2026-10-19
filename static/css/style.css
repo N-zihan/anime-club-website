@@ -1,4 +1,4 @@
-﻿.alert {
+.alert {
     padding: 12px 20px;
     border-radius: 12px;
     margin-bottom: 16px;
@@ -70,6 +70,11 @@ nav a, nav span, nav button {
     transition: 0.2s;
     border: none;
     cursor: pointer;
+    display: inline-block !important;
+}
+
+nav a, nav button {
+    display: inline-block !important;
 }
 
 nav a:hover, nav button:hover {

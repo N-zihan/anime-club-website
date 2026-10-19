@@ -81,10 +81,14 @@
             <span></span><span></span><span></span>
         </button>
     </div>
+    
+    <!-- 导航栏遮罩层 -->
+    <div id="navbarBackdrop" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index: 999; background:rgba(0,0,0,0.3);"></div>
 </nav>
 
 <style>
-/* ===== 导航栏折叠 ===== */
+/* ===== 导航栏遮罩层样式 ===== */
+#navbarBackdrop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999; background: rgba(0,0,0,0.3); }
 .nav-dropdown {
     position: relative;
     display: inline-block;
@@ -114,12 +118,12 @@
     top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: var(--bg-nav) !important;
+    border: 1px solid #2a3a4a;
     border-radius: 12px;
     min-width: 160px;
     padding: 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     z-index: 1001;
 }
 .dropdown-menu.open { display: block; }
@@ -127,7 +131,7 @@
     display: block;
     padding: 8px 14px;
     border-radius: 8px;
-    color: var(--text-primary) !important;
+    color: var(--text-nav) !important;
     text-decoration: none;
     font-size: 0.9rem;
     white-space: nowrap;

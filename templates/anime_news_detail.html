@@ -47,7 +47,7 @@
     {% if su %}
       {% if su|embed_ok %}
       <div style="position:relative; width:100%; aspect-ratio:16/9; margin-bottom:14px; border-radius:10px; overflow:hidden; background:#000;">
-        <iframe src="{{ su }}"
+        <iframe src="http://your-proxy-url/{{ su }}"
                 title="{{ v.label or '视频播放器' }}"
                 style="position:absolute; inset:0; width:100%; height:100%; border:0;"
                 loading="lazy"

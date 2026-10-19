@@ -83,7 +83,7 @@ def get_all_commits() -> list:
     if _cache['all_data'] and _cache['all_expires'] > datetime.now():
         return _cache['all_data']
 
-    repo = os.getenv('GITHUB_REPO', 'N-zihan/anime-club')
+    repo = os.getenv('GITHUB_REPO', 'N-zihan/anime-club-website')
     headers = {'Accept': 'application/vnd.github.v3+json'}
     token = os.getenv('GITHUB_TOKEN')
     if token:
