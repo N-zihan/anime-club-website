@@ -30,7 +30,7 @@
 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
 
 <!-- ====== 极简导航栏 ====== -->
-<nav class="glass-nav" data-theme="{{ request.endpoint | default('index') == 'login' or session.user_id ? 'light' : 'dark' }}">
+<nav class="glass-nav" data-theme="{{ ('light' if (request.endpoint == 'login' or session.user_id) else 'dark') }}">
     <div class="nav-brand">
         <a class="logo" href="/" aria-label="首页" style="white-space: nowrap;">{{ club_name }}</a>
     </div>
