@@ -214,14 +214,29 @@
         resetAndLoad();
     });
 
-    // ===== 番剧详情模态框 =====
+    // ===== 番剧详情模态框 - 限制高度 85vh，支持滚动，关闭时解除滚动锁定 =====
+    let originalOverflow = document.body.style.overflow;
+    let originalShowScreen = document.body.style.display;
+    
+    // 保存原始滚动状态
+    let hasLockedList = false;
+    
     async function openAnimeModal(id) {
         const modal = document.getElementById('animeModal');
         const content = document.getElementById('modalContent');
+        hasLockedList = true;
 
-        content.innerHTML = '<div style="text-align:center; padding:60px 0; color: var(--text-muted);">正在加载...</div>';
+        content.innerHTML = '<div style="text-align:center; padding:40px 0; color: var(--text-muted);">正在加载...</div>';
         modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+
+        // 解除页面滚动锁定
+        if (originalShowScreen !== undefined) {
+            document.body.style.display = originalShowScreen;
+        } else if (originalOverflow !== undefined) {
+            document.body.style.overflow = originalOverflow;
+        } else {
+            document.body.style.overflow = '';
+        }
 
         let d;
         try {
@@ -375,17 +390,40 @@
     }
 
     function closeAnimeModal() {
-        document.getElementById('animeModal').style.display = 'none';
-        document.body.style.overflow = '';
+        const modal = document.getElementById('animeModal');
+        if (modal) {
+            hasLockedList = false;
+            modal.style.display = 'none';
+        }
+        // 确保解除滚动锁定
+        if (hasLockedList) {
+            if (originalShowScreen !== undefined) {
+                document.body.style.display = originalShowScreen;
+            } else if (originalOverflow !== undefined) {
+                document.body.style.overflow = originalOverflow;
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
     }
 
-    // ===== 角色详情模态框 =====
+    // ===== 角色详情模态框 - 限制高度 85vh，支持滚动 =====
+    let charOriginalShowScreen = undefined;
+    let charOriginalOverflow = undefined;
     async function openCharacterModal(charId) {
         const modal = document.getElementById('characterModal');
         const content = document.getElementById('characterModalContent');
 
-        content.innerHTML = '<div style="text-align:center; padding:60px 0; color: var(--text-muted);">正在加载...</div>';
+        // 保存和恢复原始滚动状态
+        charOriginalShowScreen = document.body.style.display;
+        charOriginalOverflow = document.body.style.overflow;
+
+        content.innerHTML = '<div style="text-align:center; padding:40px 0; color: var(--text-muted);">正在加载...</div>';
         modal.style.display = 'flex';
+
+        // 解除页面滚动
+        document.body.style.display = charOriginalShowScreen;
+        document.body.style.overflow = charOriginalOverflow;
 
         let d;
         try {
@@ -442,7 +480,21 @@
     }
 
     function closeCharacterModal() {
-        document.getElementById('characterModal').style.display = 'none';
+        const modal = document.getElementById('characterModal');
+        if (modal) modal.style.display = 'none';
+        
+        // 恢复滚动状态
+        if (charOriginalShowScreen !== undefined) {
+            document.body.style.display = charOriginalShowScreen;
+        }
+        if (charOriginalOverflow !== undefined) {
+            document.body.style.overflow = charOriginalOverflow;
+        } else {
+            document.body.style.overflow = '';
+        }
+        
+        charOriginalShowScreen = undefined;
+        charOriginalOverflow = undefined;
     }
 
     document.addEventListener('keydown', function (e) {
