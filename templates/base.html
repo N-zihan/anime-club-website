@@ -6,7 +6,6 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.bangumi.com https://api.github.com; frame-ancestors 'none'; base-uri 'self';">
     <meta content="Sv5yDeDt3X" name="sogou_site_verification"/>
     <meta content="codeva-mVPCgddV5r" name="baidu-site-verification"/>
-    <link href="{{ url_for('static', filename='css/style.css') }}?v=5" rel="stylesheet">
     <title>{{ club_name }} - {% block title %}{% endblock %}</title>
     <link href="{{ url_for('static', filename='favicon.ico') }}?v=2" rel="icon" type="image/x-icon"/>
     <link rel="manifest" href="/manifest.json">
@@ -22,89 +21,111 @@
     <meta property="og:image" content="{{ request.url_root }}static/images/icon-512.png">
     <meta name="twitter:card" content="summary">
 
+    <!-- 主题初始化：尽早执行，避免昼夜模式闪烁 -->
+    <script>
+    (function () {
+        try {
+            var saved = localStorage.getItem('anime_club_theme');
+            var theme = (saved === 'dark' || saved === 'light')
+                ? saved
+                : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+    })();
+    </script>
+
+    <link href="{{ url_for('static', filename='css/style.css') }}?v=6" rel="stylesheet">
+
     <!-- Cloudflare Turnstile 验证码修复 -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-<!-- ====== CSRF Token ====== -->
+<!-- ====== CSRF Token（所有表单通过 {{ csrf_token() }} 使用） ====== -->
 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+<!-- =============================================================== -->
 
-<!-- ====== 极简导航栏 ====== -->
-<nav class="glass-nav" data-theme="{{ ('light' if (request.endpoint == 'login' or session.user_id) else 'dark') }}">
-    <div class="nav-brand">
-        <a class="logo" href="/" aria-label="首页" style="white-space: nowrap;">{{ club_name }}</a>
-    </div>
+<!-- ====== 极简顶部导航：仅 Logo + 昼夜切换 + 菜单 ====== -->
+<nav class="navbar">
+    <a class="logo" href="/">{{ club_name }}</a>
 
-    <!-- 右侧：主题切换 + 汉堡菜单 -->
     <div class="nav-actions">
-        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="切换主题">
-            <span id="theme-icon">🌙</span>
-        </button>
-        <button type="button" class="menu-toggle" id="menu-toggle" aria-label="打开菜单" aria-haspopup="true">
-            <span></span><span></span><span></span>
-        </button>
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="切换昼夜模式" title="切换昼夜模式">🌙</button>
+        <button type="button" id="menu-toggle" class="menu-btn" aria-label="打开菜单" aria-expanded="false" aria-controls="drawer">菜单</button>
     </div>
 </nav>
 
-<!-- ====== 遮罩层 ====== -->
-<div class="backdrop" id="backdrop" aria-hidden="true"></div>
+<!-- ====== 遮罩层（轻透明 + 轻微模糊） ====== -->
+<div id="drawer-backdrop" class="drawer-backdrop"></div>
 
-<!-- ====== 抽屉菜单 ====== -->
-<div class="offcanvas offcanvas-start" id="offcanvasMenu" tabindex="-1">
-    <div class="offcanvas-backdrop"></div>
-    <div class="offcanvas-dialog">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">{{ club_name }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <!-- 个人中心区域 -->
-            <div class="user-profile-section" data-user="{{ (session.user_id or session.username) if session and (session.user_id or session.username) else 'guest' }}">
-                {% if session.user_id %}
-                <div class="profile-info">
-                    <div class="profile-avatar">👤</div>
-                    <div class="profile-name">{{ session.username }}</div>
-                    <div class="profile-meta">
-                        <span class="profile-badge">社员</span>
-                    </div>
-                    <a href="{{ url_for('user.user_profile', name=session.username) }}" class="btn-link">进入主页</a>
-                </div>
-                <hr>
-                <div class="profile-actions">
-                    <a href="{{ url_for('user.notifications') }}" class="menu-item">
-                        <span>🔔</span> 通知
-                    </a>
-                </div>
-                {% else %}
-                <div class="guest-signin">
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">登录</a>
-                    <br><br>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">注册</a>
-                </div>
+<!-- ====== 抽屉菜单：个人中心 + 站内导航 ====== -->
+<aside id="drawer" class="drawer" aria-hidden="true" aria-label="站内导航">
+    <div class="drawer-header">
+        <span class="drawer-title">{{ club_name }}</span>
+        <button type="button" id="drawer-close" class="drawer-close" aria-label="关闭菜单">×</button>
+    </div>
+
+    <div class="drawer-body">
+        <!-- 个人中心 -->
+        <div class="drawer-user">
+            {% if session.user_id %}
+            <a class="drawer-profile" href="{{ url_for('user.user_profile', name=session.username) }}">
+                <span class="drawer-avatar">👤</span>
+                <span class="drawer-profile-text">
+                    <span class="drawer-profile-name">{{ session.username }}</span>
+                    <span class="drawer-profile-meta">个人主页 · 我的留言与推荐</span>
+                </span>
+                <span class="drawer-arrow">›</span>
+            </a>
+            <div class="drawer-user-links">
+                <a class="drawer-item" href="{{ url_for('user.notifications') }}">
+                    <span>🔔 通知中心</span>
+                    <span id="notif-badge" class="notif-badge" style="display:none;"></span>
+                </a>
+                <a class="drawer-item" href="{{ url_for('user.profile') }}">⚙️ 个人设置</a>
+                {% if is_admin %}
+                <a class="drawer-item" href="{{ url_for('admin.admin_entry') }}">🛠️ 管理后台</a>
                 {% endif %}
             </div>
-
-            <!-- 导航链接区域 -->
-            <hr>
-            <nav class="offcanvas-nav">
-                <a href="/home" class="menu-item">首页</a>
-                <a href="/about" class="menu-item">社团介绍</a>
-                <a href="/activities" class="menu-item">活动</a>
-                <a href="/gallery" class="menu-item">珍贵历史图片</a>
-                <a href="{{ url_for('public.board') }}" class="menu-item">留言板</a>
-                <a href="{{ url_for('public.anime_resources') }}" class="menu-item">番剧百科</a>
-                <a href="{{ url_for('public.anime_news') }}" class="menu-item">番剧新闻</a>
-                <a href="{{ url_for('public.contest_center') }}" class="menu-item">赛事中心</a>
-                <a href="{{ url_for('public.members') }}" class="menu-item">社员名单</a>
-            </nav>
+            {% else %}
+            <div class="drawer-guest">
+                <div class="drawer-guest-text">登录后即可留言、参加赛事、收藏番剧</div>
+                <div class="drawer-auth-btns">
+                    <a class="btn btn-primary" href="{{ url_for('auth.login') }}">登录</a>
+                    <a class="btn btn-ghost" href="{{ url_for('auth.register') }}">注册</a>
+                </div>
+            </div>
+            {% endif %}
         </div>
+
+        <div class="drawer-divider"></div>
+        <div class="drawer-section-title">站内导航</div>
+
+        <nav class="drawer-nav">
+            <a href="/home">首页</a>
+            <a href="/activities">活动</a>
+            <a href="{{ url_for('public.board') }}">留言板</a>
+            <a href="{{ url_for('public.contest_center') }}">赛事中心</a>
+            <a href="/about">社团介绍</a>
+            <a href="/gallery">珍贵历史图片</a>
+            <a href="{{ url_for('public.anime_resources') }}">番剧百科</a>
+            <a href="{{ url_for('public.anime_news') }}">番剧新闻</a>
+            <a href="{{ url_for('public.members') }}">社员名单</a>
+        </nav>
+
+        {% if session.user_id %}
+        <div class="drawer-divider"></div>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="drawer-logout-form">
+            <button type="submit" class="drawer-logout">退出登录</button>
+        </form>
+        {% endif %}
     </div>
-</div>
+
+    <div class="drawer-footer">© {{ club_name }} · {{ app_version }}</div>
+</aside>
 
 {% set kanban_hidden = ['auth.login', 'auth.register', 'auth.forgot_password', 'auth.forgot_password_bind', 'auth.reset_password', 'auth.forgot_bind_send_code', 'auth.forgot_bind_verify'] %}
-
-{% if request.endpoint not in kanban_hidden and session.user_id %}
-<!-- ====== 看板娘 ====== -->
+{% if request.endpoint not in kanban_hidden %}
+<!-- 看板娘 -->
 <div id="kanban" style="position:fixed; right:20px; bottom:20px; z-index:900; pointer-events:none; user-select:none;">
     <div id="kanban-bubble-wrap" style="
         position:absolute; bottom:100%; right:0; margin-bottom:12px;
@@ -115,7 +136,8 @@
             background:white; color:#1e2a3a;
             border-radius:16px; line-height:1.5;
             box-shadow:0 6px 20px rgba(0,0,0,0.15);
-            min-height:1.5em; cursor:pointer; position:relative;">
+            min-height:1.5em; cursor:pointer; position:relative;
+            animation:bubble-float 2.5s ease-in-out infinite;">
         </div>
         <div id="kanban-tail" style="
             position:absolute; bottom:-6px; right:24px; width:12px; height:12px;
@@ -134,157 +156,812 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
 }
+@keyframes bubble-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
 [data-theme="dark"] #kanban-bubble { background:#334155; color:#e2e8f0; }
 [data-theme="dark"] #kanban-tail { background:#334155; }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(function () {
+    const POS_KEY = 'kanban_pos';
+    const GREET_KEY = 'kanban_greeted';
+    const kanban = document.getElementById('kanban');
+    const img = document.getElementById('kanban-img');
+    const wrap = document.getElementById('kanban-bubble-wrap');
+    const bubble = document.getElementById('kanban-bubble');
+    const tail = document.getElementById('kanban-tail');
+    if (!kanban || !img || !wrap || !bubble) return;
+
+    // ========== 尺寸：全部由 JS 控制 ==========
+    function applySize() {
+        const isMobile = window.innerWidth <= 700;
+        if (isMobile) {
+            img.style.setProperty('width', '180px', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            bubble.style.setProperty('font-size', '1rem', 'important');
+            bubble.style.setProperty('max-width', '270px', 'important');
+            bubble.style.setProperty('padding', '12px 18px', 'important');
+            tail.style.setProperty('right', '20px', 'important');
+        } else {
+            img.style.setProperty('width', '120px', 'important');
+            img.style.setProperty('height', 'auto', 'important');
+            bubble.style.setProperty('font-size', '0.85rem', 'important');
+            bubble.style.setProperty('max-width', '220px', 'important');
+            bubble.style.setProperty('padding', '10px 16px', 'important');
+            tail.style.setProperty('right', '24px', 'important');
+        }
+    }
+    applySize();
+    window.addEventListener('resize', applySize);
+
+    // ========== 位置恢复 ==========
+    function clampPosition() {
+        const rect = kanban.getBoundingClientRect();
+        let left = rect.left;
+        let top = rect.top;
+        const maxLeft = window.innerWidth - rect.width - 4;
+        const maxTop = window.innerHeight - rect.height - 4;
+        if (left < 4) left = 4;
+        if (top < 4) top = 4;
+        if (left > maxLeft) left = maxLeft;
+        if (top > maxTop) top = maxTop;
+        kanban.style.left = left + 'px';
+        kanban.style.top = top + 'px';
+        kanban.style.right = 'auto';
+        kanban.style.bottom = 'auto';
+    }
+
+    function restorePosition() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(POS_KEY) || 'null');
+            if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+                kanban.style.left = saved.left + 'px';
+                kanban.style.top = saved.top + 'px';
+                kanban.style.right = 'auto';
+                kanban.style.bottom = 'auto';
+                clampPosition();
+            }
+        } catch (e) {}
+    }
+    restorePosition();
+    window.addEventListener('resize', clampPosition);
+
+    // ========== 气泡 ==========
+    let facts = [];
+    let chitchat = ['欢迎来到动漫社！'];
+    let lastChitchatIdx = -1;
+    let typingTimer = null;
+    let hideTimer = null;
+
+    function hideBubble() {
+        wrap.style.opacity = '0';
+        wrap.style.transform = 'scale(0.6)';
+    }
+
+    function typeText(text) {
+        clearTimeout(typingTimer);
+        clearTimeout(hideTimer);
+        bubble.textContent = '';
+        let i = 0;
+        (function tick() {
+            if (i <= text.length) {
+                bubble.textContent = text.slice(0, i);
+                i++;
+                typingTimer = setTimeout(tick, 40);
+            } else {
+                hideTimer = setTimeout(hideBubble, 8000);
+            }
+        })();
+    }
+
+    function showBubble(text) {
+        clearTimeout(typingTimer);
+        clearTimeout(hideTimer);
+        wrap.style.opacity = '0';
+        wrap.style.transform = 'scale(0.6)';
+        bubble.textContent = '';
+        setTimeout(() => {
+            wrap.style.opacity = '1';
+            wrap.style.transform = 'scale(1)';
+            typeText(text);
+        }, 200);
+    }
+
+    function randomChitchat() {
+        if (!chitchat.length) return '……';
+        if (chitchat.length === 1) return chitchat[0];
+        let i;
+        do {
+            i = Math.floor(Math.random() * chitchat.length);
+        } while (i === lastChitchatIdx);
+        lastChitchatIdx = i;
+        return chitchat[i];
+    }
+
+    function next() {
+        if (facts.length) {
+            showBubble(facts.shift());
+        } else {
+            showBubble(randomChitchat());
+        }
+    }
+
+    // ========== 拖拽 ==========
+    let dragging = false;
+    let moved = false;
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+    function getPoint(e) {
+        if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function onStart(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        const p = getPoint(e);
+        const rect = kanban.getBoundingClientRect();
+        startX = p.x;
+        startY = p.y;
+        startLeft = rect.left;
+        startTop = rect.top;
+        dragging = true;
+        moved = false;
+        img.style.cursor = 'grabbing';
+    }
+
+    function onMove(e) {
+        if (!dragging) return;
+        const p = getPoint(e);
+        const dx = p.x - startX;
+        const dy = p.y - startY;
+        if (!moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) moved = true;
+        if (!moved) return;
+
+        let newLeft = startLeft + dx;
+        let newTop = startTop + dy;
+        const rect = kanban.getBoundingClientRect();
+        const maxLeft = window.innerWidth - rect.width - 4;
+        const maxTop = window.innerHeight - rect.height - 4;
+        if (newLeft < 4) newLeft = 4;
+        if (newTop < 4) newTop = 4;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        if (newTop > maxTop) newTop = maxTop;
+
+        kanban.style.left = newLeft + 'px';
+        kanban.style.top = newTop + 'px';
+        kanban.style.right = 'auto';
+        kanban.style.bottom = 'auto';
+        if (e.cancelable) e.preventDefault();
+    }
+
+    function onEnd() {
+        if (!dragging) return;
+        dragging = false;
+        img.style.cursor = 'grab';
+        if (moved) {
+            const rect = kanban.getBoundingClientRect();
+            try {
+                localStorage.setItem(POS_KEY, JSON.stringify({ left: rect.left, top: rect.top }));
+            } catch (e) {}
+        }
+    }
+
+    img.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+
+    img.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+
+    // ========== 点击 ==========
+    img.addEventListener('click', function () {
+        if (moved) return;
+        next();
+    });
+    bubble.addEventListener('click', next);
+
+    // ========== 欢迎语：本次会话只弹一次 ==========
     fetch('/api/kanban/lines')
         .then(r => r.json())
         .then(data => {
-            const bubble = document.getElementById('kanban-bubble');
-            bubble.textContent = data.facts && data.facts.length ? data.facts.shift() : '欢迎来到动漫社！';
+            facts = data.facts || [];
+            chitchat = data.chitchat || ['欢迎来到动漫社！'];
+
+            // sessionStorage：同一个标签页内只弹一次
+            // 新标签页 / 关掉重开 → 再弹一次
+            if (!sessionStorage.getItem(GREET_KEY) && facts.length) {
+                sessionStorage.setItem(GREET_KEY, '1');
+                setTimeout(() => showBubble(facts.shift()), 800);
+            }
         })
-        .catch(() => {});
-});
+        .catch(() => {
+            chitchat = ['欢迎来到动漫社！'];
+        });
+})();
 </script>
 {% endif %}
 
-<!-- ====== 头部内容区域 ====== -->
-<header style="margin-bottom:var(--spacing-xl);">
-    {% block header %}{% endblock %}
-</header>
-
-<!-- ====== 主体内容区域 ====== -->
-<main class="main-content" style="margin-top:var(--spacing-xl);">
+<main class="main-content">
     {% block content %}{% endblock %}
 </main>
 
+<footer>
+    <p>© {{ club_name }}</p>
+    <p class="footer-version">{{ app_version }}</p>
+</footer>
+
+<!-- ==================== 新手引导（首次登录自动弹出） ==================== -->
+{% if session.user_id %}
 <style>
-main.main-content {
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: var(--spacing-xl) var(--spacing-xl);
-}
-@media (max-width: 768px) {
-    main.main-content {
-        padding: var(--spacing-lg) var(--spacing-md);
+    /* ---------- 引导覆盖层样式 ---------- */
+    #onboarding-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: none;
+        pointer-events: none; /* 由内部元素控制 */
     }
-}
+
+    #onboarding-overlay.active {
+        display: block;
+        pointer-events: auto;
+    }
+
+    #onboarding-highlight {
+        position: absolute;
+        border-radius: 16px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    #onboarding-popup {
+        position: absolute;
+        max-width: 400px;
+        width: 90%;
+        background: var(--glass-bg-strong);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border-radius: 24px;
+        padding: 28px 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        pointer-events: auto;
+        z-index: 2;
+        border: 1px solid var(--glass-border);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        transform: translateY(0);
+        opacity: 1;
+        color: var(--text-primary);
+    }
+
+    #onboarding-popup.hidden {
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+    }
+
+    #onboarding-popup .step-title {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+
+    #onboarding-popup .step-counter {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 400;
+    }
+
+    #onboarding-popup .step-desc {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+    }
+
+    #onboarding-popup .step-desc strong {
+        color: var(--text-primary);
+        background: var(--bg-code);
+        padding: 0 6px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+
+    .onboarding-btn {
+        background: transparent;
+        border: none;
+        padding: 6px 18px;
+        border-radius: 40px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+        color: var(--text-secondary);
+    }
+
+    .onboarding-btn-primary {
+        background: var(--accent-strong);
+        color: #fff;
+    }
+
+    .onboarding-btn-primary:hover {
+        background: var(--accent);
+    }
+
+    .onboarding-btn-secondary {
+        background: var(--bg-code);
+        color: var(--text-primary);
+    }
+
+    .onboarding-btn-secondary:hover {
+        background: var(--bg-hover);
+    }
+
+    .onboarding-btn-skip {
+        color: var(--text-muted);
+    }
+
+    .onboarding-btn-skip:hover {
+        color: var(--text-secondary);
+    }
+
+    .onboarding-btn-done {
+        background: #f39c12;
+        color: #fff;
+    }
+
+    .onboarding-btn-done:hover {
+        background: #e67e22;
+    }
+
+    @media (max-width: 600px) {
+        #onboarding-popup {
+            padding: 20px 16px;
+            max-width: 95%;
+        }
+
+        #onboarding-popup .step-title {
+            font-size: 1rem;
+        }
+
+        #onboarding-popup .step-desc {
+            font-size: 0.85rem;
+        }
+
+        .onboarding-btn {
+            font-size: 0.8rem;
+            padding: 4px 14px;
+        }
+    }
 </style>
 
-<!-- ====== 新手引导 ====== -->
-{% if session.user_id %}
 <div id="onboarding-overlay">
     <div id="onboarding-highlight"></div>
     <div id="onboarding-popup">
-        <div>
-            <div class="step-title" id="onboarding-title">欢迎来到{{ club_name }}</div>
-            <div class="step-counter">1 / 6</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+                <div class="step-title" id="onboarding-title">欢迎来到{{ club_name }}</div>
+                <div class="step-counter" id="onboarding-counter">1 / 6</div>
+            </div>
         </div>
-        <div class="step-desc" id="onboarding-desc">这里是你的二次元家园，我们先简单逛一圈吧~</div>
+        <div class="step-desc" id="onboarding-desc">
+            这里是你的二次元家园，我们先简单逛一圈吧~
+        </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
-            <button class="btn btn-link" id="onboarding-skip">跳过</button>
-            <button class="btn btn-primary" id="onboarding-next">下一步 →</button>
+            <button class="onboarding-btn onboarding-btn-skip" id="onboarding-skip">跳过</button>
+            <button class="onboarding-btn onboarding-btn-secondary" id="onboarding-prev" style="display:none;">上一步
+            </button>
+            <button class="onboarding-btn onboarding-btn-primary" id="onboarding-next">下一步 →</button>
+            <button class="onboarding-btn onboarding-btn-done" id="onboarding-done" style="display:none;">完成
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-(function() {
-    const userId = '{{ session.user_id if session.user_id else "" }}';
-    if (!userId) return;
-    const doneKey = 'onboarding_done_' + userId;
-    if (localStorage.getItem(doneKey) === 'true') return;
+    (function () {
+        // ---------- 只对已登录且未完成引导的用户执行 ----------
+        const userId = '{{ session.user_id if session.user_id else "" }}';
+        if (!userId) return;
+        const doneKey = 'onboarding_done_' + userId;
+        if (localStorage.getItem(doneKey) === 'true') return;
 
-    const overlay = document.getElementById('onboarding-overlay');
-    const popup = document.getElementById('onboarding-popup');
-    const titleEl = document.getElementById('onboarding-title');
-    const descEl = document.getElementById('onboarding-desc');
-    const nextBtn = document.getElementById('onboarding-next');
-    const skipBtn = document.getElementById('onboarding-skip');
-    let currentStep = 0;
+        // ---------- 引导步骤配置 ----------
+        const steps = [
+            {
+                title: '欢迎回来！',
+                desc: '这里是{{ club_name }}官网。<br>接下来 30 秒，带你熟悉咱们的二次元据点。',
+                target: null,
+            },
+            {
+                title: '顶部菜单',
+                desc: '右上角的 <strong>「菜单」</strong> 收纳了全部入口：<br>社团介绍、活动、留言板、赛事中心……<br>点一下就能展开抽屉。',
+                target: '#menu-toggle',
+            },
+            {
+                title: '留言板',
+                desc: '在 <strong>「留言板」</strong> 可以畅所欲言，<br>也可以回复其他社员，一起打造热闹的交流区！',
+                target: 'a[href*="board"]',
+            },
+            {
+                title: '番剧百科',
+                desc: '点击 <strong>「番剧百科」</strong>，<br>番剧一览<br>你也可以点击查询你想看的番剧！',
+                target: 'a[href*="anime_resources"]',
+            },
+            {
+                title: '珍贵历史图片',
+                desc: '在 <strong>「珍贵历史图片」</strong> 里，<br>记录着社团的点点滴滴。<br>你也可以上传活动照片，把回忆保存下来。',
+                target: 'a[href*="gallery"]',
+            },
+            {
+                title: '你的个人中心',
+                desc: '打开右上角 <strong>「菜单」</strong>，<br>第一项就是你的个人中心，<br>还能进入通知中心与个人设置。',
+                target: '#menu-toggle',
+            }
+        ];
 
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
+        // ---------- DOM 引用 ----------
+        const overlay = document.getElementById('onboarding-overlay');
+        const highlight = document.getElementById('onboarding-highlight');
+        const popup = document.getElementById('onboarding-popup');
+        const titleEl = document.getElementById('onboarding-title');
+        const counterEl = document.getElementById('onboarding-counter');
+        const descEl = document.getElementById('onboarding-desc');
+        const prevBtn = document.getElementById('onboarding-prev');
+        const nextBtn = document.getElementById('onboarding-next');
+        const doneBtn = document.getElementById('onboarding-done');
+        const skipBtn = document.getElementById('onboarding-skip');
+
+        let currentStep = 0;
+        let isVisible = false;
+
+        // ---------- 工具函数 ----------
+        function scrollToElement(el) {
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                const scrollY = window.scrollY || window.pageYOffset;
+                const targetY = rect.top + scrollY - window.innerHeight / 3;
+                window.scrollTo({top: Math.max(0, targetY), behavior: 'smooth'});
+            }
+        }
+
+        function updatePopupPosition(rect) {
+            const popupWidth = 400;
+            const popupHeight = 300;
+            const pad = 20;
+
+            let left = rect.left + rect.width / 2 - popupWidth / 2;
+            let top = rect.bottom + 20 + window.scrollY;
+
+            // 水平边界修正
+            if (left < pad) left = pad;
+            if (left + popupWidth > window.innerWidth - pad) left = window.innerWidth - popupWidth - pad;
+
+            // 垂直边界修正：如果下方空间不足，放到上方
+            if (top + popupHeight > window.innerHeight + window.scrollY - pad) {
+                top = rect.top - popupHeight - 20 + window.scrollY;
+            }
+            if (top < pad + window.scrollY) top = pad + window.scrollY;
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.style.transform = 'none';
+        }
+
+        function showStep(index) {
+            const step = steps[index];
+            const total = steps.length;
+
+            // 更新文字
+            titleEl.innerHTML = step.title;
+            counterEl.textContent = `${index + 1} / ${total}`;
+            descEl.innerHTML = step.desc;
+
+            // 按钮显隐
+            prevBtn.style.display = index === 0 ? 'none' : 'inline-block';
+            if (index === total - 1) {
+                nextBtn.style.display = 'none';
+                doneBtn.style.display = 'inline-block';
+            } else {
+                nextBtn.style.display = 'inline-block';
+                doneBtn.style.display = 'none';
+            }
+
+            // 高亮和定位
+            if (step.target) {
+                const targetEl = document.querySelector(step.target);
+                if (targetEl) {
+                    const rect = targetEl.getBoundingClientRect();
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    const pad = 12;
+                    highlight.style.left = (rect.left - pad + scrollX) + 'px';
+                    highlight.style.top = (rect.top - pad + scrollY) + 'px';
+                    highlight.style.width = (rect.width + pad * 2) + 'px';
+                    highlight.style.height = (rect.height + pad * 2) + 'px';
+                    highlight.style.display = 'block';
+                    updatePopupPosition(rect);
+                    scrollToElement(targetEl);
+                } else {
+                    // 目标不存在，居中显示
+                    highlight.style.display = 'none';
+                    popup.style.left = '50%';
+                    popup.style.top = '40%';
+                    popup.style.transform = 'translateX(-50%)';
+                }
+            } else {
+                // 第一步，无目标
+                highlight.style.display = 'none';
+                popup.style.left = '50%';
+                popup.style.top = '40%';
+                popup.style.transform = 'translateX(-50%)';
+            }
+
             overlay.classList.add('active');
-            overlay.classList.remove('hidden');
-            setTimeout(function() {
-                popup.classList.add('visible');
-            }, 300);
+            isVisible = true;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideOverlay() {
+            overlay.classList.remove('active');
+            isVisible = false;
+            document.body.style.overflow = '';
+        }
+
+        function finishOnboarding() {
+            localStorage.setItem(doneKey, 'true');
+            hideOverlay();
+        }
+
+        function goToStep(index) {
+            if (index < 0) index = 0;
+            if (index >= steps.length) index = steps.length - 1;
+            currentStep = index;
+            showStep(currentStep);
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        // ---------- 事件绑定 ----------
+        nextBtn.addEventListener('click', nextStep);
+        prevBtn.addEventListener('click', prevStep);
+        doneBtn.addEventListener('click', finishOnboarding);
+        skipBtn.addEventListener('click', finishOnboarding);
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function (e) {
+            if (!isVisible) return;
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                if (currentStep === steps.length - 1) {
+                    finishOnboarding();
+                } else {
+                    nextStep();
+                }
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevStep();
+            } else if (e.key === 'Escape') {
+                finishOnboarding();
+            }
+        });
+
+        // 点击遮罩空白处可跳过（仅点击高亮以外的区域才触发）
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) {
+                finishOnboarding();
+            }
+        });
+
+        // ---------- 启动引导 ----------
+        // 等待 DOM 渲染完成，避免元素未加载
+        setTimeout(function () {
+            if (!localStorage.getItem(doneKey)) {
+                goToStep(0);
+            }
+        }, 600);
+
+    })();
+</script>
+{% endif %}
+<!-- ==================== 新手引导结束 ==================== -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    var token = document.querySelector('input[name="csrf_token"]');
+    if (token) {
+        document.querySelectorAll('form').forEach(function(form) {
+            if (!form.querySelector('input[name="csrf_token"]')) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'csrf_token';
+                input.value = token.value;
+                form.prepend(input);
+                }
+            });
         }
     });
+</script>
 
-    nextBtn.addEventListener('click', function() {
-        titleEl.textContent = '使用指南';
-        descEl.textContent = '点击上方任意链接即可开始探索。';
-        nextBtn.textContent = '完成';
-        currentStep++;
+<!-- 安全增强 - 禁用复制粘贴敏感信息 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 禁止复制 CSRF 令牌值（已在隐藏字段中，增加额外安全层）
+        document.querySelectorAll('input[name="csrf_token"]').forEach(function(input) {
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('autocapitalize', 'off');
+            input.setAttribute('spellcheck', 'false');
+        });
     });
+</script>
 
-    skipBtn.addEventListener('click', function() {
-        this.style.display = 'none';
-        nextBtn.style.display = 'none';
-        overlay.classList.add('active');
-        setTimeout(function() {
-            popup.classList.add('visible');
-        }, 300);
+<!-- ====== 昼夜模式：主题切换 ====== -->
+<script>
+    (function() {
+        const THEME_KEY = 'anime_club_theme';
+
+        function getPreferredTheme() {
+            const saved = localStorage.getItem(THEME_KEY);
+            if (saved === 'dark' || saved === 'light') {
+                return saved;
+            }
+            // 浏览器系统偏好
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                return 'dark';
+            }
+            return 'light';
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            // 更新按钮图标
+            const btn = document.getElementById('theme-toggle');
+            if (btn) {
+                btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+            localStorage.setItem(THEME_KEY, theme);
+        }
+
+        // 初始化
+        const theme = getPreferredTheme();
+        applyTheme(theme);
+
+        // 按钮切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('theme-toggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const current = document.documentElement.getAttribute('data-theme');
+                    const next = current === 'dark' ? 'light' : 'dark';
+                    applyTheme(next);
+                });
+            }
+        });
+
+        // 监听系统主题变化
+        if (window.matchMedia) {
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            mq.addEventListener('change', function(e) {
+                // 只有用户没有手动保存偏好时才跟随系统
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+    })();
+</script>
+
+<!-- ====== 抽屉菜单：全端可用 ====== -->
+<script>
+(function () {
+    const menuBtn = document.getElementById('menu-toggle');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    const closeBtn = document.getElementById('drawer-close');
+    if (!menuBtn || !drawer || !backdrop) return;
+
+    let savedOverflow = '';
+
+    function openDrawer() {
+        savedOverflow = document.body.style.overflow;
+        drawer.classList.add('open');
+        backdrop.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+        menuBtn.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        drawer.classList.remove('open');
+        backdrop.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = savedOverflow || '';
+    }
+
+    menuBtn.addEventListener('click', function () {
+        if (drawer.classList.contains('open')) {
+            closeDrawer();
+        } else {
+            openDrawer();
+        }
     });
-
-    nextBtn.addEventListener('click', function() {
-        this.style.display = 'none';
-        overlay.classList.add('active');
-        setTimeout(function() {
-            popup.classList.add('visible');
-        }, 300);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && drawer.classList.contains('open')) {
+            closeDrawer();
+        }
+    });
+    // 抽屉内普通链接跳转时收起菜单
+    drawer.querySelectorAll('a[href]').forEach(function (link) {
+        link.addEventListener('click', function () {
+            closeDrawer();
+        });
     });
 })();
+</script>
+
+<script>
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('Service Worker 注册成功');
+                })
+                .catch((error) => {
+                    console.log('Service Worker 注册失败:', error);
+                });
+        });
+    }
+</script>
+
+{% if session.user_id %}
+<script>
+    function loadNotifCount() {
+        fetch('/api/notifications/count')
+            .then(r => r.json())
+            .then(d => {
+                const badge = document.getElementById('notif-badge');
+                if (!badge) return;
+                if (d.count > 0) {
+                    badge.textContent = d.count > 99 ? '99+' : d.count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(() => {});
+    }
+    loadNotifCount();
+    setInterval(loadNotifCount, 60000);  // 每分钟刷新一次
 </script>
 {% endif %}
 
-<!-- ====== 底部 ====== -->
-<footer>
-    <p>© {{ club_name }}</p>
-    <p style="font-size:0.7rem; color:#aaa; margin-top:4px;">{{ app_version }}</p>
-</footer>
-
-<!-- ====== 深色模式脚本 ====== -->
-<script>
-(function() {
-    const THEME_KEY = 'anime_club_theme';
-
-    function getPreferredTheme() {
-        const saved = localStorage.getItem(THEME_KEY);
-        if (saved === 'dark' || saved === 'light') return saved;
-        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-
-    function applyTheme(theme) {
-        if (theme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-        }
-        const btn = document.getElementById('theme-toggle');
-        if (btn) {
-            btn.querySelector('#theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
-        }
-        localStorage.setItem(THEME_KEY, theme);
-    }
-
-    const theme = getPreferredTheme();
-    applyTheme(theme);
-
-    const btn = document.getElementById('theme-toggle');
-    btn.addEventListener('click', function() {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        applyTheme(next);
-    });
-})();
-</script>
-
+<script src="{{ url_for('static', filename='js/upload-compress.js') }}"></script>
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </body>
 </html>

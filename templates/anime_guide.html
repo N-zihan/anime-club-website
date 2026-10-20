@@ -47,9 +47,9 @@
 
 <!-- 番剧详情模态框 -->
 <div id="animeModal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99999; align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto;"
+     style="display:none; position:fixed; inset:0; background:rgba(8,16,30,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:24px 16px; overflow:hidden;"
      onclick="if(event.target===this) closeAnimeModal()">
-    <div style="background: var(--bg-card); border-radius:16px; max-width:680px; width:100%; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border:1px solid var(--glass-border); border-radius:18px; max-width:680px; width:100%; max-height:85vh; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.35); color: var(--text-primary);">
         <button onclick="closeAnimeModal()"
                 style="position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.6rem; color: var(--text-muted); cursor:pointer; line-height:1; z-index:1;">×</button>
         <div id="modalContent"></div>
@@ -57,9 +57,9 @@
 </div>
 <!-- 角色详情模态框 -->
 <div id="characterModal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100000; align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto;"
+     style="display:none; position:fixed; inset:0; background:rgba(8,16,30,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:100000; align-items:center; justify-content:center; padding:24px 16px; overflow:hidden;"
      onclick="if(event.target===this) closeCharacterModal()">
-    <div style="background: var(--bg-card); border-radius:16px; max-width:520px; width:100%; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+    <div style="background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border:1px solid var(--glass-border); border-radius:18px; max-width:520px; width:100%; max-height:80vh; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.4); color: var(--text-primary);">
         <button onclick="closeCharacterModal()"
                 style="position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.6rem; color: var(--text-muted); cursor:pointer; line-height:1; z-index:1;">×</button>
         <div id="characterModalContent"></div>
@@ -214,29 +214,19 @@
         resetAndLoad();
     });
 
-    // ===== 番剧详情模态框 - 限制高度 85vh，支持滚动，关闭时解除滚动锁定 =====
-    let originalOverflow = document.body.style.overflow;
-    let originalShowScreen = document.body.style.display;
-    
-    // 保存原始滚动状态
-    let hasLockedList = false;
-    
+    // ===== 番剧详情模态框：限制高度 85vh + 内部滚动；打开锁滚动，关闭必须解锁 =====
+    let savedBodyOverflow = '';
+
     async function openAnimeModal(id) {
         const modal = document.getElementById('animeModal');
         const content = document.getElementById('modalContent');
-        hasLockedList = true;
+
+        // 记录当前滚动状态，并锁住页面滚动（避免弹窗内滚动带动整页）
+        savedBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
 
         content.innerHTML = '<div style="text-align:center; padding:40px 0; color: var(--text-muted);">正在加载...</div>';
         modal.style.display = 'flex';
-
-        // 解除页面滚动锁定
-        if (originalShowScreen !== undefined) {
-            document.body.style.display = originalShowScreen;
-        } else if (originalOverflow !== undefined) {
-            document.body.style.overflow = originalOverflow;
-        } else {
-            document.body.style.overflow = '';
-        }
 
         let d;
         try {
@@ -392,38 +382,20 @@
     function closeAnimeModal() {
         const modal = document.getElementById('animeModal');
         if (modal) {
-            hasLockedList = false;
             modal.style.display = 'none';
         }
-        // 确保解除滚动锁定
-        if (hasLockedList) {
-            if (originalShowScreen !== undefined) {
-                document.body.style.display = originalShowScreen;
-            } else if (originalOverflow !== undefined) {
-                document.body.style.overflow = originalOverflow;
-            } else {
-                document.body.style.overflow = '';
-            }
-        }
+        // 关闭时必须释放页面滚动锁
+        document.body.style.overflow = savedBodyOverflow || '';
     }
 
-    // ===== 角色详情模态框 - 限制高度 85vh，支持滚动 =====
-    let charOriginalShowScreen = undefined;
-    let charOriginalOverflow = undefined;
+    // ===== 角色详情模态框：限制高度 80vh + 内部滚动 =====
     async function openCharacterModal(charId) {
         const modal = document.getElementById('characterModal');
         const content = document.getElementById('characterModalContent');
 
-        // 保存和恢复原始滚动状态
-        charOriginalShowScreen = document.body.style.display;
-        charOriginalOverflow = document.body.style.overflow;
-
+        // 角色弹窗叠加在番剧弹窗之上，页面滚动锁由番剧弹窗统一持有
         content.innerHTML = '<div style="text-align:center; padding:40px 0; color: var(--text-muted);">正在加载...</div>';
         modal.style.display = 'flex';
-
-        // 解除页面滚动
-        document.body.style.display = charOriginalShowScreen;
-        document.body.style.overflow = charOriginalOverflow;
 
         let d;
         try {
@@ -482,19 +454,7 @@
     function closeCharacterModal() {
         const modal = document.getElementById('characterModal');
         if (modal) modal.style.display = 'none';
-        
-        // 恢复滚动状态
-        if (charOriginalShowScreen !== undefined) {
-            document.body.style.display = charOriginalShowScreen;
-        }
-        if (charOriginalOverflow !== undefined) {
-            document.body.style.overflow = charOriginalOverflow;
-        } else {
-            document.body.style.overflow = '';
-        }
-        
-        charOriginalShowScreen = undefined;
-        charOriginalOverflow = undefined;
+        // 页面滚动锁仍由番剧弹窗持有，这里不释放
     }
 
     document.addEventListener('keydown', function (e) {
