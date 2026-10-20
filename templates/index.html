@@ -4,11 +4,11 @@
 
 <!-- ========== 新增：老用户绑定邮箱提示 ========== -->
 {% if session.get('show_bind_prompt') %}
-<div style="background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-    <span style="color:#856404;">请绑定邮箱，以便日后修改密码</span>
+<div class="alert alert-warning" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <span>请绑定邮箱，以便日后修改密码</span>
     <div style="display:flex; gap:10px;">
-        <a href="{{ url_for('user.profile') }}" style="color:#856404; font-weight:600;">前往绑定</a>
-        <a href="{{ url_for('user.dismiss_bind_prompt') }}" style="color:#856404; text-decoration:none; font-size:1.2rem;">×</a>
+        <a href="{{ url_for('user.profile') }}" style="font-weight:600;">前往绑定</a>
+        <a href="{{ url_for('user.dismiss_bind_prompt') }}" style="text-decoration:none; font-size:1.2rem;">×</a>
     </div>
 </div>
 {% endif %}

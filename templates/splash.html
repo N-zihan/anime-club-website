@@ -5,7 +5,39 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{{ club_name }}</title>
     <link href="{{ url_for('static', filename='favicon.ico') }}" rel="icon" type="image/x-icon">
+    <!-- 主题初始化：与全站共用 anime_club_theme，避免进入页与内页主题不一致 -->
+    <script>
+    (function () {
+        try {
+            var saved = localStorage.getItem('anime_club_theme');
+            var theme = (saved === 'dark' || saved === 'light')
+                ? saved
+                : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+    })();
+    </script>
     <style>
+        :root {
+            --splash-bg: linear-gradient(135deg, #e0f0ff 0%, #f0e6ff 50%, #ffe6f0 100%);
+            --splash-text: #2c3e50;
+            --splash-sub: #34495e;
+            --splash-muted: #7f8c8d;
+            --splash-accent: #4a90d9;
+            --splash-btn-bg: rgba(255, 255, 255, 0.5);
+            --splash-btn-shadow: rgba(74, 144, 217, 0.15);
+        }
+
+        [data-theme="dark"] {
+            --splash-bg: linear-gradient(135deg, #0a1220 0%, #16203a 50%, #1d1730 100%);
+            --splash-text: #e9eefb;
+            --splash-sub: #c3d2e8;
+            --splash-muted: #9fb0c9;
+            --splash-accent: #7fb6ff;
+            --splash-btn-bg: rgba(255, 255, 255, 0.08);
+            --splash-btn-shadow: rgba(0, 0, 0, 0.4);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,9 +46,13 @@
 
         body {
             font-family: 'Segoe UI', 'PingFang SC', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            background: linear-gradient(135deg, #e0f0ff 0%, #f0e6ff 50%, #ffe6f0 100%);
+            /* 短屏 / 横向手机也能滚动，避免按钮被裁掉 */
+            min-height: 100dvh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: var(--splash-bg);
+            background-attachment: fixed;
+            transition: background 0.3s ease;
         }
 
         #canvas {
@@ -36,10 +72,10 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100dvh;
             text-align: center;
             padding: 20px;
-            color: #2c3e50;
+            color: var(--splash-text);
         }
 
         .splash-content h1 {
@@ -56,8 +92,8 @@
         .splash-content .subtitle {
             font-size: 1.5rem;
             margin-bottom: 1.8em;
-            color: #34495e;
-            opacity: 0.8;
+            color: var(--splash-sub);
+            opacity: 0.85;
             letter-spacing: 6px;
             font-weight: 300;
         }
@@ -65,23 +101,23 @@
         .btn-enter {
             display: inline-block;
             padding: 14px 50px;
-            border: 2px solid #4a90d9;
+            border: 2px solid var(--splash-accent);
             border-radius: 50px;
-            color: #4a90d9;
+            color: var(--splash-accent);
             font-size: 1.2rem;
             font-weight: 600;
             text-decoration: none;
-            background: rgba(255, 255, 255, 0.5);
+            background: var(--splash-btn-bg);
             backdrop-filter: blur(8px);
             transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.15);
+            box-shadow: 0 4px 20px var(--splash-btn-shadow);
         }
 
         .btn-enter:hover {
-            background: #4a90d9;
-            color: white;
+            background: var(--splash-accent);
+            color: #fff;
             transform: scale(1.05);
-            box-shadow: 0 8px 40px rgba(74, 144, 217, 0.3);
+            box-shadow: 0 8px 40px var(--splash-btn-shadow);
         }
 
         .footer-note {
@@ -91,9 +127,43 @@
             right: 0;
             text-align: center;
             font-size: 0.85rem;
-            color: #7f8c8d;
-            opacity: 0.6;
+            color: var(--splash-muted);
+            opacity: 0.75;
             letter-spacing: 2px;
+        }
+
+        /* 昼夜切换按钮：入口页也能换主题（与内页共用同一偏好） */
+        .splash-theme-toggle {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 5;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid var(--splash-accent);
+            background: var(--splash-btn-bg);
+            backdrop-filter: blur(8px);
+            color: var(--splash-accent);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.25s ease, transform 0.25s ease;
+        }
+
+        .splash-theme-toggle:hover {
+            transform: translateY(-2px);
+            background: var(--splash-accent);
+            color: #fff;
+        }
+
+        [data-theme="dark"] .splash-content h1 {
+            background: linear-gradient(135deg, #8cc4ff, #c9a4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         @media (max-width: 600px) {
@@ -110,11 +180,38 @@
                 padding: 12px 30px;
                 font-size: 1rem;
             }
+
+            .footer-note {
+                bottom: 16px;
+                font-size: 0.78rem;
+            }
+        }
+
+        /* 极矮屏（横屏手机）：确保内容不被裁切 */
+        @media (max-height: 520px) {
+            .splash-content {
+                padding: 60px 20px 50px;
+            }
+
+            .splash-content h1 {
+                font-size: 2.2rem;
+            }
+
+            .splash-content .subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 1em;
+            }
+
+            .footer-note {
+                position: static;
+                margin-top: 24px;
+            }
         }
     </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
+<button type="button" class="splash-theme-toggle" id="splash-theme-toggle" aria-label="切换昼夜模式" title="切换昼夜模式">🌙</button>
 <div class="splash-content">
     <h1>{{ club_name }}</h1>
     <p class="subtitle">以热爱为名 · 共创二次元家园</p>
@@ -252,6 +349,31 @@
         }
 
         animate();
+    })();
+</script>
+<script>
+    // 昼夜切换：与全站共用 anime_club_theme，进入内页后主题保持一致
+    (function () {
+        var btn = document.getElementById('splash-theme-toggle');
+        if (!btn) return;
+        var KEY = 'anime_club_theme';
+
+        function paint() {
+            btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+        }
+
+        paint();
+        btn.addEventListener('click', function () {
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem(KEY, 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem(KEY, 'dark');
+            }
+            paint();
+        });
     })();
 </script>
 </body>
