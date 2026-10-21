@@ -1134,6 +1134,9 @@ def get_article_content(url, fail_reason=None):
         result = {
             'title': title,
             'content': translated,
+            # 原文正文：供「设置 → 语言与翻译」里的「仅原文 / 双语对照」使用。
+            # 译者优先（默认）时前端不读它，因此纯增量、向后兼容。
+            'content_original': full_text,
             'images': images,
             # 新增字段：向后兼容（旧调用方只读 title/content/images）
             # 'videos' 元素形如 {'type','url','embed','label'}，

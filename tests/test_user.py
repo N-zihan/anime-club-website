@@ -223,6 +223,8 @@ class TestNotificationPreferences:
         page = logged_in_client.get('/notifications').text
         assert '审核未通过' not in page
         assert '有人回复了你' in page
+        # 静音必须有明确说明，否则用户会以为通知丢了
+        assert '已静音' in page and '审核结果' in page
 
     def test_read_all_skips_muted_types(self, logged_in_client, sample_user, db_session):
         self._make_notifications(db_session, sample_user)

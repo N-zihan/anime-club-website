@@ -34,11 +34,15 @@
             var font = localStorage.getItem('anime_club_font');
             if (font === 'large' || font === 'xlarge') root.setAttribute('data-font', font);
             if (localStorage.getItem('anime_club_motion') === 'reduced') root.setAttribute('data-motion', 'reduced');
+            var newsLang = localStorage.getItem('anime_club_news_lang');
+            if (newsLang === 'original' || newsLang === 'both') root.setAttribute('data-news-lang', newsLang);
         } catch (e) {}
     })();
     </script>
 
-    <link href="{{ url_for('static', filename='css/style.css') }}?v=6" rel="stylesheet">
+    {# 样式表版本号跟着站点版本走：每次发版都会换 URL，避免老用户被浏览器缓存的旧 CSS 卡住
+       （此前固定 ?v=6，换版后浏览器仍可能直接用几年前缓存的那份） #}
+    <link href="{{ url_for('static', filename='css/style.css') }}?v={{ app_version }}" rel="stylesheet">
 
     <!-- Cloudflare Turnstile 验证码修复 -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -825,6 +829,7 @@
         const THEME_KEY = 'anime_club_theme';
         const FONT_KEY = 'anime_club_font';
         const MOTION_KEY = 'anime_club_motion';
+        const NEWS_LANG_KEY = 'anime_club_news_lang';
 
         function readKey(key) {
             try { return localStorage.getItem(key); } catch (e) { return null; }
@@ -886,6 +891,19 @@
             return pref;
         }
 
+        // 番剧新闻显示语言：'zh'（译文优先）/ 'original'（仅原文）/ 'both'（双语对照）
+        function newsLangPreference() {
+            const saved = readKey(NEWS_LANG_KEY);
+            return (saved === 'original' || saved === 'both') ? saved : 'zh';
+        }
+        function applyNewsLang() {
+            const pref = newsLangPreference();
+            // 'zh' 是 CSS 默认，去掉属性即可，避免首屏多一层选择器
+            if (pref === 'zh') document.documentElement.removeAttribute('data-news-lang');
+            else document.documentElement.setAttribute('data-news-lang', pref);
+            return pref;
+        }
+
         // 暴露给设置页复用，避免两处逻辑漂移
         window.acPrefs = {
             theme: themePreference,
@@ -895,7 +913,9 @@
             setFont: function(pref) { writeKey(FONT_KEY, pref); return applyFont(); },
             motion: motionPreference,
             setMotion: function(pref) { writeKey(MOTION_KEY, pref); return applyMotion(); },
-            applyAll: function() { applyTheme(); applyFont(); applyMotion(); }
+            newsLang: newsLangPreference,
+            setNewsLang: function(pref) { writeKey(NEWS_LANG_KEY, pref); return applyNewsLang(); },
+            applyAll: function() { applyTheme(); applyFont(); applyMotion(); applyNewsLang(); }
         };
 
         applyTheme();

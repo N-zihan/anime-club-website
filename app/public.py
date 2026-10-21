@@ -513,6 +513,8 @@ def anime_news_article():
     # data 可能是 None（抓取失败）或旧结构（无 videos 键），全部用 getattr/兜底处理，
     # 详情页在抓取失败时必须降级渲染而不是 500。
     content = (data or {}).get('content') or ''
+    # 原文正文（旧缓存条目可能没有该字段，回落到译文，保证模板永远拿得到字符串）
+    content_original = (data or {}).get('content_original') or content
     images = (data or {}).get('images') or []
 
     # 视频：只做「白名单 iframe 嵌入 + 非白名单外链跳转」。
@@ -580,6 +582,7 @@ def anime_news_article():
                            article=article_meta,
                            url=url,
                            content=content,
+                           content_original=content_original,
                            images=images,
                            videos=embed_videos + link_videos,
                            embed_videos=embed_videos,

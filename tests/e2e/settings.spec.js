@@ -16,11 +16,12 @@ test.describe('设置页 · 外观与显示', () => {
 
     test('访客可直接打开，分区与控件齐全', async ({page}) => {
         await expect(page.locator('h1.settings-title')).toBeVisible();
-        // 访客：外观 + 通知（登录提示）+ 数据，共三个分区
-        await expect(page.locator('.settings-section')).toHaveCount(3);
+        // 访客：外观 + 语言与翻译 + 通知（登录提示）+ 数据，共四个分区
+        await expect(page.locator('.settings-section')).toHaveCount(4);
         await expect(page.locator('.pref-option[data-group="theme"]')).toHaveCount(3);
         await expect(page.locator('.pref-option[data-group="font"]')).toHaveCount(3);
         await expect(page.locator('.pref-option[data-group="motion"]')).toHaveCount(2);
+        await expect(page.locator('.pref-option[data-group="news-lang"]')).toHaveCount(3);
         // 当前偏好应被标记为选中
         await expect(page.locator('.pref-option.is-active[data-group="theme"]')).toHaveCount(1);
     });
@@ -185,10 +186,17 @@ test.describe('设置页 · 通知与免打扰（登录后）', () => {
         await page.locator('.settings-form-actions button[type="submit"]').click();
         await expect(page).toHaveURL(/\/settings/);
 
-        const before = polls.length;
+        // 重新加载设置页：此时它已按「不显示红点」渲染，不会再发轮询请求；
+        // 先等一会儿消化掉上一页可能残留的请求事件，再清零计数，
+        // 否则上一条在途请求会让下面的断言假失败（曾复现过一次）。
+        await page.goto(SETTINGS_URL);
+        await expect(toggle).not.toBeChecked();
+        await page.waitForTimeout(800);
+        polls.length = 0;
+
         await page.goto('/home');
         await page.waitForTimeout(1500);
-        expect(polls.length).toBe(before);
+        expect(polls).toEqual([]);
     });
 });
 

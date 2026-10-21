@@ -90,6 +90,18 @@ def test_backward_compatible_fields(parse):
     assert isinstance(result['content'], str)
 
 
+def test_content_original_present_for_language_preference(parse):
+    """阶段 C：正文接口同时给出原文全文，供「仅原文 / 双语对照」使用。
+
+    没有这个字段，详情页的「仅原文」只能拿到译文（等于偏好失效），
+    所以它必须是稳定契约的一部分，而不是顺手塞进去的临时键。
+    """
+    result = parse('<p>Original English paragraph about anime news.</p>')
+    assert 'content_original' in result, '缺少原文正文，语言偏好无法工作'
+    assert isinstance(result['content_original'], str)
+    assert 'Original English paragraph about anime news.' in result['content_original']
+
+
 def test_old_structure_without_videos_key_still_renders(client, monkeypatch):
     """T3 之前的返回结构（无 videos 键）也必须能走通详情页"""
     monkeypatch.setattr(anime_news, 'get_article_content',

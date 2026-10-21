@@ -32,21 +32,21 @@
             style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.85rem;">官方</button>
 </div>
 
+<!-- 显示语言（与「设置 → 语言与翻译」共用本地偏好，无需登录） -->
+<div id="newsLangRow" style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+    <span style="font-size:0.82rem; color: var(--text-muted);">显示：</span>
+    <button type="button" class="news-lang-btn" data-lang="zh"
+            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">译文优先</button>
+    <button type="button" class="news-lang-btn" data-lang="original"
+            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">仅原文</button>
+    <button type="button" class="news-lang-btn" data-lang="both"
+            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">双语对照</button>
+</div>
+
 <div id="newsStatus" style="text-align:center; color: var(--text-muted); padding:40px 0; display:none;"></div>
 <div id="newsFeed"></div>
 
 <button id="loadMoreBtn" style="display:none; width:100%; padding:14px; margin-top:20px; background:var(--bg-code); border:1px solid var(--border-color); border-radius:12px; cursor:pointer; color:var(--text-primary); font-size:0.9rem;">加载更多</button>
-
-<!-- 详情模态框 -->
-<div id="newsModal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:99999; align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto;"
-     onclick="if(event.target===this) closeNewsModal()">
-    <div style="background: var(--bg-card); border-radius:16px; max-width:720px; width:100%; padding:32px 28px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-        <button onclick="closeNewsModal()"
-                style="position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.6rem; color: var(--text-muted); cursor:pointer; line-height:1;">×</button>
-        <div id="newsModalContent"></div>
-    </div>
-</div>
 
 <style>
 .news-item { display: flex; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--border-color); align-items: flex-start; }
@@ -58,6 +58,10 @@
 .news-title { font-size: 1.05rem; font-weight: 600; margin: 4px 0 8px 0; line-height: 1.5; }
 .news-title a { color: var(--text-primary); text-decoration: none; transition: color 0.15s; }
 .news-title a:hover { color: #4a90d9; }
+/* 显示语言：双语模式下的原文弱化显示 + 快捷切换按钮选中态 */
+.news-title-orig { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-top: 4px; }
+.news-excerpt-orig { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-color); color: var(--text-muted); font-size: 0.92em; }
+.news-lang-btn.is-active { background: #1e2a3a !important; color: #fff !important; }
 .news-excerpt { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 600px) { .news-thumb { width: 90px; height: 60px; } .news-title { font-size: 0.95rem; } }
 
@@ -133,14 +137,45 @@
         return '/api/anime/news-image?url=' + encodeURIComponent(url);
     }
 
+    function newsLangMode() {
+        const v = document.documentElement.getAttribute('data-news-lang');
+        return (v === 'original' || v === 'both') ? v : 'zh';
+    }
+
     function itemHtml(a) {
-        // 中文标题：优先显示翻译，没有翻译时显示占位符
-        const title = escapeHtml(a.title_zh ? a.title_zh : (a.title ? a.title : '(标题翻译中)'));
+        // 显示语言：译文优先 / 仅原文 / 双语对照（偏好来自「设置 → 语言与翻译」）
+        const mode = newsLangMode();
+        const zhTitle = a.title_zh ? a.title_zh : (a.title ? a.title : '(标题翻译中)');
+        const origTitle = a.title ? a.title : '';
+        let title;
+        if (mode === 'original') {
+            title = escapeHtml(origTitle || zhTitle);
+        } else if (mode === 'both' && origTitle && origTitle !== zhTitle) {
+            title = escapeHtml(zhTitle) + '<span class="news-title-orig">' + escapeHtml(origTitle) + '</span>';
+        } else {
+            title = escapeHtml(zhTitle);
+        }
         const link = a.link || a.url || '#';
         const source = SOURCE_NAMES[a.source] || a.source || '';
         const date = formatDate(a.date || a.published_at);
-        // 摘要优先显示翻译，没有则省略
-        const excerpt = a.excerpt_zh ? escapeHtml(a.excerpt_zh) : '';
+        // 摘要：原文缺失时回落到译文，任一模式都不会出现空摘要
+        const zhExcerpt = a.excerpt_zh ? a.excerpt_zh : '';
+        const origExcerpt = a.excerpt ? a.excerpt : '';
+        let excerpt = '';
+        if (mode === 'original') {
+            excerpt = escapeHtml(origExcerpt || zhExcerpt);
+        } else if (mode === 'both') {
+            if (zhExcerpt) {
+                excerpt = escapeHtml(zhExcerpt);
+                if (origExcerpt && origExcerpt !== zhExcerpt) {
+                    excerpt += '<div class="news-excerpt-orig">' + escapeHtml(origExcerpt) + '</div>';
+                }
+            } else {
+                excerpt = escapeHtml(origExcerpt);
+            }
+        } else {
+            excerpt = escapeHtml(zhExcerpt);
+        }
         const img = a.image ? thumbUrl(a.image) : '';
 
         const thumbHtml = img
@@ -307,6 +342,33 @@
     });
 
     // 卡片点击已由链接 href 负责，无需额外绑定
+
+    // ===== 显示语言快捷切换（与「设置 → 语言与翻译」共用同一个本地偏好） =====
+    const langBtns = document.querySelectorAll('.news-lang-btn');
+    function paintLangBtns() {
+        const mode = newsLangMode();
+        langBtns.forEach(function (b) {
+            const on = b.dataset.lang === mode;
+            b.classList.toggle('is-active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+    langBtns.forEach(function (b) {
+        b.addEventListener('click', function () {
+            const mode = b.dataset.lang || 'zh';
+            if (window.acPrefs && window.acPrefs.setNewsLang) {
+                window.acPrefs.setNewsLang(mode);
+            } else {
+                document.documentElement.setAttribute('data-news-lang', mode);
+            }
+            paintLangBtns();
+            // 重新渲染列表：服务端有缓存，代价很低；搜索态下沿用当前关键词
+            if (searchKeyword) doSearch();
+            else load(currentTag, false);
+        });
+    });
+    paintLangBtns();
+
     load('', false);
 })();
 </script>

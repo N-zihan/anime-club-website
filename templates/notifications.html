@@ -8,6 +8,15 @@
     {% endif %}
 </div>
 
+{% if muted_types %}
+{# 被静音的类型既不出现在列表里、也不计入红点，所以必须显式说明，否则用户会以为通知丢了 #}
+<div style="margin:0 0 16px; padding:10px 14px; border-radius:10px; background: var(--bg-code); color: var(--text-muted); font-size:0.85rem; line-height:1.6;">
+    已静音：{% for t in muted_types %}{{ notify_labels.get(t, t) }}{% if not loop.last %}、{% endif %}{% endfor %}
+    —— 静音的通知仍会入库，只是不在这里显示、也不发邮件。
+    <a href="{{ url_for('public.settings') }}#notify-section" style="color:#4a90d9;">去设置里恢复</a>
+</div>
+{% endif %}
+
 {% if notifications %}
 <div style="display:flex; flex-direction:column; gap:12px;">
     {% for n in notifications %}

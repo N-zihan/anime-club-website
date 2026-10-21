@@ -2207,3 +2207,38 @@ html[data-motion="reduced"] .btn-primary:hover {
         width: 100%;
     }
 }
+
+/* ===================== 18. 番剧新闻显示偏好（设置 → 语言与翻译） ===================== */
+/* 默认（未设置属性 / zh）：只显示译文块；脚本失效时也不会白屏 */
+.news-lang-block.news-lang-orig {
+    display: none;
+}
+
+/* 仅原文：隐藏译文，只留原文 */
+html[data-news-lang="original"] .news-lang-block.news-lang-zh {
+    display: none;
+}
+
+html[data-news-lang="original"] .news-lang-block.news-lang-orig {
+    display: block;
+}
+
+/* 双语对照：中文在上，原文在下并用虚线分隔 */
+html[data-news-lang="both"] .news-lang-block.news-lang-orig {
+    display: block;
+}
+
+html[data-news-lang="both"] .article-title .news-lang-orig {
+    margin-top: 8px;
+    font-size: 0.68em;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+html[data-news-lang="both"] .news-orig-body,
+html[data-news-lang="both"] .article-excerpt.news-lang-orig {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+}

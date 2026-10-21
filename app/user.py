@@ -30,7 +30,7 @@ from sqlalchemy import func
 
 from .config import AVATAR_MAX_SIZE
 from .models import db, User, Message, Notification
-from .preferences import (get_preferences, muted_types,
+from .preferences import (NOTIFY_LABELS, get_preferences, muted_types,
                           normalize_preferences, save_preferences)
 from .utils import (allowed_file, compress_image, get_or_404,
                     upload_avatar_to_storage, code_digest, code_matches)
@@ -337,7 +337,8 @@ def notifications():
     for n in items:
         n.created_at = n.created_at + timedelta(hours=8)
 
-    return render_template('notifications.html', notifications=items, muted_types=muted)
+    return render_template('notifications.html', notifications=items, muted_types=muted,
+                           notify_labels=NOTIFY_LABELS)
 
 
 @user_bp.route('/notifications/read/<int:nid>')

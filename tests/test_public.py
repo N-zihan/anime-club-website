@@ -504,3 +504,29 @@ class TestPublicExtra:
         with patch('app.public.generate_prediction', return_value=(True, 'AI prediction', None)):
             resp = logged_in_client.get(f'/contest/{sample_contest.id}/predict')
             assert resp.get_json()['prediction'] == 'AI prediction'
+
+
+# ========== 站点设置页（访客可用；账号级设置需登录） ==========
+
+class TestSettingsPage:
+
+    def test_settings_page_loads_for_guest(self, client):
+        """设置页对访客开放：外观 / 语言 / 通知（登录提示）/ 数据 四个分区都在"""
+        resp = client.get('/settings')
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        for text in ('外观与显示', '语言与翻译', '通知与免打扰', '数据与隐私'):
+            assert text in body, f'缺少分区：{text}'
+
+    def test_settings_page_has_three_news_language_options(self, client):
+        """阶段 C：语言与翻译给出「译文优先 / 仅原文 / 双语对照」三档"""
+        body = client.get('/settings').get_data(as_text=True)
+        assert body.count('data-group="news-lang"') == 3
+        for value in ('data-value="zh"', 'data-value="original"', 'data-value="both"'):
+            assert value in body, f'缺少语言选项：{value}'
+
+    def test_settings_page_hides_notification_form_for_guest(self, client):
+        """通知免打扰是账号级设置：访客只能看到登录提示，看不到表单"""
+        body = client.get('/settings').get_data(as_text=True)
+        assert 'name="muted_types"' not in body
+        assert 'settings-login-hint' in body

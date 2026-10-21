@@ -12,16 +12,25 @@ Lead 追加要求：
 """
 import pytest
 
-from app import anime_news
+from app import anime_news, public
 
 
 @pytest.fixture
 def patched_detail(monkeypatch):
-    """打桩抓取层，避免任何外网请求。"""
+    """打桩抓取层，避免任何外网请求。
+
+    ★ 必须同时打桩两个名字：public.py 顶层 `from .anime_news import get_article_content`
+    已把函数对象绑定进 app.public 的命名空间，只打桩 anime_news.* 对详情页无效
+    （旧版 fixture 正是如此，这些用例其实一直在跑「真实抓取失败」的降级路径，
+    所以断言 200 能过、断言内容就过不了）。
+    """
     def _set(payload):
         monkeypatch.setattr(anime_news, 'get_article_content', lambda url: payload,
                             raising=False)
-        # public.py 在函数内 from .anime_news import get_article_content，同样被打桩
+        monkeypatch.setattr(public, 'get_article_content', lambda url: payload,
+                            raising=False)
+        # 详情页还会用 find_article_meta 找标题元数据；一并不走网络，保证用例 hermetic
+        monkeypatch.setattr(public, 'find_article_meta', lambda url: None, raising=False)
     return _set
 
 
@@ -127,3 +136,47 @@ def test_template_escapes_video_url_in_href(app):
     )
     assert 'onload="alert(1)"' not in html, '属性逃逸成功：onload 未被转义'
     assert '" onload=' not in html, '属性逃逸成功：引号未转义'
+
+
+# ---------------------------------------------------------------------------
+# 阶段 C：语言与翻译 —— 详情页同时输出译文块与原文块，由 html[data-news-lang] 决定显示哪份
+# ---------------------------------------------------------------------------
+def test_detail_page_renders_both_language_blocks(client, patched_detail):
+    """正文接口给了原文时，模板要同时渲染译文块与原文块（默认 CSS 只显示译文）。"""
+    patched_detail({
+        'title': 'Original Title',
+        'content': '中文第一段\n\n中文第二段',
+        'content_original': 'First paragraph\n\nSecond paragraph',
+        'images': [],
+    })
+    resp = client.get('/anime_news/article', query_string={'url': _VALID_URL})
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert 'news-lang-block news-lang-zh' in body
+    assert 'news-lang-block news-lang-orig' in body
+    assert 'news-orig-body' in body
+    assert '中文第一段' in body, '译文正文缺失'
+    assert 'First paragraph' in body, '原文正文缺失，「仅原文 / 双语对照」会失效'
+
+
+def test_detail_page_falls_back_to_translated_body_without_original(client, patched_detail):
+    """旧缓存/旧结构没有 content_original 时，原文块回落到译文，不能出现空白正文。"""
+    patched_detail({'title': 'T', 'content': 'only translated body text', 'images': []})
+    resp = client.get('/anime_news/article', query_string={'url': _VALID_URL})
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert body.count('only translated body text') >= 2, '原文块空掉了'
+
+
+def test_detail_page_escapes_original_text(client, patched_detail):
+    """原文块走 Jinja 自动转义，不能因为「原文」就绕过 XSS 防线。"""
+    patched_detail({
+        'title': 'T',
+        'content': '译文正文' * 60,
+        'content_original': '<script>alert(1)</script>',
+        'images': [],
+    })
+    resp = client.get('/anime_news/article', query_string={'url': _VALID_URL})
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert '<script>alert(1)</script>' not in body, '原文块未转义'

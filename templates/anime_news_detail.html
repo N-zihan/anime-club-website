@@ -11,8 +11,11 @@
 </div>
 {% endif %}
 
-<h1 style="font-size:1.8rem; line-height:1.3; margin-bottom:12px;">
-  {{ article.title_zh if article and article.title_zh else (article.title if article else '') }}
+{% set title_zh = article.title_zh if article and article.title_zh else '' %}
+{% set title_orig = article.title if article and article.title else '' %}
+<h1 class="article-title" style="font-size:1.8rem; line-height:1.3; margin-bottom:12px;">
+  <span class="news-lang-block news-lang-zh">{{ title_zh or title_orig }}</span>
+  <span class="news-lang-block news-lang-orig">{{ title_orig or title_zh }}</span>
 </h1>
 
 <div style="color: var(--text-muted); font-size:0.9rem; margin-bottom:24px;">
@@ -21,9 +24,14 @@
   <span>{{ article.date[:10] if article and article.date else '' }}</span>
 </div>
 
-{% if article and article.excerpt_zh %}
-<div style="background: var(--bg-code); padding:18px 20px; border-radius:10px; margin-bottom:28px; line-height:1.6;">
-  {{ article.excerpt_zh }}
+{% set excerpt_zh = article.excerpt_zh if article and article.excerpt_zh else '' %}
+{% set excerpt_orig = article.excerpt if article and article.excerpt else '' %}
+{% if excerpt_zh or excerpt_orig %}
+<div class="news-lang-block news-lang-zh article-excerpt" style="background: var(--bg-code); padding:18px 20px; border-radius:10px; margin-bottom:28px; line-height:1.6;">
+  {{ excerpt_zh or excerpt_orig }}
+</div>
+<div class="news-lang-block news-lang-orig article-excerpt" style="background: var(--bg-code); padding:18px 20px; border-radius:10px; margin-bottom:28px; line-height:1.6; color: var(--text-secondary);">
+  {{ excerpt_orig or excerpt_zh }}
 </div>
 {% endif %}
 
@@ -81,8 +89,17 @@
 </div>
 {% endif %}
 
-<div class="article-body" style="line-height:1.9; font-size:1rem;">
+{# 正文按「设置 → 语言与翻译」的显示偏好切换：
+   .news-lang-block 默认只显示中文（译文），html[data-news-lang="original"] 只显示原文，
+   "both" 则中文在上、原文在下并用虚线分隔。不依赖 JS 也能正常显示中文，避免脚本失败时白屏。 #}
+<div class="article-body news-lang-block news-lang-zh" style="line-height:1.9; font-size:1rem;">
   {% for para in content.split('\n\n') %}
+    <p style="margin-bottom:20px;">{{ para }}</p>
+  {% endfor %}
+</div>
+<div class="article-body news-lang-block news-lang-orig news-orig-body" style="line-height:1.9; font-size:1rem;">
+  {% set original_paras = content_original.split('\n\n') if content_original else content.split('\n\n') %}
+  {% for para in original_paras %}
     <p style="margin-bottom:20px;">{{ para }}</p>
   {% endfor %}
 </div>

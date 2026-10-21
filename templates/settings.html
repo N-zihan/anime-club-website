@@ -14,7 +14,7 @@
 <div class="settings-page">
     <header class="settings-header">
         <h1 class="settings-title">⚙️ 设置</h1>
-        <p class="settings-sub">这里的偏好保存在本机浏览器，改完立即生效，无需保存；未登录也能使用。</p>
+        <p class="settings-sub">外观、语言、数据相关偏好存在本机浏览器，改完立即生效；通知免打扰是账号级设置，需要登录后保存。</p>
     </header>
 
     <!-- ====== 外观与显示 ====== -->
@@ -55,6 +55,27 @@
                 <button type="button" class="pref-option" data-group="motion" data-value="reduced" role="radio">减少动效</button>
             </div>
         </div>
+    </section>
+
+    <!-- ====== 语言与翻译 ====== -->
+    <section class="settings-section" id="lang-section" aria-labelledby="settings-lang">
+        <h2 class="settings-section-title" id="settings-lang">🌐 语言与翻译</h2>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">番剧新闻显示</span>
+                <span class="settings-desc">新闻来自国外媒体，站点会自动翻译标题与正文。这里决定给你看哪一份；番剧新闻页顶部也有同样的快捷切换。</span>
+            </div>
+            <div class="pref-options" role="radiogroup" aria-label="番剧新闻显示语言">
+                <button type="button" class="pref-option" data-group="news-lang" data-value="zh" role="radio">译文优先</button>
+                <button type="button" class="pref-option" data-group="news-lang" data-value="original" role="radio">仅原文</button>
+                <button type="button" class="pref-option" data-group="news-lang" data-value="both" role="radio">双语对照</button>
+            </div>
+        </div>
+
+        <p class="settings-footnote" style="margin-top:12px;">
+            界面文案本身的中英切换暂未开放：全站有 40 多个模板、800 多条文案，一次做国际化并长期维护翻译同步的成本很高，宁可先不做半套。如果你需要某个页面出英文版，可以在留言板直接提，我们按需单独处理。
+        </p>
     </section>
 
     {% if session.user_id %}
@@ -180,7 +201,7 @@
     </section>
     {% endif %}
 
-    <p class="settings-footnote">更多设置（通知免打扰、语言与翻译）正在开发中。</p>
+    <p class="settings-footnote">本机偏好与账号设置相互独立：清空本机设置不会动到账号里的通知免打扰。</p>
 </div>
 
 <div class="settings-toast" id="settings-toast" role="status" aria-live="polite"></div>
@@ -200,11 +221,16 @@
         toastTimer = setTimeout(function () { toastEl.classList.remove('is-visible'); }, 2200);
     }
 
-    /* ---- 外观：选项按钮与 acPrefs（base.html 提供）同步 ---- */
+    /* ---- 外观 / 语言：选项按钮与 acPrefs（base.html 提供）同步 ---- */
     function paintOptions() {
         var prefs = window.acPrefs;
         if (!prefs) return;
-        var current = { theme: prefs.theme(), font: prefs.font(), motion: prefs.motion() };
+        var current = {
+            theme: prefs.theme(),
+            font: prefs.font(),
+            motion: prefs.motion(),
+            'news-lang': prefs.newsLang ? prefs.newsLang() : 'zh'
+        };
         document.querySelectorAll('.pref-option').forEach(function (btn) {
             var on = current[btn.dataset.group] === btn.dataset.value;
             btn.classList.toggle('is-active', on);
@@ -219,8 +245,10 @@
             if (group === 'theme') prefs.setTheme(value);
             else if (group === 'font') prefs.setFont(value);
             else if (group === 'motion') prefs.setMotion(value);
+            else if (group === 'news-lang' && prefs.setNewsLang) prefs.setNewsLang(value);
             paintOptions();
-            toast(value === 'reduced' ? '已减少动效' : '已应用');
+            var tips = { reduced: '已减少动效', original: '新闻只显示原文', both: '新闻双语对照', zh: '新闻显示译文' };
+            toast(tips[value] || '已应用');
         });
     });
     // base.html 的 acPrefs 在此脚本之后才定义，所以首帧先不标选中态，等文档解析完补一遍
