@@ -298,7 +298,7 @@
                 keys.forEach(function (k) { localStorage.removeItem(k); removed++; });
             } catch (e) {}
             onboardingReset.textContent = '已重置';
-            toast(removed > 0 ? '已重置，下次打开网站会重新播放引导' : '引导标记不存在，下次打开即会播放');
+            toast(removed > 0 ? '已重置，回到首页即可重新观看引导' : '引导还没看过，回到首页即可观看');
         });
     }
 

@@ -20,7 +20,7 @@
 {% if notifications %}
 <div style="display:flex; flex-direction:column; gap:12px;">
     {% for n in notifications %}
-    <a href="{{ url_for('user.notification_read', nid=n.id) }}"
+    <a class="notif-card" href="{{ url_for('user.notification_read', nid=n.id) }}"
        style="display:block; padding:16px 20px; background: var(--bg-card); border-radius:12px; border:1px solid var(--border-color); text-decoration:none; {% if not n.is_read %}border-left:4px solid #4a90d9;{% endif %}">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <strong style="color: var(--text-primary);">{{ n.title }}</strong>

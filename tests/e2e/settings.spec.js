@@ -111,6 +111,8 @@ test.describe('设置页 · 数据与隐私', () => {
 
         await page.locator('#onboarding-reset').click();
         expect(await page.evaluate(() => localStorage.getItem('onboarding_done_7'))).toBeNull();
+        // 引导只在首页自动播放，所以提示要明确告诉用户去哪里看
+        await expect(page.locator('#settings-toast')).toContainText('首页');
     });
 
     test('清空本地设置后所有 anime_club_* 与引导标记都被移除', async ({page}) => {
@@ -143,11 +145,22 @@ test.describe('设置页 · 通知与免打扰（登录后）', () => {
         await expect(page).not.toHaveURL(/\/login/);
 
         await page.goto(SETTINGS_URL);
-        // 登录后会有新手引导遮罩，先按「跳过」再操作设置
+        // 新手引导只在首页自动播放；这里仍兜底跳过，避免以后改动把设置页也纳入播放范围
+        await page.waitForTimeout(800);
         const skip = page.locator('#onboarding-skip');
         if (await skip.isVisible().catch(() => false)) {
             await skip.click();
         }
+    });
+
+    test('新手引导只在首页自动播放，不会在设置页挡住操作', async ({page}) => {
+        // beforeEach 已登录并停在设置页，且等了 800ms（引导原本 600ms 就会弹出）
+        await expect(page.locator('#onboarding-overlay.active')).toHaveCount(0);
+
+        await page.goto('/home');
+        await expect(page.locator('#onboarding-overlay.active')).toBeVisible();
+        await page.locator('#onboarding-skip').click();
+        await expect(page.locator('#onboarding-overlay.active')).toHaveCount(0);
     });
 
     test('可勾选静音类型并保存到账号（换页仍生效）', async ({page}) => {

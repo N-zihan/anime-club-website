@@ -207,6 +207,8 @@
         }
         statusEl.style.display = 'none';
         feed.insertAdjacentHTML('beforeend', articles.map(itemHtml).join(''));
+        // 卡片是动态插入的，补一轮「从下往上淡入」（base.html 提供，减少动效时会自动跳过）
+        if (window.acRiseCards) window.acRiseCards(feed);
     }
 
     function load(tag, append) {

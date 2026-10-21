@@ -80,6 +80,12 @@
     --alert-bg-info: #eff6ff;
     --alert-text-info: #1d4ed8;
     --alert-border-info: #bfdbfe;
+
+    /* ---- 科技感背景线条（固定不随页面滚动，见第 2 节 body） ---- */
+    --tech-line: rgba(47, 111, 179, 0.075);
+    --tech-line-strong: rgba(47, 111, 179, 0.11);
+    --tech-glow-1: rgba(47, 111, 179, 0.20);
+    --tech-glow-2: rgba(56, 189, 248, 0.16);
 }
 
 /* ---- 深夜模式 ---- */
@@ -128,6 +134,12 @@
     --alert-bg-info: #122036;
     --alert-text-info: #93c5fd;
     --alert-border-info: #1e3a8a;
+
+    /* 深夜模式下线条要更亮一点才看得见，但仍然压得很低 */
+    --tech-line: rgba(91, 155, 234, 0.10);
+    --tech-line-strong: rgba(91, 155, 234, 0.14);
+    --tech-glow-1: rgba(59, 130, 246, 0.24);
+    --tech-glow-2: rgba(34, 211, 238, 0.18);
 }
 
 /* ============================================================
@@ -146,8 +158,23 @@ html {
 
 body {
     min-height: 100vh;
-    background: var(--bg-body);
+    /* 底色 + 科技线条纹路：全部 background-attachment: fixed，
+       滚动页面时纹路固定不动（视觉上像一层贴在视口上的蓝图网格） */
+    background-color: var(--bg-main);
+    background-image:
+        /* 左上、右下两团冷色光晕，给网格一点纵深感 */
+        radial-gradient(1000px 680px at 10% 6%, var(--tech-glow-1), transparent 68%),
+        radial-gradient(1100px 760px at 92% 94%, var(--tech-glow-2), transparent 70%),
+        /* 稀疏斜向长线（科技线条主纹路） */
+        repeating-linear-gradient(135deg, var(--tech-line-strong) 0 1px, transparent 1px 180px),
+        repeating-linear-gradient(45deg, var(--tech-line-strong) 0 1px, transparent 1px 220px),
+        /* 细网格 */
+        repeating-linear-gradient(90deg, var(--tech-line) 0 1px, transparent 1px 56px),
+        repeating-linear-gradient(0deg, var(--tech-line) 0 1px, transparent 1px 56px),
+        /* 原有淡色渐变底 */
+        var(--bg-body);
     background-attachment: fixed;
+    background-repeat: no-repeat, no-repeat, repeat, repeat, repeat, repeat, no-repeat;
     color: var(--text-primary);
     font-family: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     font-size: 1rem;
@@ -1864,6 +1891,7 @@ html[data-motion="reduced"] *,
 html[data-motion="reduced"] *::before,
 html[data-motion="reduced"] *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     transition-delay: 0s !important;
@@ -1882,6 +1910,7 @@ html[data-motion="reduced"] .btn-primary:hover {
     *::before,
     *::after {
         animation-duration: 0.001ms !important;
+        animation-delay: 0s !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
@@ -2241,4 +2270,37 @@ html[data-news-lang="both"] .article-excerpt.news-lang-orig {
     padding-top: 16px;
     border-top: 1px dashed var(--border-color);
     color: var(--text-secondary);
+}
+
+/* ===================== 19. 页面切换：卡片从下往上淡入 ===================== */
+/* 由 base.html 末尾的脚本（window.acRiseCards）给卡片补上 .card-rise 与 --card-i，
+   没有 JS 时不会加这个类，卡片照常显示，不会白屏。
+   动画只动 opacity 与 translate，不碰 transform —— 卡片原有的 hover 位移不受影响；
+   fill-mode 用 backwards：延迟期间保持「未出现」，播完立刻交还给正常样式。 */
+@keyframes card-rise {
+    from {
+        opacity: 0;
+        translate: 0 26px;
+    }
+
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+.card-rise {
+    animation: card-rise 0.52s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+    animation-delay: calc(var(--card-i, 0) * 42ms);
+}
+
+/* 减少动效（设置页开关 / 系统偏好）时不播，卡片保持正常显示 */
+html[data-motion="reduced"] .card-rise {
+    animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-rise {
+        animation: none !important;
+    }
 }

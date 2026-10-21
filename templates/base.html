@@ -583,6 +583,11 @@
         const doneKey = 'onboarding_done_' + userId;
         if (localStorage.getItem(doneKey) === 'true') return;
 
+        // 引导讲的是顶部菜单与首页各入口，只在首页自动播放：
+        // 在设置页、后台等页面突然弹出会打断操作，遮罩也会挡住点击
+        const path = (location.pathname || '/').replace(/\/+$/, '') || '/';
+        if (path !== '/' && path !== '/home') return;
+
         // ---------- 引导步骤配置 ----------
         const steps = [
             {
@@ -1036,6 +1041,42 @@
 </script>
 {% endif %}
 {% endif %}
+
+<script>
+/* ===== 页面切换时卡片从下往上淡入（第 19 节样式） ===== */
+(function () {
+    var CARDS = '.card, .activity-card, .anime-card, .card-form, .contest-card,' +
+        ' .candidate-card, .message-card, .member-card, .gallery-item,' +
+        ' .news-item, .settings-section, .notif-card';
+    var MAX_INDEX = 10;   // 同一容器内最多错峰 10 档，避免长列表最后一张等太久
+
+    function reducedMotion() {
+        if (document.documentElement.getAttribute('data-motion') === 'reduced') return true;
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+    function rise(root) {
+        var counters = new Map();
+        var nodes = (root || document).querySelectorAll(CARDS);
+        for (var i = 0; i < nodes.length; i++) {
+            var el = nodes[i];
+            var parent = el.parentElement;
+            if (!parent) continue;
+            var idx = counters.get(parent) || 0;
+            counters.set(parent, idx + 1);
+            el.style.setProperty('--card-i', idx > MAX_INDEX ? MAX_INDEX : idx);
+            el.classList.add('card-rise');
+        }
+    }
+
+    // 动态渲染的列表（如番剧新闻加载更多 / 切换标签）可以调这个再补一轮
+    window.acRiseCards = function (root) {
+        if (reducedMotion()) return;
+        rise(root);
+    };
+
+    if (!reducedMotion()) rise(document);
+})();
+</script>
 
 <script src="{{ url_for('static', filename='js/upload-compress.js') }}"></script>
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
