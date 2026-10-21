@@ -1,0 +1,52 @@
+name: Sync VERSION from tag
+
+# 目的：让线上版本号自动跟随 git tag。
+# Vercel 的构建包里没有 .git（.vercelignore 已排除 .git/），运行时无法执行
+# git describe；因此这里在推送 tag 时把 tag 写进根目录 VERSION 文件并提交到 main，
+# 线上应用（app/version.py）读取该文件即可显示 tag。
+#
+# 幂等：VERSION 内容没变就不提交，不会产生循环提交。
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 解析最近可达的 tag
+        id: tag
+        run: |
+          TAG="$(git describe --tags --abbrev=0)"
+          if [ -z "$TAG" ]; then
+            echo "未找到任何 tag，跳过"
+            exit 0
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "$TAG" > VERSION
+          echo "VERSION -> $TAG"
+
+      - name: 提交 VERSION（仅在变化时）
+        if: steps.tag.outputs.tag != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- VERSION; then
+            echo "VERSION 未变化，无需提交"
+            exit 0
+          fi
+          git add VERSION
+          git commit -m "chore: 同步版本号 VERSION -> ${{ steps.tag.outputs.tag }}"
+          git push origin HEAD:main

@@ -31,6 +31,7 @@ from .public import (
     method_not_allowed, bad_request, request_entity_too_large,
 )
 from .user import user_bp
+from .version import resolve_version
 
 # 视频代理是可选模块：其顶层 import aiohttp，而 aiohttp 不在 requirements.txt 中
 # （线上依赖 pip install -r requirements.txt 安装）。原先的顶层直接导入会让整个
@@ -221,8 +222,8 @@ def create_app():
             return redirect(url_for('auth.login'))
         return None
 
-    # 版本号（Vercel 等环境可用 APP_VERSION 覆盖；默认值随发布线更新）
-    app.config['APP_VERSION'] = os.getenv('APP_VERSION', 'v4.16.0')
+    # 版本号：优先读 git tag（VERSION 文件 / git describe），解析规则见 app/version.py
+    app.config['APP_VERSION'] = resolve_version()
 
     @app.context_processor
     def inject_version():
