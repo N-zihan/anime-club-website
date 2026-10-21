@@ -10,7 +10,7 @@
    ============================================================ */
 :root {
     /* ---- 版式尺寸 ---- */
-    --nav-height: 64px;
+    --nav-height: 4rem;
     --content-max: 1300px;
 
     --radius-xs: 8px;
@@ -150,7 +150,7 @@ body {
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: 'Segoe UI', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    font-size: 16px;
+    font-size: 1rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
@@ -1712,7 +1712,7 @@ tbody tr:hover {
 
 @media (max-width: 700px) {
     :root {
-        --nav-height: 58px;
+        --nav-height: 3.625rem;
     }
 
     main.main-content {
@@ -1841,4 +1841,369 @@ tbody tr:hover {
     background: var(--alert-bg-warning);
     color: var(--alert-text-warning);
     border-color: var(--alert-border-warning);
+}
+
+/* ============================================================
+   16. 本地偏好（设置页）：字号缩放 + 减少动效
+   —— 由 app/version 无关的前端偏好驱动，属性挂在 <html> 上 ——
+   ============================================================ */
+html {
+    font-size: 16px;
+}
+
+html[data-font="large"] {
+    font-size: 17.5px;
+}
+
+html[data-font="xlarge"] {
+    font-size: 19px;
+}
+
+/* 减少动效：用户在设置页手动开启 */
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+}
+
+html[data-motion="reduced"] .card:hover,
+html[data-motion="reduced"] .btn:hover,
+html[data-motion="reduced"] .btn-primary:hover {
+    transform: none;
+}
+
+/* 同时尊重设备自身设置（系统级「减少动态效果」） */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================================
+   17. 设置页（外观与显示 / 数据与隐私）
+   ============================================================ */
+.settings-page {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.settings-title {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.settings-sub {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.settings-section {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-weak);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+
+.settings-section-title {
+    margin: 0 0 var(--spacing-md);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-row:first-of-type {
+    padding-top: 4px;
+}
+
+.settings-row:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.settings-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.settings-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.settings-desc {
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+}
+
+.pref-options {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.pref-option {
+    min-height: 44px;
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--glass-bg-strong);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.pref-option:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.pref-option.is-active,
+.pref-option.is-active:hover {
+    background: var(--accent-strong);
+    border-color: transparent;
+    color: #fff;
+}
+
+.pref-option:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.btn-danger {
+    background: var(--alert-bg-danger);
+    color: var(--alert-text-danger);
+    border-color: var(--alert-border-danger);
+}
+
+.btn-danger:hover {
+    background: var(--alert-text-danger);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-1px);
+}
+
+.settings-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* ---- 设置页：复选框组 / 开关 / 下拉 / 表单动作 ---- */
+.settings-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    justify-content: flex-end;
+}
+
+.settings-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--glass-bg-strong);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings-check:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.settings-check input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.settings-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings-switch input {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px;
+    height: 26px;
+    margin: 0;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.settings-switch input::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: var(--shadow-weak);
+    transition: transform 0.2s ease;
+}
+
+.settings-switch input:checked {
+    background: var(--accent-strong);
+    border-color: transparent;
+}
+
+.settings-switch input:checked::after {
+    transform: translateX(20px);
+}
+
+.settings-select {
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--glass-bg-strong);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--spacing-md);
+}
+
+.settings-form-actions .btn {
+    min-height: 44px;
+    padding: 10px 22px;
+}
+
+.settings-login-hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    line-height: 1.7;
+}
+
+/* 设置页的操作按钮加大到 44px，保证手指点得准（其余 .btn 保持不变） */
+.settings-row .btn,
+.settings-links .btn {
+    min-height: 44px;
+    padding: 10px 20px;
+}
+
+.settings-footnote {
+    margin: 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+.settings-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 1200;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    background: var(--accent-strong);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-pop);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 16px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.settings-toast.is-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+@media (max-width: 700px) {
+    .settings-section {
+        padding: var(--spacing-md);
+    }
+
+    .settings-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pref-options {
+        width: 100%;
+    }
+
+    .settings-checks {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .settings-form-actions .btn {
+        width: 100%;
+    }
+
+    .pref-option {
+        flex: 1 1 auto;
+    }
+
+    .settings-row .btn {
+        width: 100%;
+    }
 }

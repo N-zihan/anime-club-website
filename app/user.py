@@ -30,6 +30,8 @@ from sqlalchemy import func
 
 from .config import AVATAR_MAX_SIZE
 from .models import db, User, Message, Notification
+from .preferences import (get_preferences, muted_types,
+                          normalize_preferences, save_preferences)
 from .utils import (allowed_file, compress_image, get_or_404,
                     upload_avatar_to_storage, code_digest, code_matches)
 from .auth import send_verification_email, send_welcome_email
@@ -322,19 +324,20 @@ def dismiss_bind_prompt():
 
 @user_bp.route('/notifications')
 def notifications():
-    """通知列表页"""
+    """通知列表页（已静音的类型不出现，但仍保留在库中，取消静音后可见）"""
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
 
-    items = Notification.query.filter_by(
-        user_id=session['user_id']
-    ).order_by(Notification.created_at.desc()).all()
-
+    muted = muted_types(db.session.get(User, session['user_id']))
+    query = Notification.query.filter_by(user_id=session['user_id'])
+    if muted:
+        query = query.filter(~Notification.type.in_(muted))
+    items = query.order_by(Notification.created_at.desc()).all()
     # 时间转东八区
     for n in items:
         n.created_at = n.created_at + timedelta(hours=8)
 
-    return render_template('notifications.html', notifications=items)
+    return render_template('notifications.html', notifications=items, muted_types=muted)
 
 
 @user_bp.route('/notifications/read/<int:nid>')
@@ -356,13 +359,17 @@ def notification_read(nid):
 
 @user_bp.route('/notifications/read_all')
 def notification_read_all():
-    """全部标记已读"""
+    """全部标记已读（已静音的类型不参与，避免它们被静默置读）"""
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
-    Notification.query.filter_by(
+    muted = muted_types(db.session.get(User, session['user_id']))
+    query = Notification.query.filter_by(
         user_id=session['user_id'],
         is_read=False
-    ).update({'is_read': True})
+    )
+    if muted:
+        query = query.filter(~Notification.type.in_(muted))
+    query.update({'is_read': True})
     db.session.commit()
     flash('已全部标记为已读', 'success')
     return redirect(url_for('user.notifications'))
@@ -370,11 +377,36 @@ def notification_read_all():
 
 @user_bp.route('/api/notifications/count')
 def notification_count():
-    """返回未读数（给导航栏铃铛用）"""
+    """返回未读数（给导航栏铃铛用；已静音的类型不计入）"""
     if not session.get('user_id'):
         return jsonify({'count': 0})
-    count = Notification.query.filter_by(
+    muted = muted_types(db.session.get(User, session['user_id']))
+    query = Notification.query.filter_by(
         user_id=session['user_id'],
         is_read=False
-    ).count()
-    return jsonify({'count': count})
+    )
+    if muted:
+        query = query.filter(~Notification.type.in_(muted))
+    return jsonify({'count': query.count()})
+
+
+@user_bp.route('/settings/notifications', methods=['POST'])
+def save_notification_settings():
+    """保存「通知与免打扰」设置（账号级，存 users.preferences）"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    user = db.session.get(User, session['user_id'])
+    if user is None:
+        return redirect(url_for('auth.login'))
+
+    prefs = get_preferences(user)
+    notify = dict(prefs['notify'])
+    notify['muted_types'] = request.form.getlist('muted_types')
+    notify['email_enabled'] = request.form.get('email_enabled') is not None
+    notify['badge_enabled'] = request.form.get('badge_enabled') is not None
+    notify['badge_poll_seconds'] = request.form.get('badge_poll_seconds')
+
+    save_preferences(user, normalize_preferences({'notify': notify}))
+    db.session.commit()
+    flash('通知设置已保存', 'success')
+    return redirect(url_for('public.settings') + '#notify-section')

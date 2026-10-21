@@ -5,15 +5,19 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{{ club_name }}</title>
     <link href="{{ url_for('static', filename='favicon.ico') }}" rel="icon" type="image/x-icon">
-    <!-- 主题初始化：与全站共用 anime_club_theme，避免进入页与内页主题不一致 -->
+    <!-- 本地偏好初始化：与全站共用 anime_club_theme / _font / _motion，尽早执行避免闪烁 -->
     <script>
     (function () {
         try {
+            var root = document.documentElement;
             var saved = localStorage.getItem('anime_club_theme');
             var theme = (saved === 'dark' || saved === 'light')
                 ? saved
                 : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
-            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+            var font = localStorage.getItem('anime_club_font');
+            if (font === 'large' || font === 'xlarge') root.setAttribute('data-font', font);
+            if (localStorage.getItem('anime_club_motion') === 'reduced') root.setAttribute('data-motion', 'reduced');
         } catch (e) {}
     })();
     </script>

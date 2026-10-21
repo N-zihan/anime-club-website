@@ -6,6 +6,7 @@
 import os
 
 from .models import db, Notification, User
+from .preferences import should_send_mail
 from .auth import send_email, send_email_batch
 
 club_name = os.getenv('CLUB_NAME', '动漫社')
@@ -73,10 +74,10 @@ def notify(user_id: int, title: str, content: str = '', notify_type: str = 'syst
     )
     db.session.add(n)
 
-    # 2. 邮件通知
+    # 2. 邮件通知（尊重用户的通知偏好：关闭邮件或静音该类型时不发）
     if send_mail:
         user = db.session.get(User, user_id)
-        if user and user.email:
+        if user and user.email and should_send_mail(user, notify_type):
             html = _build_email_html(title, content or '你有一条新通知', _absolute_link(link))
             try:
                 send_email(user.email, f'【{club_name}】{title}', html, is_html=True)
@@ -106,9 +107,9 @@ def notify_all(title: str, content: str = '', notify_type: str = 'system',
             link=link,
         ))
 
-    # 2. 邮件通知：一次连接批量发送
+    # 2. 邮件通知：一次连接批量发送（按各用户的静音/邮件偏好过滤）
     if send_mail:
-        emails = [u.email for u in users if u.email]
+        emails = [u.email for u in users if u.email and should_send_mail(u, notify_type)]
         if emails:
             html = _build_email_html(title, content or '你有一条新通知', _absolute_link(link))
             send_email_batch(emails, f'【{club_name}】{title}', html, is_html=True)

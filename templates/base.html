@@ -21,15 +21,19 @@
     <meta property="og:image" content="{{ request.url_root }}static/images/icon-512.png">
     <meta name="twitter:card" content="summary">
 
-    <!-- 主题初始化：尽早执行，避免昼夜模式闪烁 -->
+    <!-- 本地偏好初始化：尽早执行，避免主题 / 字号 / 动效闪烁 -->
     <script>
     (function () {
         try {
+            var root = document.documentElement;
             var saved = localStorage.getItem('anime_club_theme');
             var theme = (saved === 'dark' || saved === 'light')
                 ? saved
                 : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
-            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+            var font = localStorage.getItem('anime_club_font');
+            if (font === 'large' || font === 'xlarge') root.setAttribute('data-font', font);
+            if (localStorage.getItem('anime_club_motion') === 'reduced') root.setAttribute('data-motion', 'reduced');
         } catch (e) {}
     })();
     </script>
@@ -81,7 +85,8 @@
                     <span>🔔 通知中心</span>
                     <span id="notif-badge" class="notif-badge" style="display:none;"></span>
                 </a>
-                <a class="drawer-item" href="{{ url_for('user.profile') }}">⚙️ 个人设置</a>
+                <a class="drawer-item" href="{{ url_for('user.profile') }}">👤 个人资料</a>
+                <a class="drawer-item" href="{{ url_for('public.settings') }}">⚙️ 设置</a>
                 {% if is_admin %}
                 <a class="drawer-item" href="{{ url_for('admin.admin_entry') }}">🛠️ 管理后台</a>
                 {% endif %}
@@ -93,6 +98,7 @@
                     <a class="btn btn-primary" href="{{ url_for('auth.login') }}">登录</a>
                     <a class="btn btn-ghost" href="{{ url_for('auth.register') }}">注册</a>
                 </div>
+                <a class="drawer-item" href="{{ url_for('public.settings') }}">⚙️ 设置</a>
             </div>
             {% endif %}
         </div>
@@ -813,63 +819,109 @@
     });
 </script>
 
-<!-- ====== 昼夜模式：主题切换 ====== -->
+<!-- ====== 本地偏好中心：主题 / 字号 / 动效（供导航按钮与设置页共用） ====== -->
 <script>
     (function() {
         const THEME_KEY = 'anime_club_theme';
+        const FONT_KEY = 'anime_club_font';
+        const MOTION_KEY = 'anime_club_motion';
 
-        function getPreferredTheme() {
-            const saved = localStorage.getItem(THEME_KEY);
-            if (saved === 'dark' || saved === 'light') {
-                return saved;
-            }
-            // 浏览器系统偏好
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                return 'dark';
-            }
-            return 'light';
+        function readKey(key) {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function writeKey(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) {}
+        }
+        function systemPrefersDark() {
+            return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         }
 
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-            }
-            // 更新按钮图标
+        // 主题：'light' / 'dark' / 'system'（未设置视为跟随系统）
+        function themePreference() {
+            const saved = readKey(THEME_KEY);
+            return (saved === 'dark' || saved === 'light' || saved === 'system') ? saved : 'system';
+        }
+        function resolvedTheme() {
+            const pref = themePreference();
+            if (pref === 'light' || pref === 'dark') return pref;
+            return systemPrefersDark() ? 'dark' : 'light';
+        }
+        function applyTheme() {
+            const theme = resolvedTheme();
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
             const btn = document.getElementById('theme-toggle');
             if (btn) {
                 btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+                btn.title = themePreference() === 'system' ? '切换昼夜模式（当前跟随系统）' : '切换昼夜模式';
+                btn.setAttribute('aria-label', btn.title);
             }
-            localStorage.setItem(THEME_KEY, theme);
+            return theme;
+        }
+        function setTheme(pref) {
+            writeKey(THEME_KEY, pref);
+            return applyTheme();
         }
 
-        // 初始化
-        const theme = getPreferredTheme();
-        applyTheme(theme);
+        // 字号：'normal' / 'large' / 'xlarge'
+        function fontPreference() {
+            const saved = readKey(FONT_KEY);
+            return (saved === 'large' || saved === 'xlarge') ? saved : 'normal';
+        }
+        function applyFont() {
+            const pref = fontPreference();
+            if (pref === 'normal') document.documentElement.removeAttribute('data-font');
+            else document.documentElement.setAttribute('data-font', pref);
+            return pref;
+        }
 
-        // 按钮切换
+        // 动效：'normal' / 'reduced'
+        function motionPreference() {
+            return readKey(MOTION_KEY) === 'reduced' ? 'reduced' : 'normal';
+        }
+        function applyMotion() {
+            const pref = motionPreference();
+            if (pref === 'reduced') document.documentElement.setAttribute('data-motion', 'reduced');
+            else document.documentElement.removeAttribute('data-motion');
+            return pref;
+        }
+
+        // 暴露给设置页复用，避免两处逻辑漂移
+        window.acPrefs = {
+            theme: themePreference,
+            resolvedTheme: resolvedTheme,
+            setTheme: setTheme,
+            font: fontPreference,
+            setFont: function(pref) { writeKey(FONT_KEY, pref); return applyFont(); },
+            motion: motionPreference,
+            setMotion: function(pref) { writeKey(MOTION_KEY, pref); return applyMotion(); },
+            applyAll: function() { applyTheme(); applyFont(); applyMotion(); }
+        };
+
+        applyTheme();
+
+        // 导航栏按钮：在明/暗之间快速切换（若此前为“跟随系统”，则以当前实际主题的反面作为显式偏好）
         document.addEventListener('DOMContentLoaded', function() {
             const btn = document.getElementById('theme-toggle');
             if (btn) {
                 btn.addEventListener('click', function() {
-                    const current = document.documentElement.getAttribute('data-theme');
-                    const next = current === 'dark' ? 'light' : 'dark';
-                    applyTheme(next);
+                    setTheme(resolvedTheme() === 'dark' ? 'light' : 'dark');
                 });
             }
         });
 
-        // 监听系统主题变化
+        // 监听系统主题变化：仅在“跟随系统”时同步
         if (window.matchMedia) {
             const mq = window.matchMedia('(prefers-color-scheme: dark)');
-            mq.addEventListener('change', function(e) {
-                // 只有用户没有手动保存偏好时才跟随系统
-                if (!localStorage.getItem(THEME_KEY)) {
-                    applyTheme(e.matches ? 'dark' : 'light');
-                }
+            mq.addEventListener('change', function() {
+                if (themePreference() === 'system') applyTheme();
             });
         }
+
+        // 其他标签页/页面改了偏好时同步（例如从设置页返回）
+        window.addEventListener('storage', function(e) {
+            if (!e.key || e.key.indexOf('anime_club_') === 0) window.acPrefs.applyAll();
+        });
     })();
 </script>
 
@@ -940,6 +992,8 @@
 </script>
 
 {% if session.user_id %}
+{% set notify_prefs = user_prefs.get('notify', {}) %}
+{% if notify_prefs.get('badge_enabled', True) %}
 <script>
     function loadNotifCount() {
         fetch('/api/notifications/count')
@@ -957,8 +1011,10 @@
             .catch(() => {});
     }
     loadNotifCount();
-    setInterval(loadNotifCount, 60000);  // 每分钟刷新一次
+    // 刷新间隔可在「设置 → 通知与免打扰」里改为 60 / 120 / 300 秒
+    setInterval(loadNotifCount, {{ (notify_prefs.get('badge_poll_seconds', 60) | int) * 1000 }});
 </script>
+{% endif %}
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/upload-compress.js') }}"></script>

@@ -50,6 +50,7 @@ from .contest_engine import (
 )
 from .models import (db, User, Activity, Photo, Message, Reply, Contest,
                      Nomination, Candidate, ContestVote)
+from .preferences import BADGE_POLL_CHOICES, NOTIFY_LABELS, NOTIFY_TYPES
 from .utils import (get_supabase, compress_image, get_or_404, allowed_file,
                     is_public_http_url, safe_get)
 from .notify import notify
@@ -224,6 +225,19 @@ def splash():
                           og_title='动漫社官网',
                           og_description='动漫社官网，集社团展示、互动交流、资源分享、线上赛事于一体',
                           og_image='/static/images/icon-512.png')
+
+
+@public_bp.route('/settings')
+def settings():
+    """站点设置页：外观与显示 / 通知与免打扰 / 数据与隐私。
+
+    页面本身对访客开放（外观与本地数据偏好无需登录），
+    账号级设置（通知）在模板里按登录状态分别渲染表单或登录提示。
+    """
+    return render_template('settings.html',
+                           notify_all_types=NOTIFY_TYPES,
+                           notify_labels=NOTIFY_LABELS,
+                           badge_poll_choices=BADGE_POLL_CHOICES)
 
 
 @public_bp.route('/home')

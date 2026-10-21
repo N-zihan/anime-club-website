@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}设置{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="settings-page">
+    <header class="settings-header">
+        <h1 class="settings-title">⚙️ 设置</h1>
+        <p class="settings-sub">这里的偏好保存在本机浏览器，改完立即生效，无需保存；未登录也能使用。</p>
+    </header>
+
+    <!-- ====== 外观与显示 ====== -->
+    <section class="settings-section" aria-labelledby="settings-appearance">
+        <h2 class="settings-section-title" id="settings-appearance">🎨 外观与显示</h2>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">主题</span>
+                <span class="settings-desc">选择「跟随系统」后，会随你的设备昼夜模式自动切换。</span>
+            </div>
+            <div class="pref-options" role="radiogroup" aria-label="主题">
+                <button type="button" class="pref-option" data-group="theme" data-value="light" role="radio">浅色</button>
+                <button type="button" class="pref-option" data-group="theme" data-value="dark" role="radio">深色</button>
+                <button type="button" class="pref-option" data-group="theme" data-value="system" role="radio">跟随系统</button>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">字号</span>
+                <span class="settings-desc">整站文字大小，觉得字小就调大一点。</span>
+            </div>
+            <div class="pref-options" role="radiogroup" aria-label="字号">
+                <button type="button" class="pref-option" data-group="font" data-value="normal" role="radio">标准</button>
+                <button type="button" class="pref-option" data-group="font" data-value="large" role="radio">大</button>
+                <button type="button" class="pref-option" data-group="font" data-value="xlarge" role="radio">特大</button>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">减少动效</span>
+                <span class="settings-desc">关闭过渡与动画，适合晕动、低配设备或省电场景；设备本身开启了「减少动态效果」时同样生效。</span>
+            </div>
+            <div class="pref-options" role="radiogroup" aria-label="减少动效">
+                <button type="button" class="pref-option" data-group="motion" data-value="normal" role="radio">保持动效</button>
+                <button type="button" class="pref-option" data-group="motion" data-value="reduced" role="radio">减少动效</button>
+            </div>
+        </div>
+    </section>
+
+    {% if session.user_id %}
+    <!-- ====== 通知与免打扰（账号级，存 users.preferences） ====== -->
+    <section class="settings-section" id="notify-section" aria-labelledby="settings-notify">
+        <h2 class="settings-section-title" id="settings-notify">🔔 通知与免打扰</h2>
+        {% set nprefs = user_prefs.get('notify', {}) %}
+        <form method="post" action="{{ url_for('user.save_notification_settings') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="settings-row">
+                <div class="settings-label">
+                    <span class="settings-name">静音类型</span>
+                    <span class="settings-desc">勾选后这类通知不再出现在通知中心、也不计入红点；取消勾选即可重新看到历史记录。</span>
+                </div>
+                <div class="settings-checks">
+                    {% for t in notify_all_types %}
+                    <label class="settings-check">
+                        <input type="checkbox" name="muted_types" value="{{ t }}"
+                               {% if t in nprefs.get('muted_types', []) %}checked{% endif %}>
+                        <span>{{ notify_labels[t] }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-label">
+                    <span class="settings-name">邮件通知</span>
+                    <span class="settings-desc">关闭后站内通知照常保留，只是不再往邮箱发信。</span>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" name="email_enabled"
+                           {% if nprefs.get('email_enabled', True) %}checked{% endif %}>
+                    <span>接收邮件</span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-label">
+                    <span class="settings-name">未读红点</span>
+                    <span class="settings-desc">关闭轮询可省电省流量；通知不会丢，进通知中心一样能看到。</span>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" name="badge_enabled"
+                           {% if nprefs.get('badge_enabled', True) %}checked{% endif %}>
+                    <span>显示红点</span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <div class="settings-label">
+                    <span class="settings-name">红点刷新间隔</span>
+                    <span class="settings-desc">间隔越短越及时，也越费流量。</span>
+                </div>
+                <select class="settings-select" name="badge_poll_seconds" aria-label="红点刷新间隔">
+                    {% for seconds in badge_poll_choices %}
+                    <option value="{{ seconds }}"
+                            {% if nprefs.get('badge_poll_seconds', 60) == seconds %}selected{% endif %}>{{ seconds }} 秒</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="settings-form-actions">
+                <button type="submit" class="btn btn-primary">保存通知设置</button>
+            </div>
+        </form>
+    </section>
+    {% else %}
+    <section class="settings-section" id="notify-section" aria-labelledby="settings-notify-guest">
+        <h2 class="settings-section-title" id="settings-notify-guest">🔔 通知与免打扰</h2>
+        <p class="settings-login-hint">通知免打扰是账号级设置，换设备也会跟着走。请先
+            <a href="{{ url_for('auth.login') }}">登录</a>，再来这里按类型静音、管住邮件与未读红点。</p>
+    </section>
+    {% endif %}
+
+    <!-- ====== 数据与隐私 ====== -->
+    <section class="settings-section" aria-labelledby="settings-data">
+        <h2 class="settings-section-title" id="settings-data">🧹 数据与隐私</h2>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">搜索历史</span>
+                <span class="settings-desc">番剧新闻页的搜索记录只存在本机，当前 <strong id="sh-count">0</strong> 条。</span>
+            </div>
+            <button type="button" class="btn btn-ghost" id="sh-clear">清除搜索历史</button>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">新手引导</span>
+                <span class="settings-desc">重置后，下次打开网站会重新播放 30 秒新手指引。</span>
+            </div>
+            <button type="button" class="btn btn-ghost" id="onboarding-reset">重新观看引导</button>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-label">
+                <span class="settings-name">离线缓存</span>
+                <span class="settings-desc">页面样式/图片异常、或更新后看不到新版时，清理缓存并刷新通常能解决。</span>
+            </div>
+            <button type="button" class="btn btn-ghost" id="cache-clear">清理缓存并刷新</button>
+        </div>
+
+        <div class="settings-row settings-row-danger">
+            <div class="settings-label">
+                <span class="settings-name">恢复默认</span>
+                <span class="settings-desc">清除本机全部偏好（主题 / 字号 / 动效 / 引导标记），不影响账号与站内数据。</span>
+            </div>
+            <button type="button" class="btn btn-danger" id="reset-all">清空本地设置</button>
+        </div>
+    </section>
+
+    {% if session.user_id %}
+    <!-- ====== 账号（跳转入口，改资料不在这里） ====== -->
+    <section class="settings-section" aria-labelledby="settings-account">
+        <h2 class="settings-section-title" id="settings-account">👤 账号</h2>
+        <div class="settings-links">
+            <a class="btn btn-ghost" href="{{ url_for('user.profile') }}">个人资料</a>
+            <a class="btn btn-ghost" href="{{ url_for('user.notifications') }}">通知中心</a>
+            <a class="btn btn-ghost" href="{{ url_for('user.change_password') }}">修改密码</a>
+        </div>
+    </section>
+    {% endif %}
+
+    <p class="settings-footnote">更多设置（通知免打扰、语言与翻译）正在开发中。</p>
+</div>
+
+<div class="settings-toast" id="settings-toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+    var SH_KEY = 'anime_news_search_history_v1';
+
+    /* ---- 轻提示 ---- */
+    var toastEl = document.getElementById('settings-toast');
+    var toastTimer = null;
+    function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add('is-visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove('is-visible'); }, 2200);
+    }
+
+    /* ---- 外观：选项按钮与 acPrefs（base.html 提供）同步 ---- */
+    function paintOptions() {
+        var prefs = window.acPrefs;
+        if (!prefs) return;
+        var current = { theme: prefs.theme(), font: prefs.font(), motion: prefs.motion() };
+        document.querySelectorAll('.pref-option').forEach(function (btn) {
+            var on = current[btn.dataset.group] === btn.dataset.value;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+    }
+    document.querySelectorAll('.pref-option').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var prefs = window.acPrefs;
+            if (!prefs) return;
+            var group = btn.dataset.group, value = btn.dataset.value;
+            if (group === 'theme') prefs.setTheme(value);
+            else if (group === 'font') prefs.setFont(value);
+            else if (group === 'motion') prefs.setMotion(value);
+            paintOptions();
+            toast(value === 'reduced' ? '已减少动效' : '已应用');
+        });
+    });
+    // base.html 的 acPrefs 在此脚本之后才定义，所以首帧先不标选中态，等文档解析完补一遍
+    function initPrefs() {
+        paintOptions();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPrefs);
+    } else {
+        initPrefs();
+    }
+
+    /* ---- 搜索历史 ---- */
+    function readHistory() {
+        try {
+            var raw = localStorage.getItem(SH_KEY);
+            var list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) { return []; }
+    }
+    function paintHistory() {
+        var el = document.getElementById('sh-count');
+        if (el) el.textContent = String(readHistory().length);
+    }
+    paintHistory();
+
+    var shClear = document.getElementById('sh-clear');
+    if (shClear) {
+        shClear.addEventListener('click', function () {
+            try { localStorage.removeItem(SH_KEY); } catch (e) {}
+            paintHistory();
+            toast('搜索历史已清除');
+        });
+    }
+
+    /* ---- 新手引导 ---- */
+    var onboardingReset = document.getElementById('onboarding-reset');
+    if (onboardingReset) {
+        onboardingReset.addEventListener('click', function () {
+            var removed = 0;
+            try {
+                var keys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && k.indexOf('onboarding_done_') === 0) keys.push(k);
+                }
+                keys.forEach(function (k) { localStorage.removeItem(k); removed++; });
+            } catch (e) {}
+            onboardingReset.textContent = '已重置';
+            toast(removed > 0 ? '已重置，下次打开网站会重新播放引导' : '引导标记不存在，下次打开即会播放');
+        });
+    }
+
+    /* ---- 离线缓存 ---- */
+    var cacheClear = document.getElementById('cache-clear');
+    if (cacheClear) {
+        cacheClear.addEventListener('click', function () {
+            var tasks = [];
+            if (window.caches && caches.keys) {
+                tasks.push(caches.keys().then(function (names) {
+                    return Promise.all(names.map(function (n) { return caches.delete(n); }));
+                }));
+            }
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                tasks.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.update().catch(function () {}); }));
+                }));
+            }
+            Promise.all(tasks).catch(function () {}).then(function () {
+                toast('缓存已清理，正在刷新…');
+                setTimeout(function () { location.reload(); }, 700);
+            });
+        });
+    }
+
+    /* ---- 恢复默认 ---- */
+    var resetAll = document.getElementById('reset-all');
+    if (resetAll) {
+        resetAll.addEventListener('click', function () {
+            if (!window.confirm('确定清除本机全部偏好设置吗？账号与站内数据不受影响。')) return;
+            try {
+                var keys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && (k.indexOf('anime_club_') === 0 || k.indexOf('onboarding_done_') === 0)) keys.push(k);
+                }
+                keys.forEach(function (k) { localStorage.removeItem(k); });
+            } catch (e) {}
+            toast('已恢复默认，正在刷新…');
+            setTimeout(function () { location.reload(); }, 700);
+        });
+    }
+})();
+</script>
+{% endblock %}

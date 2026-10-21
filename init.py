@@ -18,6 +18,15 @@ from app import create_app, db
 from app.utils import get_supabase
 from app.video_proxy import init_video_proxy
 
+# Windows 控制台默认 GBK：log() 里的 ✓/✗ 会让 print 抛 UnicodeEncodeError，
+# 异常又被上层 except 捕到，于是真正的操作结果被一行 traceback 吞掉（曾据此误判建表失败）。
+# 统一把标准输出改成 UTF-8 + replace，保证日志永远打得出来。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except (AttributeError, ValueError, OSError):
+        pass
+
 app = create_app()
 
 REQUIRED_BUCKETS = ['photos', 'contest_images', 'avatars']

@@ -30,6 +30,8 @@ class User(db.Model):
     # 会话安全字段
     session_token = db.Column(db.String(255), nullable=True)
     session_token_expires = db.Column(db.DateTime, nullable=True)
+    # 账号级偏好（JSON 文本，读写规则见 app/preferences.py）：NULL 表示全部走默认值
+    preferences = db.Column(db.Text, nullable=True)
     
     def generate_session_token(self):
         """生成安全的会话令牌"""

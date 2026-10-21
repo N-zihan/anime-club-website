@@ -25,7 +25,8 @@ from flask_wtf.csrf import CSRFError
 from .admin import admin_bp
 from .auth import auth_bp
 from .config import PWA_THEME_COLOR, PWA_BACKGROUND_COLOR
-from .models import db
+from .models import db, User
+from .preferences import get_preferences
 from .public import (
     public_bp, page_not_found, internal_server_error, forbidden,
     method_not_allowed, bad_request, request_entity_too_large,
@@ -214,6 +215,8 @@ def create_app():
             'public.api_anime_news_detail',
             'public.anime_news',
             'public.anime_news_article',
+            # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用
+            'public.settings',
         ]
         # request.endpoint 为 None 表示没有匹配任何路由：应交给 404 处理器，
         # 而不是把匿名访客重定向到登录页（原先会让所有 404 看起来像 302）。
@@ -234,6 +237,14 @@ def create_app():
         role = session.get('user_role')
         is_admin = role in ('owner', 'staff')
         return {'is_admin': is_admin}
+
+    @app.context_processor
+    def inject_user_preferences():
+        """当前用户的账号级偏好（未登录返回空 dict，模板用 get/默认值兜底）"""
+        user_id = session.get('user_id')
+        if not user_id:
+            return {'user_prefs': {}}
+        return {'user_prefs': get_preferences(db.session.get(User, user_id))}
 
     @app.context_processor
     def inject_avatar_helper():
