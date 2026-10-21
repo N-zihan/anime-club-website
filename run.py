@@ -98,8 +98,7 @@ if os.getenv('TESTING') == '1':
 #     INIT_DB=1 python run.py
 #
 # 局限：db.create_all() 只新建"缺失的表"，不会给已存在的 user 表补列。
-#       补列请执行 docs/sql/v4.15.2_add_video_proxy_and_session.sql，
-#       或运行既有的运维脚本 python init.py。
+#       补列请运行既有运维脚本 python init.py（该脚本幂等，只加列不删列）。
 # 为什么不默认开启：Vercel Serverless 每次冷启动都是新实例，常驻 create_all
 #       会拖慢冷启动并额外占用 Supabase 免费计划的连接配额。
 if os.getenv('INIT_DB') == '1':

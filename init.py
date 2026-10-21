@@ -137,11 +137,11 @@ def main():
     added_cols = ensure_columns()
     created_buckets = ensure_buckets()
     
-    # 初始化视频代理系统
+    # 视频代理系统（当前按设计未启用，init_video_proxy 为幂等空操作）
     try:
         with app.app_context():
             init_video_proxy()
-        log('✓ 视频代理系统初始化完成')
+        log('✓ 视频代理系统检查完成（当前未启用）')
     except Exception as e:
         log(f'✗ 视频代理系统初始化失败: {e}')
 

@@ -28,3 +28,14 @@ def register_video_proxy_routes(app):
     :return: 未启用原因说明
     """
     return 'video proxy disabled by design (see module docstring)'
+
+
+def init_video_proxy():
+    """兼容入口：视频代理已停用，这里不做任何初始化/建表操作。
+
+    保留该函数名，是为了让既有运维脚本 `init.py` 继续可导入可运行
+    （该脚本会调用本函数并打印结果）；停用状态下必须保持空操作与幂等。
+
+    :return: 0，表示未启用任何代理相关资源
+    """
+    return 0

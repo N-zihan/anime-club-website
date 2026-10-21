@@ -221,8 +221,8 @@ def create_app():
             return redirect(url_for('auth.login'))
         return None
 
-    # 版本号
-    app.config['APP_VERSION'] = os.getenv('APP_VERSION', 'dev')
+    # 版本号（Vercel 等环境可用 APP_VERSION 覆盖；默认值随发布线更新）
+    app.config['APP_VERSION'] = os.getenv('APP_VERSION', 'v4.16.0')
 
     @app.context_processor
     def inject_version():
