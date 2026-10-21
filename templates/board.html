@@ -1,150 +1,62 @@
 {% extends "base.html" %}
-{% block title %}留言板{% endblock %}
+{% block title %}论坛{% endblock %}
+
 {% block content %}
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% for category, message in messages %}
-<div class="alert alert-{{ category }}">{{ message }}</div>
-{% endfor %}
-{% endwith %}
-
-<h2>社员留言板</h2>
-
-<div class="messages-list">
-    <h3>最新留言</h3>
-    {% if messages %}
-    <div class="message-cards">
-        {% for msg in messages %}
-        <div class="message-card">
-            <div class="message-header">
-                <img alt="..." class="msg-avatar"
-                    src="{{ avatar_url(msg.user) }}">
-                <div class="msg-meta">
-                    <strong style="color: var(--text-primary);">{{ msg.user.username if msg.user else msg.nickname }}</strong>
-                    <span class="msg-time">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                </div>
-            </div>
-            <p class="message-body" style="color: var(--text-primary);">{{ msg.content }}</p>
-
-            <!-- 回复列表 -->
-            {% if msg._replies %}
-            <div class="replies-section">
-                {% for reply in msg._replies %}
-                <div class="reply-item">
-                    <img alt="..." class="reply-avatar"
-                         src="{{ avatar_url(reply.user) }}">
-                    <div class="reply-content">
-                        <div class="reply-meta">
-                            <strong style="color: var(--text-primary);">{{ reply.user.username if reply.user else reply.nickname }}</strong>
-                            {% if reply.parent_reply_id %}
-                            {% set parent = reply.parent_reply %}
-                            <span style="color:#4a90d9; font-size:0.8rem;">
-                                    回复 @{{ parent.user.username if parent and parent.user else (parent.nickname if parent else '已删除') }}
-                                </span>
-                            {% endif %}
-                            <span class="msg-time">{{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                        </div>
-                        <p style="color: var(--text-primary);">{{ reply.content }}</p>
-                        <!-- 针对本条回复的回复按钮 -->
-                        <button class="reply-toggle" data-target="reply-form-{{ reply.id }}" onclick="toggleReply(this)"
-                                title="回复">
-                            <svg fill="none" height="14" stroke="currentColor" stroke-linecap="round"
-                                 stroke-linejoin="round"
-                                 stroke-width="2" viewBox="0 0 24 24" width="14">
-                                <polyline points="9 17 4 12 9 7"/>
-                                <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-                            </svg>
-                            回复
-                        </button>
-                        <!-- 针对本条回复的回复表单（隐藏） -->
-                        <form action="{{ url_for('public.add_reply', message_id=reply.message_id) }}" class="reply-form"
-                              id="reply-form-{{ reply.id }}" method="POST"
-                              onsubmit="this.querySelector('.reply-submit').disabled = true; this.querySelector('textarea').readOnly = true;" style="display: none;">
-                            <input name="parent_reply_id" type="hidden" value="{{ reply.id }}">
-                            <div class="reply-input-row">
-                                <textarea name="content" placeholder="写下你的回复..." required rows="2"></textarea>
-                                <button class="reply-submit" type="submit">
-                                    <svg fill="none" height="14" stroke="currentColor" stroke-linecap="round"
-                                         stroke-linejoin="round"
-                                         stroke-width="2" viewBox="0 0 24 24" width="14">
-                                        <line x1="22" x2="11" y1="2" y2="13"/>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                                    </svg>
-                                    发送
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- 留言级别的回复按钮（回复主评论） -->
-            <button class="reply-toggle" data-target="reply-form-msg-{{ msg.id }}" onclick="toggleReply(this)"
-                    title="回复">
-                <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                     stroke-width="2"
-                     viewBox="0 0 24 24" width="16">
-                    <polyline points="9 17 4 12 9 7"/>
-                    <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-                </svg>
-                回复
-            </button>
-
-            <!-- 留言级别的回复表单（回复主评论，默认隐藏） -->
-            <form action="{{ url_for('public.add_reply', message_id=msg.id) }}" class="reply-form"
-                  id="reply-form-msg-{{ msg.id }}" method="POST"
-                  onsubmit="this.querySelector('.reply-submit').disabled = true; this.querySelector('textarea').readOnly = true;" style="display: none;">
-                <input name="parent_reply_id" type="hidden" value="">
-                <div class="reply-input-row">
-                    <textarea name="content" placeholder="写下你的回复..." required rows="2"></textarea>
-                    <button class="reply-submit" type="submit">
-                        <svg fill="none" height="14" stroke="currentColor" stroke-linecap="round"
-                             stroke-linejoin="round"
-                             stroke-width="2" viewBox="0 0 24 24" width="14">
-                            <line x1="22" x2="11" y1="2" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
-                        发送
-                    </button>
-                </div>
-            </form>
+<div class="forum-page">
+    <header class="forum-header">
+        <div class="forum-header-text">
+            <h2>动漫社论坛</h2>
+            <p class="forum-sub">共 {{ total }} 个主题 · 想聊什么就开一帖</p>
         </div>
+        {% if session.user_id %}
+        <a class="btn btn-primary forum-new-btn" href="{{ url_for('public.board_new') }}">✏️ 发起新帖</a>
+        {% else %}
+        <a class="btn btn-primary forum-new-btn" href="{{ url_for('auth.login') }}">登录后发帖</a>
+        {% endif %}
+    </header>
+
+    {% if threads %}
+    <div class="forum-list">
+        {% for t in threads %}
+        <a class="forum-row" href="{{ url_for('public.board_thread', thread_id=t.id) }}">
+            <div class="forum-row-main">
+                <h3 class="forum-row-title">{{ t.title }}</h3>
+                <div class="forum-row-meta">
+                    <span class="forum-author">{{ t.author }}</span>
+                    <span class="forum-dot">·</span>
+                    <span>{{ t.created.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+            <div class="forum-row-stats">
+                <span class="forum-replies">{{ t.reply_count }} 回复</span>
+                <span class="forum-last">最后活跃 {{ t.last_activity.strftime('%m-%d %H:%M') }}</span>
+            </div>
+        </a>
         {% endfor %}
     </div>
+
+    {% if total_pages > 1 %}
+    <nav class="forum-pager">
+        {% if page > 1 %}
+        <a class="btn btn-ghost" href="{{ url_for('public.board', page=page - 1) }}">← 上一页</a>
+        {% else %}
+        <span class="btn btn-ghost is-disabled">← 上一页</span>
+        {% endif %}
+        <span class="forum-pager-info">第 {{ page }} / {{ total_pages }} 页</span>
+        {% if page < total_pages %}
+        <a class="btn btn-ghost" href="{{ url_for('public.board', page=page + 1) }}">下一页 →</a>
+        {% else %}
+        <span class="btn btn-ghost is-disabled">下一页 →</span>
+        {% endif %}
+    </nav>
+    {% endif %}
     {% else %}
-    <p class="empty-hint">暂无留言，来做第一个留言的人吧！</p>
+    <div class="forum-empty">
+        <p>还没有人发过帖子，来做第一个吧。</p>
+        {% if session.user_id %}
+        <a class="btn btn-primary" href="{{ url_for('public.board_new') }}">发起第一帖</a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
-
-<div class="new-message-section">
-    <h3>发表新留言</h3>
-    <form class="new-message-form" method="POST" onsubmit="this.querySelector('.new-msg-submit').disabled = true; this.querySelector('textarea').readOnly = true;">
-        <textarea id="content" name="content" placeholder="分享你的想法..." required rows="3"></textarea>
-        <button class="new-msg-submit" type="submit">
-            <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                 stroke-width="2"
-                 viewBox="0 0 24 24" width="16">
-                <line x1="22" x2="11" y1="2" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-            提交留言
-        </button>
-    </form>
-</div>
-
-<script>
-    function toggleReply(btn) {
-        var targetId = btn.dataset.target;
-        var form = document.getElementById(targetId);
-        if (form) {
-            if (form.style.display === 'block') {
-                form.style.display = 'none';
-            } else {
-                form.style.display = 'block';
-                form.querySelector('textarea').focus();
-            }
-        }
-    }
-</script>
 {% endblock %}

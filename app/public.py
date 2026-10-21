@@ -15,6 +15,7 @@ from datetime import timedelta, datetime, timezone
 from urllib.parse import urlparse
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, Response, abort
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
@@ -282,61 +283,142 @@ def gallery():
     return render_template('gallery.html', activities=activities, uncategorized_photos=uncategorized_photos)
 
 
-@public_bp.route('/board', methods=['GET', 'POST'])
+# ========== 论坛（原留言板） ==========
+BOARD_PAGE_SIZE = 20
+BOARD_TITLE_MAX = 120
+BOARD_CONTENT_MAX = 5000
+
+
+def _cn_time(dt):
+    # 库里存的是 naive UTC，展示统一转东八区
+    return dt + timedelta(hours=8) if dt else dt
+
+
+@public_bp.route('/board')
 def board():
+    # 论坛首页：主题帖列表，按「最后活跃」倒序分页
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+
+    stats = db.session.query(
+        Reply.message_id.label('mid'),
+        func.count(Reply.id).label('reply_count'),
+        func.max(Reply.timestamp).label('last_ts'),
+    ).group_by(Reply.message_id).subquery()
+
+    last_activity = func.coalesce(stats.c.last_ts, Message.timestamp)
+    total = db.session.query(func.count(Message.id)).scalar() or 0
+    rows = (
+        db.session.query(Message, stats.c.reply_count, last_activity.label('last_activity'))
+        .options(joinedload(Message.user))
+        .outerjoin(stats, stats.c.mid == Message.id)
+        .order_by(last_activity.desc(), Message.id.desc())
+        .offset((page - 1) * BOARD_PAGE_SIZE)
+        .limit(BOARD_PAGE_SIZE)
+        .all()
+    )
+
+    threads = [{
+        'id': msg.id,
+        'title': msg.display_title,
+        'author': msg.user.username if msg.user else msg.nickname,
+        'created': _cn_time(msg.timestamp),
+        'last_activity': _cn_time(last_ts or msg.timestamp),
+        'reply_count': int(reply_count or 0),
+    } for msg, reply_count, last_ts in rows]
+
+    total_pages = max(1, (total + BOARD_PAGE_SIZE - 1) // BOARD_PAGE_SIZE)
+    return render_template('board.html', threads=threads, page=page,
+                           total=total, total_pages=total_pages)
+
+
+@public_bp.route('/board', methods=['POST'])
+def board_legacy_post():
+    # 旧版留言板表单的兼容入口：统一引导到论坛发帖页
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    flash('留言板已升级为论坛，请补个标题再发帖', 'info')
+    return redirect(url_for('public.board_new'))
+
+
+@public_bp.route('/board/new', methods=['GET', 'POST'])
+def board_new():
+    # 发帖必须登录：原先只靠全局拦截器兜着，爬虫 UA 旁路可伪造，能匿名发帖
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    form = {'title': '', 'content': ''}
     if request.method == 'POST':
-        # 发帖必须登录：原先只靠全局拦截器兜着，而拦截器的爬虫 UA 旁路可伪造，
-        # 用 `-A Googlebot` 就能匿名发帖。
-        if not session.get('user_id'):
-            return redirect(url_for('auth.login'))
-
-        nickname = session.get('username', '匿名')
-        content = request.form.get('content')
-        if content:
-            # 防重复提交：同一用户 5 秒内发相同内容，直接忽略
-            user_id = session.get('user_id')
-            if user_id:
-                cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=5)
-                duplicate = Message.query.filter(
-                    Message.user_id == user_id,
-                    Message.content == content,
-                    Message.timestamp >= cutoff
-                ).first()
-                if duplicate:
-                    return redirect(url_for('public.board'))
-
+        title = (request.form.get('title') or '').strip()
+        content = (request.form.get('content') or '').strip()
+        form = {'title': title, 'content': content}
+        if len(title) < 2:
+            flash('标题至少 2 个字', 'danger')
+        elif len(title) > BOARD_TITLE_MAX:
+            flash(f'标题不能超过 {BOARD_TITLE_MAX} 个字', 'danger')
+        elif not content:
+            flash('正文不能为空', 'danger')
+        elif len(content) > BOARD_CONTENT_MAX:
+            flash(f'正文不能超过 {BOARD_CONTENT_MAX} 字', 'danger')
+        else:
+            user_id = session['user_id']
+            # 防重复提交：同一用户 5 秒内发相同正文，直接回到已发出的那一帖
+            cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=5)
+            duplicate = Message.query.filter(
+                Message.user_id == user_id,
+                Message.content == content,
+                Message.timestamp >= cutoff
+            ).first()
+            if duplicate:
+                return redirect(url_for('public.board_thread', thread_id=duplicate.id))
             msg = Message(
-                nickname=nickname,
+                title=title,
                 content=content,
-                user_id=user_id
+                nickname=session.get('username', '匿名'),
+                user_id=user_id,
             )
             db.session.add(msg)
             db.session.commit()
-        return redirect(url_for('public.board'))
+            flash('发帖成功', 'success')
+            return redirect(url_for('public.board_thread', thread_id=msg.id))
+    return render_template('board_new.html', form=form,
+                           title_max=BOARD_TITLE_MAX, content_max=BOARD_CONTENT_MAX)
 
-    messages = db.session.query(Message).options(
-        joinedload(Message.user)
-    ).order_by(Message.timestamp.desc()).all()
 
-    all_replies = Reply.query.options(
-        joinedload(Reply.user),
-        joinedload(Reply.parent_reply).joinedload(Reply.user)
-    ).order_by(Reply.timestamp.asc()).all()
+@public_bp.route('/board/<int:thread_id>')
+def board_thread(thread_id):
+    # 帖子详情：主楼 + 全部楼层，底部固定输入框可直接回复本主题
+    thread = db.session.get(Message, thread_id)
+    if not thread:
+        abort(404)
 
-    for reply in all_replies:
-        reply.timestamp = reply.timestamp + timedelta(hours=8)
+    replies = (
+        Reply.query.options(
+            joinedload(Reply.user),
+            joinedload(Reply.parent_reply).joinedload(Reply.user),
+        )
+        .filter_by(message_id=thread_id)
+        .order_by(Reply.timestamp.asc())
+        .all()
+    )
 
-    reply_dict_by_msg = {}
-    for reply in all_replies:
-        if reply.message_id not in reply_dict_by_msg:
-            reply_dict_by_msg[reply.message_id] = []
-        reply_dict_by_msg[reply.message_id].append(reply)
+    parent_names = {}
+    for reply in replies:
+        reply.timestamp = _cn_time(reply.timestamp)
+        if reply.parent_reply_id:
+            parent = reply.parent_reply
+            if parent is None:
+                parent_names[reply.id] = '已删除的楼层'
+            else:
+                parent_names[reply.id] = parent.user.username if parent.user else parent.nickname
 
-    for msg in messages:
-        msg.timestamp = msg.timestamp + timedelta(hours=8)
-        msg._replies = reply_dict_by_msg.get(msg.id, [])
-
-    return render_template('board.html', messages=messages)
+    return render_template(
+        'board_thread.html',
+        thread=thread,
+        thread_time=_cn_time(thread.timestamp),
+        replies=replies,
+        parent_names=parent_names,
+        reply_count=len(replies),
+    )
 
 
 @public_bp.route('/reply/<int:message_id>', methods=['POST'])
@@ -344,14 +426,21 @@ def add_reply(message_id):
     if not session.get('user_id'):
         return redirect(url_for('auth.login'))
 
+    thread = db.session.get(Message, message_id)
+    if not thread:
+        abort(404)
+
     nickname = session.get('username', '匿名')
-    content = request.form.get('content')
+    content = (request.form.get('content') or '').strip()
     parent_reply_id = request.form.get('parent_reply_id')
+
+    if len(content) > BOARD_CONTENT_MAX:
+        flash(f'回复不能超过 {BOARD_CONTENT_MAX} 字', 'danger')
+        return redirect(url_for('public.board_thread', thread_id=message_id))
 
     if content:
         user_id = session.get('user_id')
-
-        # 防重复提交：同一用户 5 秒内发相同内容到同一留言，忽略
+        # 防重复提交：同一用户 5 秒内发相同内容到同一主题，忽略
         cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=5)
         duplicate = Reply.query.filter(
             Reply.user_id == user_id,
@@ -359,38 +448,38 @@ def add_reply(message_id):
             Reply.content == content,
             Reply.timestamp >= cutoff
         ).first()
-        if duplicate:
-            return redirect(url_for('public.board'))
-
-        reply = Reply(
-            nickname=nickname,
-            content=content,
-            message_id=message_id,
-            user_id=user_id,
-            parent_reply_id=int(parent_reply_id) if parent_reply_id else None
-        )
-        db.session.add(reply)
-        db.session.commit()
-        # 通知被回复的人
-        msg = db.session.get(Message, message_id)
-        target_user_id = None
-        if parent_reply_id:
-            parent = db.session.get(Reply, int(parent_reply_id))
-            if parent and parent.user_id and parent.user_id != session.get('user_id'):
-                target_user_id = parent.user_id
-        elif msg and msg.user_id and msg.user_id != session.get('user_id'):
-            target_user_id = msg.user_id
-
-        if target_user_id:
-            notify(
-                target_user_id,
-                f'{nickname} 回复了你',
-                content[:50] + ('...' if len(content) > 50 else ''),
-                notify_type='reply',
-                link=url_for('public.board')
+        if not duplicate:
+            reply = Reply(
+                nickname=nickname,
+                content=content,
+                message_id=message_id,
+                user_id=user_id,
+                parent_reply_id=int(parent_reply_id) if parent_reply_id else None
             )
+            db.session.add(reply)
             db.session.commit()
-    return redirect(url_for('public.board'))
+
+            # 通知被回复的人（回复楼层 → 通知层主；回复主楼 → 通知楼主）
+            target_user_id = None
+            if parent_reply_id:
+                parent = db.session.get(Reply, int(parent_reply_id))
+                if parent and parent.user_id and parent.user_id != user_id:
+                    target_user_id = parent.user_id
+            elif thread.user_id and thread.user_id != user_id:
+                target_user_id = thread.user_id
+
+            if target_user_id:
+                notify(
+                    target_user_id,
+                    f'{nickname} 回复了你',
+                    content[:50] + ('...' if len(content) > 50 else ''),
+                    notify_type='reply',
+                    link=url_for('public.board_thread', thread_id=message_id)
+                )
+                db.session.commit()
+
+    return redirect(url_for('public.board_thread', thread_id=message_id))
+
 
 
 @public_bp.route('/anime_resources')

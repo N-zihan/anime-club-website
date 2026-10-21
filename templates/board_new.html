@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}发起新帖{% endblock %}
+
+{% block content %}
+<div class="forum-page forum-compose">
+    <nav class="thread-crumb">
+        <a href="{{ url_for('public.board') }}">← 返回论坛</a>
+    </nav>
+
+    <header class="forum-header">
+        <div class="forum-header-text">
+            <h2>发起新帖</h2>
+            <p class="forum-sub">标题写清楚一点，别人才知道你在聊什么</p>
+        </div>
+    </header>
+
+    <form class="forum-form" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label class="forum-field">
+            <span class="forum-field-name">标题</span>
+            <input type="text" name="title" value="{{ form.title }}" maxlength="{{ title_max }}"
+                   placeholder="一句话说清楚主题（至少 2 个字）" required autofocus>
+        </label>
+
+        <label class="forum-field">
+            <span class="forum-field-name">正文</span>
+            <textarea name="content" rows="10" maxlength="{{ content_max }}"
+                      placeholder="详细说说你的想法…" required>{{ form.content }}</textarea>
+        </label>
+
+        <div class="forum-form-actions">
+            <a class="btn btn-ghost" href="{{ url_for('public.board') }}">取消</a>
+            <button class="btn btn-primary" type="submit">发布</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -43,9 +43,9 @@ test.describe('后台管理', () => {
         await expect(page.locator('h2')).toHaveText('用户管理');
     });
 
-    test('留言管理加载', async ({page}) => {
+    test('帖子管理加载', async ({page}) => {
         await page.goto('/admin/messages');
-        await expect(page.locator('h2')).toHaveText('留言管理');
+        await expect(page.locator('h2')).toHaveText('帖子管理');
     });
 
     test('赛事管理加载', async ({page}) => {

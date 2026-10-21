@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ thread.display_title }} - 论坛{% endblock %}
+{% block body_class %}has-composer{% endblock %}
+
+{% block content %}
+<div class="thread-page">
+    <nav class="thread-crumb">
+        <a href="{{ url_for('public.board') }}">← 返回论坛</a>
+    </nav>
+
+    <article class="thread-post thread-post-op">
+        <header class="thread-post-head">
+            <img class="thread-avatar" src="{{ avatar_url(thread.user) }}" alt="">
+            <div class="thread-post-meta">
+                <strong>{{ thread.user.username if thread.user else thread.nickname }}</strong>
+                <span class="thread-badge">楼主</span>
+                <time>{{ thread_time.strftime('%Y-%m-%d %H:%M') }}</time>
+            </div>
+        </header>
+        <h2 class="thread-title">{{ thread.display_title }}</h2>
+        <div class="thread-body">{{ thread.content }}</div>
+    </article>
+
+    <h3 class="thread-reply-title">全部回复 <span class="thread-reply-count">{{ reply_count }}</span></h3>
+
+    {% if replies %}
+    <div class="thread-posts">
+        {% for r in replies %}
+        <div class="thread-post" id="post-{{ r.id }}">
+            <header class="thread-post-head">
+                <img class="thread-avatar" src="{{ avatar_url(r.user) }}" alt="">
+                <div class="thread-post-meta">
+                    <strong>{{ r.user.username if r.user else r.nickname }}</strong>
+                    {% if parent_names.get(r.id) %}
+                    <span class="thread-replyto">回复 @{{ parent_names[r.id] }}</span>
+                    {% endif %}
+                    <time>{{ r.timestamp.strftime('%Y-%m-%d %H:%M') }}</time>
+                </div>
+                <span class="thread-floor">{{ loop.index }} 楼</span>
+            </header>
+            <div class="thread-body">{{ r.content }}</div>
+            {% if session.user_id %}
+            <button type="button" class="thread-reply-btn" data-target="reply-form-{{ r.id }}"
+                    onclick="toggleReply(this)">回复</button>
+            <form class="thread-reply-form" id="reply-form-{{ r.id }}" method="POST"
+                  action="{{ url_for('public.add_reply', message_id=thread.id) }}" style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="parent_reply_id" value="{{ r.id }}">
+                <textarea name="content" rows="2" required
+                          placeholder="回复 @{{ r.user.username if r.user else r.nickname }}…"></textarea>
+                <button class="btn btn-primary" type="submit">发送</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="thread-empty">还没有回复，抢个沙发吧。</p>
+    {% endif %}
+</div>
+
+{% if session.user_id %}
+<form class="thread-composer" method="POST" action="{{ url_for('public.add_reply', message_id=thread.id) }}">
+    <div class="thread-composer-inner">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="content" id="thread-reply-input" rows="1" required
+                  placeholder="写下你的回复…（Ctrl + Enter 发送）"></textarea>
+        <button class="btn btn-primary thread-composer-send" type="submit">发送</button>
+    </div>
+</form>
+{% else %}
+<div class="thread-composer thread-composer-guest">
+    <div class="thread-composer-inner">
+        <span class="thread-composer-hint">登录后才能回复</span>
+        <a class="btn btn-primary" href="{{ url_for('auth.login') }}">去登录</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function toggleReply(btn) {
+        var form = document.getElementById(btn.dataset.target);
+        if (!form) return;
+        var open = form.style.display === 'block';
+        form.style.display = open ? 'none' : 'block';
+        if (!open) {
+            var textarea = form.querySelector('textarea');
+            if (textarea) textarea.focus();
+        }
+    }
+
+    // 底部输入框：自动增高 + Ctrl/Cmd + Enter 发送
+    (function () {
+        var input = document.getElementById('thread-reply-input');
+        var composer = document.querySelector('.thread-composer');
+        if (!input || !composer) return;
+
+        function autoGrow() {
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+            document.documentElement.style.setProperty(
+                '--composer-h', composer.offsetHeight + 'px');
+        }
+        input.addEventListener('input', autoGrow);
+        autoGrow();
+        window.addEventListener('resize', autoGrow);
+
+        input.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                composer.submit();
+            }
+        });
+    })();
+</script>
+{% endblock %}

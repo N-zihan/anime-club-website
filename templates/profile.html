@@ -2,14 +2,6 @@
 {% block title %}个人设置{% endblock %}
 {% block content %}
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
 <div style="max-width:600px; margin:0 auto; padding:20px 0;">
 
     <h2 style="text-align:center; margin-bottom:24px; color: var(--text-primary);">个人设置</h2>

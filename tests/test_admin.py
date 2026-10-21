@@ -40,7 +40,7 @@ class TestAdmin:
     def test_admin_messages_loads(self, admin_client):
         response = admin_client.get('/admin/messages')
         assert response.status_code == 200
-        assert '留言管理' in response.text
+        assert '帖子管理' in response.text
 
     def test_admin_contests_manage_loads(self, admin_client):
         response = admin_client.get('/admin/contests/manage')

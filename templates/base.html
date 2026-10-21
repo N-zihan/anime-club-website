@@ -47,7 +47,7 @@
     <!-- Cloudflare Turnstile 验证码修复 -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 <!-- ====== CSRF Token（所有表单通过 {{ csrf_token() }} 使用） ====== -->
 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
 <!-- =============================================================== -->
@@ -80,7 +80,7 @@
                 <span class="drawer-avatar">👤</span>
                 <span class="drawer-profile-text">
                     <span class="drawer-profile-name">{{ session.username }}</span>
-                    <span class="drawer-profile-meta">个人主页 · 我的留言与推荐</span>
+                    <span class="drawer-profile-meta">个人主页 · 我的帖子与推荐</span>
                 </span>
                 <span class="drawer-arrow">›</span>
             </a>
@@ -97,7 +97,7 @@
             </div>
             {% else %}
             <div class="drawer-guest">
-                <div class="drawer-guest-text">登录后即可留言、参加赛事、收藏番剧</div>
+                <div class="drawer-guest-text">登录后即可发帖、参加赛事、收藏番剧</div>
                 <div class="drawer-auth-btns">
                     <a class="btn btn-primary" href="{{ url_for('auth.login') }}">登录</a>
                     <a class="btn btn-ghost" href="{{ url_for('auth.register') }}">注册</a>
@@ -113,7 +113,7 @@
         <nav class="drawer-nav">
             <a href="/home">首页</a>
             <a href="/activities">活动</a>
-            <a href="{{ url_for('public.board') }}">留言板</a>
+            <a href="{{ url_for('public.board') }}">论坛</a>
             <a href="{{ url_for('public.contest_center') }}">赛事中心</a>
             <a href="/about">社团介绍</a>
             <a href="/gallery">珍贵历史图片</a>
@@ -135,8 +135,8 @@
 
 {% set kanban_hidden = ['auth.login', 'auth.register', 'auth.forgot_password', 'auth.forgot_password_bind', 'auth.reset_password', 'auth.forgot_bind_send_code', 'auth.forgot_bind_verify'] %}
 {% if request.endpoint not in kanban_hidden %}
-<!-- 看板娘 -->
-<div id="kanban" style="position:fixed; right:20px; bottom:20px; z-index:900; pointer-events:none; user-select:none;">
+<!-- 看板娘：默认位置交给 style.css 的 #kanban 规则（带底部输入框的页面会自动抬高） -->
+<div id="kanban" style="position:fixed; z-index:900; pointer-events:none; user-select:none;">
     <div id="kanban-bubble-wrap" style="
         position:absolute; bottom:100%; right:0; margin-bottom:12px;
         opacity:0; transform:scale(0.6); transform-origin:bottom right;
@@ -155,13 +155,26 @@
             box-shadow:4px 4px 8px rgba(0,0,0,0.06);"></div>
     </div>
     <img id="kanban-img" src="{{ url_for('static', filename='images/kanban.png') }}"
-         alt="看板娘" draggable="false"
-         style="display:block; cursor:grab; pointer-events:auto;
+         alt="看板娘" draggable="false" width="120" height="120"
+         style="display:block; width:120px; height:auto; cursor:grab; pointer-events:auto;
                 filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));
                 animation:kanban-breathe 3s ease-in-out infinite; touch-action:none;">
 </div>
 
 <style>
+/* 看板娘原图 1447×1447：必须在 CSS/HTML 层就限定尺寸，
+   否则首帧会按原图画满屏幕再被 JS 缩回去（“先进页面突然变大”的元凶） */
+#kanban-img {
+    width: 120px;
+    height: auto;
+}
+
+@media (max-width: 700px) {
+    #kanban-img {
+        width: 180px;
+    }
+}
+
 @keyframes kanban-breathe {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
@@ -397,6 +410,17 @@
 {% endif %}
 
 <main class="main-content">
+    {# 一次性提示统一在这里渲染：每个页面都会消费掉 flash，
+       避免后台操作/AJAX 产生的提示残留在 session 里，隔几个页面才莫名弹出 #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
 </main>
 
@@ -597,12 +621,12 @@
             },
             {
                 title: '顶部菜单',
-                desc: '右上角的 <strong>「菜单」</strong> 收纳了全部入口：<br>社团介绍、活动、留言板、赛事中心……<br>点一下就能展开抽屉。',
+                desc: '右上角的 <strong>「菜单」</strong> 收纳了全部入口：<br>社团介绍、活动、论坛、赛事中心……<br>点一下就能展开抽屉。',
                 target: '#menu-toggle',
             },
             {
-                title: '留言板',
-                desc: '在 <strong>「留言板」</strong> 可以畅所欲言，<br>也可以回复其他社员，一起打造热闹的交流区！',
+                title: '论坛',
+                desc: '在 <strong>「论坛」</strong> 可以开帖聊番、提问求助，<br>也可以在别人的帖子下回复，一起打造热闹的交流区！',
                 target: 'a[href*="board"]',
             },
             {

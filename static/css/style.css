@@ -81,11 +81,12 @@
     --alert-text-info: #1d4ed8;
     --alert-border-info: #bfdbfe;
 
-    /* ---- 科技感背景线条（固定不随页面滚动，见第 2 节 body） ---- */
-    --tech-line: rgba(47, 111, 179, 0.075);
-    --tech-line-strong: rgba(47, 111, 179, 0.11);
-    --tech-glow-1: rgba(47, 111, 179, 0.20);
-    --tech-glow-2: rgba(56, 189, 248, 0.16);
+    /* ---- 科技感背景线条（固定不随页面滚动，见第 2 节 body） ----
+       刻意压得很低：卡片是半透明的，线条太重会从卡片里透出来，正文区就会显脏 */
+    --tech-line: rgba(47, 111, 179, 0.06);
+    --tech-line-strong: rgba(47, 111, 179, 0.045);
+    --tech-glow-1: rgba(47, 111, 179, 0.14);
+    --tech-glow-2: rgba(56, 189, 248, 0.10);
 }
 
 /* ---- 深夜模式 ---- */
@@ -136,10 +137,10 @@
     --alert-border-info: #1e3a8a;
 
     /* 深夜模式下线条要更亮一点才看得见，但仍然压得很低 */
-    --tech-line: rgba(91, 155, 234, 0.10);
-    --tech-line-strong: rgba(91, 155, 234, 0.14);
-    --tech-glow-1: rgba(59, 130, 246, 0.24);
-    --tech-glow-2: rgba(34, 211, 238, 0.18);
+    --tech-line: rgba(91, 155, 234, 0.075);
+    --tech-line-strong: rgba(91, 155, 234, 0.055);
+    --tech-glow-1: rgba(59, 130, 246, 0.18);
+    --tech-glow-2: rgba(34, 211, 238, 0.13);
 }
 
 /* ============================================================
@@ -165,9 +166,9 @@ body {
         /* 左上、右下两团冷色光晕，给网格一点纵深感 */
         radial-gradient(1000px 680px at 10% 6%, var(--tech-glow-1), transparent 68%),
         radial-gradient(1100px 760px at 92% 94%, var(--tech-glow-2), transparent 70%),
-        /* 稀疏斜向长线（科技线条主纹路） */
-        repeating-linear-gradient(135deg, var(--tech-line-strong) 0 1px, transparent 1px 180px),
-        repeating-linear-gradient(45deg, var(--tech-line-strong) 0 1px, transparent 1px 220px),
+        /* 稀疏斜向长线（科技线条主纹路）：周期拉大，避免满屏交叉成「X」状 */
+        repeating-linear-gradient(135deg, var(--tech-line-strong) 0 1px, transparent 1px 320px),
+        repeating-linear-gradient(45deg, var(--tech-line-strong) 0 1px, transparent 1px 460px),
         /* 细网格 */
         repeating-linear-gradient(90deg, var(--tech-line) 0 1px, transparent 1px 56px),
         repeating-linear-gradient(0deg, var(--tech-line) 0 1px, transparent 1px 56px),
@@ -1531,6 +1532,18 @@ tbody tr:hover {
     animation: fadeIn 0.3s ease;
 }
 
+/* 全站统一在 base.html 里渲染 flash（见 main-content），这里是它的容器 */
+.flash-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.flash-stack .flash {
+    margin-bottom: 0;
+}
+
 .alert-danger {
     background: var(--alert-bg-danger);
     color: var(--alert-text-danger);
@@ -2302,5 +2315,435 @@ html[data-motion="reduced"] .card-rise {
 @media (prefers-reduced-motion: reduce) {
     .card-rise {
         animation: none !important;
+    }
+}
+
+/* ===================== 20. 论坛（原留言板）+ 底部固定输入框 ===================== */
+:root {
+    /* 底部输入框占位高度，JS 会按实际高度覆盖；这里给个兜底值 */
+    --composer-h: 96px;
+}
+
+/* 看板娘默认位置（内联样式不再写 right/bottom，方便「有输入框的页面」把它抬高） */
+#kanban {
+    right: 20px;
+    bottom: 20px;
+}
+
+body.has-composer #kanban {
+    bottom: calc(20px + var(--composer-h, 96px));
+}
+
+/* 有底部输入框的页面：正文与页脚都要让出空间，避免最后一条被挡住 */
+body.has-composer main.main-content {
+    padding-bottom: calc(48px + var(--composer-h, 96px));
+}
+
+body.has-composer footer {
+    padding-bottom: calc(40px + var(--composer-h, 96px));
+}
+
+/* ---- 论坛列表 ---- */
+.forum-page {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.forum-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.forum-header h2 {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+}
+
+.forum-sub {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.forum-new-btn {
+    white-space: nowrap;
+}
+
+.forum-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.forum-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    transition: transform 0.16s, box-shadow 0.16s, border-color 0.16s;
+}
+
+.forum-row:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-soft);
+}
+
+.forum-row-title {
+    margin: 0 0 6px;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.forum-row-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.forum-author {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.forum-row-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.forum-replies {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.forum-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.forum-pager-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.btn.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.forum-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+/* ---- 帖子详情 ---- */
+.thread-page {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.thread-crumb a {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+}
+
+.thread-post {
+    padding: 20px 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.thread-post-op {
+    box-shadow: var(--shadow-card);
+}
+
+.thread-post-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.thread-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg-code);
+}
+
+.thread-post-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.thread-post-meta strong {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+}
+
+.thread-badge {
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 0.72rem;
+}
+
+.thread-replyto {
+    color: var(--accent);
+}
+
+.thread-title {
+    margin: 0 0 12px;
+    font-size: 1.35rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+.thread-body {
+    color: var(--text-primary);
+    line-height: 1.85;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.thread-floor {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.thread-reply-title {
+    margin: 8px 0 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.thread-reply-count {
+    color: var(--accent);
+}
+
+.thread-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.thread-reply-btn {
+    margin-top: 10px;
+    padding: 4px 0;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.thread-reply-btn:hover {
+    text-decoration: underline;
+}
+
+.thread-reply-form {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.thread-reply-form textarea,
+.thread-composer textarea,
+.forum-form textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+}
+
+.thread-reply-form textarea:focus,
+.thread-composer textarea:focus,
+.forum-form textarea:focus {
+    border-color: var(--accent);
+}
+
+/* ---- 底部固定输入框（不用滚到底也能打字） ---- */
+.thread-composer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    background: var(--bg-nav);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -8px 24px rgba(15, 35, 60, 0.10);
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.thread-composer-inner {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 0 clamp(16px, 4vw, 36px);
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.thread-composer textarea {
+    flex: 1;
+    min-height: 42px;
+    max-height: 160px;
+    line-height: 1.5;
+    resize: none;
+    overflow-y: auto;
+}
+
+.thread-composer-send {
+    flex: 0 0 auto;
+    height: 42px;
+}
+
+.thread-composer-hint {
+    flex: 1;
+    align-self: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.thread-composer-guest {
+    padding-top: 12px;
+}
+
+.thread-composer-guest .thread-composer-inner {
+    justify-content: center;
+}
+
+/* ---- 发帖表单 ---- */
+.forum-compose {
+    max-width: 760px;
+}
+
+.forum-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.forum-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.forum-field-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.forum-field input[type="text"] {
+    padding: 11px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+}
+
+.forum-field input[type="text"]:focus {
+    border-color: var(--accent);
+}
+
+.forum-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 700px) {
+    :root {
+        --composer-h: 104px;
+    }
+
+    .forum-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .forum-row-stats {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .thread-post {
+        padding: 16px;
+        border-radius: var(--radius-md);
+    }
+
+    .thread-title {
+        font-size: 1.15rem;
+    }
+
+    .thread-floor {
+        margin-left: 0;
+    }
+
+    .thread-composer-send {
+        padding: 0 14px;
+    }
+
+    body.has-composer #kanban {
+        bottom: calc(20px + var(--composer-h, 104px));
     }
 }

@@ -22,9 +22,9 @@
         {% endif %}
     </div>
 
-    <!-- 该用户的留言 -->
+    <!-- 该用户发过的帖子 -->
     <div style="background: var(--bg-card); border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid var(--border-color); margin-bottom: 30px;">
-        <h3 style="color: var(--text-primary);">最近留言</h3>
+        <h3 style="color: var(--text-primary);">最近发帖</h3>
         {% if messages %}
         <ul style="list-style: none; padding: 0;">
             {% for msg in messages %}
@@ -36,7 +36,7 @@
             {% endfor %}
         </ul>
         {% else %}
-        <p style="color: var(--text-muted);">该用户还没有发表过留言</p>
+        <p style="color: var(--text-muted);">该用户还没有发过帖子</p>
         {% endif %}
     </div>
 </div>

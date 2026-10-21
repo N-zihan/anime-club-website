@@ -37,7 +37,66 @@ class TestPublic:
     def test_board_page(self, logged_in_client):
         response = logged_in_client.get('/board')
         assert response.status_code == 200
-        assert '社员留言板' in response.text
+        assert '动漫社论坛' in response.text
+
+    def test_board_shows_legacy_message_as_topic(self, logged_in_client, sample_message):
+        """历史留言没有标题：论坛列表要用正文首行兜底，不能显示空标题"""
+        body = logged_in_client.get('/board').text
+        assert '测试留言内容' in body
+
+    def test_board_thread_page(self, logged_in_client, sample_message):
+        response = logged_in_client.get(f'/board/{sample_message.id}')
+        assert response.status_code == 200
+        assert '测试留言内容' in response.text
+        # 底部固定输入框：不用滚到底也能回复
+        assert 'thread-composer' in response.text
+        assert 'has-composer' in response.text
+
+    def test_board_thread_404(self, logged_in_client):
+        assert logged_in_client.get('/board/999999').status_code == 404
+
+    def test_board_new_requires_login(self, client):
+        assert client.get('/board/new').status_code == 302
+
+    def test_board_new_form_renders(self, logged_in_client):
+        response = logged_in_client.get('/board/new')
+        assert response.status_code == 200
+        assert '发起新帖' in response.text
+        assert 'name="title"' in response.text
+
+    def test_board_new_creates_topic(self, logged_in_client, db_session):
+        from app.models import Message
+        response = logged_in_client.post(
+            '/board/new',
+            data={'title': '第一次发帖测试', 'content': '论坛正文内容'},
+            follow_redirects=True)
+        assert response.status_code == 200
+        assert '发帖成功' in response.text
+        msg = Message.query.filter_by(title='第一次发帖测试').first()
+        assert msg is not None
+        assert msg.content == '论坛正文内容'
+
+    @pytest.mark.parametrize('payload', [
+        {'title': 'x', 'content': '正文'},          # 标题太短
+        {'title': '正常标题', 'content': ''},        # 正文为空
+    ])
+    def test_board_new_rejects_invalid(self, logged_in_client, db_session, payload):
+        from app.models import Message
+        before = Message.query.count()
+        response = logged_in_client.post('/board/new', data=payload, follow_redirects=True)
+        assert response.status_code == 200
+        assert '标题至少 2 个字' in response.text or '正文不能为空' in response.text
+        assert Message.query.count() == before
+
+    def test_reply_lands_on_thread_page(self, logged_in_client, sample_message, db_session):
+        from app.models import Reply
+        response = logged_in_client.post(
+            f'/reply/{sample_message.id}',
+            data={'content': '论坛回复内容'},
+            follow_redirects=True)
+        assert response.status_code == 200
+        assert '论坛回复内容' in response.text
+        assert Reply.query.filter_by(content='论坛回复内容').count() == 1
 
     def test_anime_resources_page(self, logged_in_client):
         response = logged_in_client.get('/anime_resources')
@@ -530,3 +589,25 @@ class TestSettingsPage:
         body = client.get('/settings').get_data(as_text=True)
         assert 'name="muted_types"' not in body
         assert 'settings-login-hint' in body
+
+
+class TestFlashMessages:
+    """一次性提示统一在 base.html 渲染（回归：提示曾残留在 session 里隔几页才弹出）"""
+
+    def _queue(self, client, message):
+        with client.session_transaction() as sess:
+            sess['_flashes'] = [('success', message)]
+
+    def test_flash_rendered_on_any_page_and_consumed_once(self, client):
+        self._queue(client, '提示只应出现一次')
+        first = client.get('/settings').get_data(as_text=True)
+        assert '提示只应出现一次' in first, '没有 flash 块的页面也必须显示提示'
+        second = client.get('/settings').get_data(as_text=True)
+        assert '提示只应出现一次' not in second, '提示被重复显示（未被消费）'
+
+    def test_flash_not_leaked_to_next_page(self, client):
+        """校验提示在第一个页面就被消费，不会跟着用户跑到下一个页面"""
+        self._queue(client, '禁赛相关提示')
+        client.get('/anime_news')
+        later = client.get('/settings').get_data(as_text=True)
+        assert '禁赛相关提示' not in later, '提示残留到了后续页面'

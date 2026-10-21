@@ -70,12 +70,28 @@ class User(db.Model):
 
 
 class Message(db.Model):
+    """论坛主题帖。
+
+    历史数据里它是旧的「留言」：没有标题，正文即内容。
+    现在作为论坛帖使用，title 允许为空，展示时用正文首行兜底（见 display_title）。
+    """
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=True)
     nickname = db.Column(db.String(50), nullable=False, default='匿名')
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', backref='messages')
+
+    @property
+    def display_title(self):
+        """标题缺失时用正文首行兜底，保证旧留言在论坛列表里也有可读标题。"""
+        if self.title:
+            return self.title
+        text = ' '.join((self.content or '').split())
+        if not text:
+            return '（无标题）'
+        return text[:40] + ('…' if len(text) > 40 else '')
 
 
 class Activity(db.Model):

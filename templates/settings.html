@@ -3,14 +3,6 @@
 {% block title %}设置{% endblock %}
 
 {% block content %}
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
 <div class="settings-page">
     <header class="settings-header">
         <h1 class="settings-title">⚙️ 设置</h1>
@@ -74,7 +66,7 @@
         </div>
 
         <p class="settings-footnote" style="margin-top:12px;">
-            界面文案本身的中英切换暂未开放：全站有 40 多个模板、800 多条文案，一次做国际化并长期维护翻译同步的成本很高，宁可先不做半套。如果你需要某个页面出英文版，可以在留言板直接提，我们按需单独处理。
+            界面文案本身的中英切换暂未开放：全站有 40 多个模板、800 多条文案，一次做国际化并长期维护翻译同步的成本很高，宁可先不做半套。如果你需要某个页面出英文版，可以在论坛直接提，我们按需单独处理。
         </p>
     </section>
 

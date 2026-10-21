@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}留言管理{% endblock %}
+{% block title %}帖子管理{% endblock %}
 
 {% block content %}
 <div class="admin-header">
-    <h2>留言管理</h2>
+    <h2>帖子管理</h2>
 </div>
 
 {% if messages %}
@@ -11,7 +11,7 @@
     <thead>
     <tr>
         <th style="width:50px;">ID</th>
-        <th>留言内容</th>
+        <th>帖子内容</th>
         <th style="width:100px;">作者</th>
         <th style="width:160px;">时间</th>
         <th style="width:80px; text-align:center;">回复数</th>
@@ -33,7 +33,7 @@
             </button>
             <form method="POST" action="{{ url_for('admin.admin_delete_message', message_id=msg.id) }}"
                   style="display:inline;"
-                  onsubmit="return confirm('确定删除该留言及其所有回复吗？')">
+                  onsubmit="return confirm('确定删除该帖及其所有回复吗？')">
                 <button type="submit" class="btn-delete">删除</button>
             </form>
         </td>
