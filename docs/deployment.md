@@ -55,7 +55,7 @@ https://www.nanyi-anime-club.top
 | `SECRET_KEY` | ✅ | Flask session 签名密钥，随机长字符串 |
 | `GROUP_VERIFICATION_CODE` | ✅ | 注册时的社团群验证码，只有社员知道 |
 | `CLUB_NAME` | ✅ | 站点名（页脚 / 标题 / AI 人设都会用到） |
-| `SUPABASE_URL` / `SUPABASE_KEY` | ✅ | 头像、照片、赛事图上传用（Storage） |
+| `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_ANON_KEY` | ✅ | 头像、照片、赛事图上传用（`SUPABASE_KEY` 是 service_role，仅后端；`ANON_KEY` 给前端） |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USE_SSL` / `MAIL_USERNAME` / `MAIL_PASSWORD` | 选填 | 验证码、找回密码邮件；不配则只写日志 |
 | `SITE_URL` | 选填 | 通知里的绝对链接；不配则用 `request.url_root` |
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `AI_MODEL` | 选填 | 萌战 AI 解说/预测（OpenAI 兼容接口，默认硅基流动） |
@@ -71,33 +71,46 @@ https://www.nanyi-anime-club.top
 
 ## 3. 首次部署步骤
 
-1. 把仓库推到 GitHub（`main` 分支）。
-2. Vercel → **Add New → Project** → 选择该仓库 → Framework 选 **Other**。
-3. 配置环境变量（见上表），**尤其先配 `DATABASE_URL`**。
-4. 在本地对生产库执行一次迁移：`python init.py`（顺序见 [数据库](database.md)）。
-5. Deploy。首次部署成功后会分配 `xxx.vercel.app` 域名。
-6. 绑定自定义域名：**Settings → Domains** 添加 `www.nanyi-anime-club.top`，按提示在域名服务商加 CNAME；根域用 A/ALIAS 或 Vercel 的域名服务器。
-7. 打开 `https://<域名>/settings` 看页脚版本号，确认已是最新。
+1. 创建你自己的 GitHub 仓库，把代码推到 `main` 分支。
+2. 访问 [Vercel](https://vercel.com)，用 GitHub 登录 → **Add New → Project** → 选择你的仓库导入。
+   - 仓库里有 `vercel.json`，Vercel 会按它自动构建 Flask 应用；如果没识别出来，Framework 手动选 **Other** 即可。
+3. 在 **Environment Variables** 里添加环境变量（参考上面的清单，或照着你自己 `.env` 的键值填）。
+4. **先在本地对生产库执行一次迁移**：`python init.py`（顺序见 [数据库](database.md)），再点 Deploy。
+5. Deploy 后等待 1–2 分钟，Vercel 会分配一个 `xxx.vercel.app` 域名，先用它访问 `/settings` 看页脚版本号。
+6. **域名请自己去域名供应商注册**（如 [NameSilo](https://www.namesilo.com)，海外商注册无需备案；若需备案就不能用 Vercel，要换国内服务器）。
+   买好域名后，在 Vercel 项目 **Settings → Domains** 添加 **你自己的域名**，按提示在域名服务商加 CNAME / A 记录。
+
+!!! danger "别把别人的域名绑到你的项目"
+    文档里出现的 `www.nanyi-anime-club.top` 是**本社团自己的线上域名**，仅用于演示"怎么验证部署"。
+    - 你部署自己的站点时，**不要**把它填进 Domains，也不要照抄成 CNAME 目标；
+    - 你自己的域名要做解析，只能在**你注册的那个域名**的控制台里操作；
+    - 反过来也一样：不要接受任何"帮别人绑定域名"的操作，域名管理权等于站点所有权。
 
 !!! note "国内访问"
     Vercel 的默认域名在国内可能不稳定，自定义域名 + 香港区域会好一些；极端情况可在前面套一层 CDN/反向代理。
+    如果暂时不打算上公网，也可以只本地运行：`python run.py` 后访问 <http://127.0.0.1:5000>。
 
 ## 4. 部署后验证（每次都做）
 
+把下面的 `https://your-site.example.com` 换成**你自己的**域名（或 Vercel 分配的 `xxx.vercel.app`），
+不要用文档示例里的社团域名去验证你的部署。
+
 ```bash
+SITE="https://your-site.example.com"
+
 # 1) 版本号是否是新版本（页脚 / 设置页会渲染当前 VERSION）
-curl -s https://www.nanyi-anime-club.top/settings | grep -o 'v4\.[0-9.]*' | head -1
+curl -s "$SITE/settings" | grep -o 'v4\.[0-9.]*' | head -1
 
 # 2) 静态资源版本（防止旧 CSS 缓存）
-curl -s https://www.nanyi-anime-club.top/settings | grep -o 'style.css?v=[^"]*' | head -1
+curl -s "$SITE/settings" | grep -o 'style.css?v=[^"]*' | head -1
 
 # 3) 公开页是否 200（新闻/着陆/登录）
 for p in / /login /anime_news /settings; do
-  echo -n "$p -> "; curl -s -o /dev/null -w '%{http_code}\n' "https://www.nanyi-anime-club.top$p"
+  echo -n "$p -> "; curl -s -o /dev/null -w '%{http_code}\n' "$SITE$p"
 done
 
 # 4) 访客拦截是否生效（内部页面应该 302 到登录）
-curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://www.nanyi-anime-club.top/board
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$SITE/board"
 ```
 
 !!! warning "Vercel 部署有延迟"

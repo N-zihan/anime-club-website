@@ -62,3 +62,4 @@ nav:
       - 管理后台: features/admin.md
   - 运维手册: operations.md
   - 开发约定与踩坑: dev-notes.md
+  - 常见问题: faq.md

@@ -29,6 +29,7 @@
 - :material-shield-account: **[管理后台](features/admin.md)** —— 审核、赛事管理、用户管理、数据导出
 - :material-wrench: **[运维手册](operations.md)** —— 版本发布、备份、故障排查
 - :material-bug: **[开发约定与踩坑](dev-notes.md)** —— 测试要求、截图流程、已知环境坑
+- :material-help-circle: **[常见问题](faq.md)** —— 访问、部署、数据库、功能、开发、发布的高频疑问
 
 </div>
 

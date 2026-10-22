@@ -11,21 +11,44 @@
     而另外一些又是复数：`contests`、`candidates`、`contest_votes`、`nominations`、`notifications`。
     写裸 SQL 或排查问题时别想当然（踩过坑：本地检查代码写成 `users` → `NoSuchTableError`）。
 
-## 1. 在 Supabase 建库
+## 1. 在 Supabase 建库（与 README 保持一致）
 
-1. 注册 <https://supabase.com>，新建一个 Project（免费计划够用，机构人多再升级）。
-2. 创建后进 **Project Settings → Database**，拿连接串：
-   - **连接池（Transaction Pooler，端口 `6543`）**：适合 Vercel Serverless，推荐用它。
-   - **直连（端口 `5432`）**：`init.py` 这类一次性运维脚本用它更稳。
-   - 两者的区别：pooler 会复用连接，但**不支持 prepared statements 之外的某些会话特性**；如果初始化脚本报奇怪的协议错误，换直连试试。
-3. 需要的连接串形如：
+1. 访问 <https://supabase.com> 注册账号，点击 **New project**。
+2. 填写项目名称、设置数据库密码；**区域推荐 Mumbai 或 Singapore**（国内访问更快）。
+3. 等待项目创建完成（约 2–3 分钟）。
+4. 项目创建后，在 Dashboard 顶部点击 **Connect** 按钮，弹出连接面板，先选择
+   **Direct Connection string**，里面是完整的连接信息：
+   - **Transaction pooler（推荐）**：端口 `6543`，适合 Vercel 等 Serverless 环境，支持最多 200 个并发连接。
+   - **Direct connection**：端口 `5432`，直连数据库，限额 60 个连接。
+5. 在 **Connection string** 区域找到 `URI` 格式的连接串，复制后把密码替换成你自己的，就是 `DATABASE_URL`：
 
 ```ini
 DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
 ```
 
+> 推荐用 Transaction pooler（6543），避免 Vercel 函数并发时把数据库连接占满。
+
 !!! tip "密码里的特殊字符要 URL 编码"
     `@` `#` `/` `:` 等字符出现在密码里时，必须百分号编码，否则连接串会被解析错。
+
+### 获取 Project URL 和 API Keys（Storage / 上传要用）
+
+1. 进入项目 Dashboard → 左侧菜单 **Integrations**。
+2. 选择 **Data API**，在 Overview 页面即可看到 **API URL**（这就是 Project URL）：
+
+```ini
+SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+```
+
+3. **Project API keys** 在同一页面：
+
+| Supabase 里的名字 | 填到哪个变量 | 用途 |
+|---|---|---|
+| `anon` public（新版项目叫 `Publishable key`） | `SUPABASE_ANON_KEY` | 给前端用的公开 key |
+| `service_role` secret（新版项目叫 `Secret key`） | `SUPABASE_KEY` | **仅后端使用**，权限极高 |
+
+!!! danger "service_role 密钥等于数据库管理员"
+    它不受行级权限限制，泄露等于数据库裸奔。只放后端环境变量，绝不进前端、不进仓库、不发聊天。
 
 ## 2. 初始化表结构（重要：顺序不能反）
 
