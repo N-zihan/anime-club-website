@@ -14,8 +14,11 @@
 
 ??? question "注册时提示验证码错误 / 收不到邮件验证码？"
     1. 先确认 `GROUP_VERIFICATION_CODE` 填的是**社团群验证码**，不是邮箱验证码（两个字段，别填反）。
-    2. 邮箱验证码依赖 SMTP：没配 `SMTP_HOST/MAIL_USERNAME/MAIL_PASSWORD` 时，验证码只写进服务端日志，不会真发邮件。
-    3. QQ 邮箱要用**授权码**当 `MAIL_PASSWORD`，不是登录密码。
+    2. **点「发送验证码」直接报「邮件发送失败」= SMTP 没配好**。注册必须经过邮箱验证码，所以 SMTP
+       在线上是**必填项**，不是可选项（没配时新社员无法注册，找回密码也不可用）。
+    3. 检查 `SMTP_HOST`（QQ 邮箱是 `smtp.qq.com`）、`SMTP_PORT=465`、`SMTP_USE_SSL=true`，
+       以及 `MAIL_PASSWORD` 用的是**邮箱授权码**而不是登录密码。
+    4. 已有账号登录不受 SMTP 影响。
 
 ??? question "登录成功但一刷新就掉线？"
     几乎都是 `SECRET_KEY` 没配、或者每次部署都变。session 用 `SECRET_KEY` 签名，密钥不稳定 → 旧 session 全部失效。

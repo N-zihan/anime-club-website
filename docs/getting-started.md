@@ -30,7 +30,7 @@ npx playwright install chromium
 cp .env.example .env
 ```
 
-**最小可运行配置**（只想把页面跑起来）：
+**最小可运行配置**（只想把页面跑起来 / 本地演示）：
 
 ```ini
 SECRET_KEY=随便写一串长随机字符串
@@ -39,11 +39,16 @@ CLUB_NAME=南平一中动漫社
 GROUP_VERIFICATION_CODE=test_group_code
 ```
 
-完整变量说明见 [平台部署 · 环境变量](deployment.md)。没有配置的可选能力会自动降级：
+!!! warning "这个最小配置只能「看」和「登录已有账号」，不能注册新社员"
+    注册需要邮箱验证码，而验证码只能通过 SMTP 发出。没配 SMTP 时「发送验证码」接口会直接报
+    「邮件发送失败」，新社员卡在注册第一步（找回密码同样不可用）。
+    要对外开放注册，**必须**在 `.env` / Vercel 里配好 `SMTP_HOST`、`MAIL_USERNAME`、`MAIL_PASSWORD`。
+
+完整变量说明见 [平台部署 · 环境变量](deployment.md)。**除 SMTP 外**的可选能力会自动降级：
 
 - 没配 `OPENAI_API_KEY` → AI 解说 / AI 好友不可用（AI 好友会回落到 FAQ）
 - 没配 `ALIBABA_CLOUD_ACCESS_KEY_ID` → 新闻不翻译，详情页会显式提示"当前显示的是原文"
-- 没配 SMTP → 验证码与找回密码链接只写日志、不发邮件
+- 没配 SMTP → **不能注册新社员、不能找回密码**（验证码发不出去，接口直接返回失败；已有账号登录不受影响）
 
 ## 3. 启动（两种模式）
 

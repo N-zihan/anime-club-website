@@ -61,7 +61,9 @@
   → 点链接设置新密码 → token 失效
 ```
 
-SMTP 未配置时链接只写日志（本地开发不会真的发信），线上必须配 `MAIL_USERNAME` / `MAIL_PASSWORD`。
+SMTP 未配置时重置链接发不出去，找回密码不可用；**注册同理**——注册要邮箱验证码，
+所以线上部署必须配 `MAIL_USERNAME` / `MAIL_PASSWORD`（见[平台部署](../deployment.md)）。
+本地演示模式用预置账号 `testuser`，不需要注册，因此可以不配 SMTP。
 
 ## 5. 权限分级
 

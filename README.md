@@ -142,6 +142,7 @@ npx playwright test  # 端到端（需 5000 端口空闲）
 Vercel 导入仓库即可（仓库自带 `vercel.json`），环境变量照着 `.env.example` 填。
 
 - **先对生产库跑 `python init.py`，再推代码上线**——顺序反了会 500（新代码查不存在的列）。
+- **SMTP 必须配**：注册要邮箱验证码、找回密码要发重置链接，不配 `MAIL_USERNAME` / `MAIL_PASSWORD` 时新社员无法注册（已有账号登录不受影响）。
 - 域名请**自己注册**并在 Vercel 里绑定**你自己的域名**；本仓库文档里出现的社团域名只是该社团已部署实例，不要照抄。
 - 免费计划（Vercel + Supabase）足够小型社团使用。
 

@@ -61,7 +61,7 @@ https://<你的域名>        # 每个部署用自己的域名；本社团实例
 | `GROUP_VERIFICATION_CODE` | ✅ | 注册时的社团群验证码，只有社员知道 |
 | `CLUB_NAME` | ✅ | 站点名（页脚 / 标题 / AI 人设都会用到） |
 | `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_ANON_KEY` | ✅ | 头像、照片、赛事图上传用（`SUPABASE_KEY` 是 service_role，仅后端；`ANON_KEY` 给前端） |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USE_SSL` / `MAIL_USERNAME` / `MAIL_PASSWORD` | 选填 | 验证码、找回密码邮件；不配则只写日志 |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USE_SSL` / `MAIL_USERNAME` / `MAIL_PASSWORD` | ✅ **注册必需** | 注册邮箱验证码、找回密码链接、邮件通知。不配则验证码发不出去，**新社员无法注册** |
 | `SITE_URL` | 选填 | 通知里的绝对链接；不配则用 `request.url_root` |
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `AI_MODEL` | 选填 | 萌战 AI 解说/预测（OpenAI 兼容接口，默认硅基流动） |
 | `AI_CHAT_ENABLED` / `AI_CHAT_MODELS` / `AI_CHAT_DAILY_LIMIT` | 选填 | AI 虚拟好友；**模型池只放免费模型**，失败回落 FAQ |
@@ -70,6 +70,12 @@ https://<你的域名>        # 每个部署用自己的域名；本社团实例
 | `SESSION_COOKIE_SECURE` | 选填 | Cookie Secure 标志；Vercel 默认开，本地默认关 |
 | `APP_VERSION` | 选填 | 版本号覆盖，正常由 `VERSION` 文件/tag 自动解析 |
 | `GITHUB_REPO` / `GITHUB_TOKEN` | 选填 | 站点内嵌的更新记录（changelog）功能 |
+
+!!! warning "SMTP 不是可选项：不配就没法注册新社员"
+    注册流程是「填邮箱 → 收 6 位验证码 → 提交注册」，验证码只能通过 SMTP 寄出。
+    没配 `MAIL_USERNAME` / `MAIL_PASSWORD` 时，`/send_register_code` 会直接返回
+    「邮件发送失败」，新社员卡在第一步；**找回密码**同样不可用。
+    已有账号登录、站内功能不受影响，所以本地演示模式可以不配。
 
 !!! danger "密钥只进 Vercel 控制台，不进仓库"
     `.env` 已在 `.gitignore` 里。任何人往仓库里提交真实密钥，等于把数据库和邮件账号送人。
@@ -151,6 +157,7 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$SITE/board"
 | 冷启动很慢 / 偶尔 504 | 函数里做了重活（全量查询、图片处理）；把重活挪到后台或加缓存 |
 | 页面样式乱 / 还是旧样式 | `style.css?v=` 没变：确认 `VERSION` 已更新并部署成功；浏览器强刷 |
 | 登录后立刻掉线 | `SECRET_KEY` 没配/每次部署变化；固定它 |
+| 注册点「发送验证码」报邮件发送失败 / 找回密码收不到信 | SMTP 未配或配置错误（`SMTP_HOST`/`SMTP_PORT`/`SMTP_USE_SSL`/`MAIL_USERNAME`/`MAIL_PASSWORD`），QQ 邮箱的 `MAIL_PASSWORD` 要用授权码；不配 SMTP 时新社员无法注册 |
 | 上传图片 413 | 超过 `MAX_CONTENT_LENGTH`；前端压缩或调大上限 |
 | 通知里的链接是 `localhost` | 配 `SITE_URL` |
 | 首页正常、AI 500 | `OPENAI_API_KEY` 缺失或额度用尽；AI 好友会自动回落 FAQ，解说会降级 |
