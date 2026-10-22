@@ -1,18 +1,22 @@
 """AI 虚拟好友：模型池轮换 / FAQ 兜底 / 人设 CRUD / 安全过滤 / 管理端下架。"""
 import json
-from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from app import ai_friend as af
-from app.models import AIChatMessage, AIPersona, User, db
-from app.preferences import (NOTIFY_TYPES, get_preferences, muted_types,
-                             normalize_preferences, parse_preferences,
-                             save_preferences, should_send_mail)
+from app.models import AIChatMessage, AIPersona, User
 
 
 @pytest.fixture(autouse=True)
-def _clean_pool():
+def _ai_env(monkeypatch):
+    """测试必须自带 AI 配置，不能依赖本机 .env。
+
+    CI 里没有 .env，OPENAI_API_KEY 为空时 is_enabled() 会返回 False，
+    聊天会直接走 FAQ 兜底，导致「轮换 / 冷却 / 补全」这些用例在 CI 上失败。
+    这里显式给一个假 key 并打开开关（_call_model 本身在用例里都被 monkeypatch 掉了）。
+    """
+    monkeypatch.setenv('OPENAI_API_KEY', 'sk-test-dummy-key')
+    monkeypatch.setenv('AI_CHAT_ENABLED', 'true')
     af.reset_cooldown()
     yield
     af.reset_cooldown()

@@ -31,7 +31,11 @@ def app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['WTF_CSRF_ENABLED'] = False
-    return app
+    yield app
+    # 释放连接，避免 Python 3.14 在 GC 时刷大量 unclosed database 警告
+    with app.app_context():
+        db.session.remove()
+        db.engine.dispose()
 
 
 @pytest.fixture
