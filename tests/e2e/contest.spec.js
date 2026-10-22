@@ -38,6 +38,13 @@ test.describe('赛事中心', () => {
         await expect(page.locator('.rules-container')).toBeVisible();
     });
 
+    test('规则确认页的勾选框不会被撑成宽条（回归）', async ({page}) => {
+        await page.goto('/contest/1/rules');
+        const box = await page.locator('#agreeCheckbox').boundingBox();
+        expect(box.width).toBeLessThan(40);
+        expect(box.height).toBeLessThan(40);
+    });
+
     test('赛事详情页加载', async ({page}) => {
         await page.goto('/contest/1');
         await expect(page.locator('h2')).toBeVisible();

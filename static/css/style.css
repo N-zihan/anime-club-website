@@ -1109,7 +1109,9 @@ button.btn-delete:hover,
 /* ============================================================
    9. 表单
    ============================================================ */
-input,
+/* 只给「文本类」控件铺满宽度；复选框/单选框单独处理，
+   否则它们会被这里的 width:100% 拉成一条长条，把后面的文字挤到一边 */
+input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
     width: 100%;
@@ -1124,12 +1126,24 @@ select {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+/* 勾选框 / 单选框的基础尺寸（个别地方如「开关」会在后面用更高优先级覆盖） */
+input[type="checkbox"],
+input[type="radio"] {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
 input::placeholder,
 textarea::placeholder {
     color: var(--text-muted);
 }
 
-input:focus,
+input:not([type="checkbox"]):not([type="radio"]):focus,
 textarea:focus,
 select:focus {
     outline: none;
