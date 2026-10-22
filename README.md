@@ -6,12 +6,12 @@
 [![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask)](https://flask.palletsprojects.com)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
-[![Python application](https://github.com/N-zihan/anime-club/actions/workflows/python-app.yml/badge.svg)](https://github.com/N-zihan/anime-club/actions/workflows/python-app.yml)
-[![Pylint](https://github.com/N-zihan/anime-club/actions/workflows/pylint.yml/badge.svg)](https://github.com/N-zihan/anime-club/actions/workflows/pylint.yml)
-[![CodeQL Advanced](https://github.com/N-zihan/anime-club/actions/workflows/codeql.yml/badge.svg)](https://github.com/N-zihan/anime-club/actions/workflows/codeql.yml)
-[![Playwright Tests](https://github.com/N-zihan/anime-club/actions/workflows/node.js.yml/badge.svg)](https://github.com/N-zihan/anime-club/actions/workflows/node.js.yml)
+[![Python application](https://github.com/N-zihan/anime-club-website/actions/workflows/python-app.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/python-app.yml)
+[![Pylint](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml)
+[![CodeQL Advanced](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml)
+[![Playwright Tests](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/github/v/tag/N-zihan/anime-club?label=Version)](https://github.com/N-zihan/anime-club/tags)
+[![Version](https://img.shields.io/github/v/tag/N-zihan/anime-club-website?label=Version)](https://github.com/N-zihan/anime-club-website/tags)
 
 > 建站即用 · 开箱即改
 
@@ -26,13 +26,15 @@
 | 功能     | 说明                                                                         |
 |----------|------------------------------------------------------------------------------|
 | 用户系统 | 注册、登录、邮箱绑定、密码重置、头像上传                                     |
-| 留言板   | 支持嵌套回复，关联用户头像                                                   |
+| 社员论坛 | 主题帖 + 楼层回复（支持 @某楼），帖子页底部固定输入框，无需滚动即可回复       |
 | 番剧资源 | 社员推荐 → 管理员审核 → 公开显示                                             |
 | 番剧百科 | Bangumi API 拉取番剧条目，支持分页浏览与搜索                                 |
-| 动漫新闻 | 自部署 AniNewsAPI 聚合资讯，附全文阅读、机器翻译与视频嵌入提取               |
+| 动漫新闻 | 自部署 AniNewsAPI 聚合资讯，全文阅读、机器翻译（译文优先/仅原文/双语对照）、视频嵌入提取 |
 | 站内搜索 | 关键词搜索番剧/新闻/资源，搜索历史本地保存，支持一键回填与清空               |
 | 照片墙   | 活动照片分类展示，存储于 Supabase Storage                                    |
 | 萌战系统 | 线上赛事引擎：提名 → 海选 → 小组赛 → 淘汰赛 → 冠军，内置禁赛/轮空/复活赛守则 |
+| 通知中心 | 回复 / 审核 / 系统通知，可按类型静音、关闭未读红点轮询、开关邮件提醒         |
+| 站点设置 | 主题 / 字号 / 动效、新闻显示语言、本机数据清理（本机偏好免登录可用）         |
 | 管理后台 | 站长 / 运营双角色权限分离                                                    |
 
 ## 萌战系统
@@ -98,9 +100,12 @@
 │   ├── contest_engine.py                   # 萌战引擎
 │   ├── models.py                           # 数据库模型
 │   ├── notify.py                           # 通知模块
-│   ├── public.py                           # 公共页面路由
+│   ├── preferences.py                      # 用户偏好读写（通知免打扰等）
+│   ├── public.py                           # 公共页面路由（含论坛/新闻/设置）
 │   ├── user.py                             # 用户中心
-│   └── utils.py                            # 工具函数
+│   ├── utils.py                            # 工具函数
+│   ├── version.py                          # 版本号解析（VERSION 文件 / git tag）
+│   └── video_proxy.py                      # 视频代理（可选，按需启用）
 ├── static/                                 # 静态资源
 │   ├── avatars/
 │   │   └── default.png                     # 默认头像
@@ -124,6 +129,8 @@
 ├── .env.example                            # 环境变量模板（填写好后删除 .example 后缀使用）
 ├── .gitignore                              # Git 忽略规则
 ├── .python-version                         # Python 版本指定
+├── .vercelignore                           # Vercel 忽略规则（不上传 .git 等）
+├── VERSION                                 # 当前版本号（随 git tag 同步）
 ├── init.py                                 # 手动运维文件
 ├── LICENSE                                 # MIT 许可证
 ├── package.json                            # Node.js 构建配置
@@ -143,8 +150,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/N-zihan/anime-club.git
-cd anime-club
+git clone https://github.com/N-zihan/anime-club-website.git
+cd anime-club-website
 python -m venv .venv
 source .venv/bin/activate      # Linux/Mac
 # .venv\Scripts\activate       # Windows
@@ -259,10 +266,13 @@ npm test
 
 ## 项目状态
 
-- 核心功能完整，已部署至生产环境
+- 核心功能完整，已部署至生产环境（在线访问：https://www.nanyi-anime-club.top）
 - 萌战引擎：禁赛 / 轮空 / 复活赛 / 冠军空缺等赛事守则完备，人数短缺全链路不崩
-- 后端测试：182 个用例全部通过
-- 前端测试：Playwright 六大 E2E 套件（登录、留言板、内容、萌战、投票、管理后台）
+- 论坛：主题帖列表（按最后活跃排序、分页）、发帖校验、楼层回复与底部固定输入框
+- 设置页：外观与显示、语言与翻译、通知免打扰、数据与隐私（本机偏好 + 账号级通知偏好）
+- 后端测试：474 个用例全部通过
+- 前端测试：Playwright 9 个 E2E 套件（登录、论坛、设置、新闻语言、内容、搜索历史、萌战、投票、管理后台），53 passed / 4 skipped
+- 依赖安全：pip-audit 与 npm audit 均无已知漏洞
 - CI：GitHub Actions（pytest + flake8 + CodeQL + Playwright）
 
 ## 许可证
