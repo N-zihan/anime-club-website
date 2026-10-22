@@ -10,6 +10,7 @@
 [![Pylint](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml)
 [![CodeQL Advanced](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml)
 [![Playwright Tests](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml)
+[![Docs](https://github.com/N-zihan/anime-club-website/actions/workflows/docs.yml/badge.svg)](https://n-zihan.github.io/anime-club-website/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/tag/N-zihan/anime-club-website?label=Version)](https://github.com/N-zihan/anime-club-website/tags)
 
@@ -18,6 +19,8 @@
 动漫社网站，集社团展示、互动交流、资源分享、动漫资讯、线上赛事于一体
 
 > 本站点为社团内部使用：**仅社员登录访问，不对外开放注册**，因此不在此提供线上入口，部署方式见下文。
+>
+> 📚 **完整文档**：[n-zihan.github.io/anime-club-website](https://n-zihan.github.io/anime-club-website/)（本地开发、数据库、Vercel 部署、站内各模块细节、运维与踩坑）
 
 </div>
 

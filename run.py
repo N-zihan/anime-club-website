@@ -22,7 +22,8 @@ from datetime import datetime, timedelta
 from urllib.parse import quote
 
 from app import create_app, db
-from app.models import User, Contest, Candidate, Activity
+from app.models import (User, Contest, Candidate, Activity, Photo,
+                        Notification, AIPersona, AIChatMessage)
 
 app = create_app()
 
@@ -125,6 +126,45 @@ if os.getenv('TESTING') == '1':
             if not Activity.query.filter_by(title=title).first():
                 db.session.add(Activity(title=title, date=date, content=content))
         print(f"  - 演示活动已就绪: {len(demo_activities)} 场")
+
+        # 5. 演示照片墙：三张占位照片（文件名即可，截图时由测试脚本替换图片）
+        if Photo.query.count() == 0:
+            for idx, fname in enumerate(
+                    ['demo-screening.jpg', 'demo-figure.jpg', 'demo-cosplay.jpg'], start=1):
+                db.session.add(Photo(filename=fname, uploader='testuser'))
+            print("  - 演示照片已就绪: 3 张")
+
+        # 6. 演示通知：通知中心截图需要真实记录（仅 TESTING）
+        if Notification.query.count() == 0:
+            demo_notices = [
+                ('你的帖子有新回复', '「十月新番大家追了哪几部？」收到了 1 条回复', 'reply'),
+                ('提名审核通过', '你提名的角色已通过审核，等待海选开始', 'audit'),
+                ('秋季萌战赛程已公布', '海选将于本周末开启，记得来投票', 'contest'),
+                ('站点维护通知', '本周日凌晨将进行数据库例行维护，预计 10 分钟', 'system'),
+            ]
+            for title, content, ntype in demo_notices:
+                db.session.add(Notification(user_id=user.id, title=title,
+                                            content=content, type=ntype))
+            print(f"  - 演示通知已就绪: {len(demo_notices)} 条")
+
+        # 7. 演示 AI 人设：AI 好友页与管理后台截图需要至少一个角色（仅 TESTING）
+        if AIPersona.query.count() == 0:
+            db.session.add(AIPersona(
+                user_id=user.id,
+                name='中野三玖',
+                source='五等分的新娘',
+                personality='内向,认真,爱历史',
+                speech_style='话少、说话轻声，第一人称「我」',
+                catchphrases='……嗯',
+                address_user='前辈',
+                is_public=True,
+            ))
+            db.session.add(AIChatMessage(user_id=user.id, role='user',
+                                         content='前辈好，最近想补一部治愈番，有推荐吗？'))
+            db.session.add(AIChatMessage(user_id=user.id, role='assistant',
+                                         content='《夏目友人帐》吧，温柔又治愈，适合慢慢看。',
+                                         model='demo-free-model'))
+            print("  - 演示 AI 人设已就绪: 1 个角色 + 2 条聊天")
 
         db.session.commit()
         print("测试数据初始化完成")

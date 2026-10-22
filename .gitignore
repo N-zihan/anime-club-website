@@ -19,3 +19,6 @@ team-reports/
 verification/
 instance/
 tmp*
+
+# mkdocs 构建产物
+site/

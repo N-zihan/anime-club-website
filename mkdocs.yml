@@ -1,0 +1,64 @@
+site_name: 南平一中动漫社 · 项目文档
+site_description: 动漫社官方网站的开发、数据库、部署与运维文档
+site_url: https://n-zihan.github.io/anime-club-website/
+repo_url: https://github.com/N-zihan/anime-club-website
+repo_name: N-zihan/anime-club-website
+edit_uri: edit/main/docs/
+docs_dir: docs
+copyright: 南平一中动漫社 · 文档随代码一起版本管理
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: 切到深色
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切到浅色
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - 首页: index.md
+  - 快速开始（本地跑起来）: getting-started.md
+  - 数据库（Supabase）: database.md
+  - 平台部署（Vercel）: deployment.md
+  - 站内功能:
+      - 账号、验证码与权限: features/accounts.md
+      - 论坛 / 照片墙 / 通知 / 设置: features/community.md
+      - 番剧资源 / 番剧百科 / 新闻 / AI 好友: features/anime.md
+      - 萌战系统: features/contest.md
+      - 管理后台: features/admin.md
+  - 运维手册: operations.md
+  - 开发约定与踩坑: dev-notes.md

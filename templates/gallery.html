@@ -28,7 +28,7 @@
         display: block;
     }
 
-    .activity-photo-group {
+    .gallery-group {
         margin-bottom: 40px;
     }
 
@@ -47,7 +47,7 @@
 <h1>动漫社珍贵历史图片</h1>
 
 <!-- ========== 往期活动照片（未分类） ========== -->
-<div class="activity-photo-group">
+<div class="gallery-group">
     <h2>往期活动照片</h2>
     <div class="gallery-grid">
         {% for photo in uncategorized_photos %}
@@ -63,7 +63,7 @@
 <!-- ========== 按活动分类 ========== -->
 {% for activity in activities %}
 {% if activity.photos %}
-<div class="activity-photo-group">
+<div class="gallery-group">
     <h2>{{ activity.title }} <span style="font-size:0.9rem; color: var(--text-muted);">（{{ activity.date }}）</span></h2>
     <div class="gallery-grid">
         {% for photo in activity.photos %}
