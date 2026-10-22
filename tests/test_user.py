@@ -30,6 +30,18 @@ class TestUser:
         response = logged_in_client.get(f'/avatar/{sample_user.id}')
         assert response.status_code == 200
 
+    def test_get_avatar_fallback_is_initial_svg(self, logged_in_client, sample_user):
+        """没有自定义头像时返回「首字 + 渐变」SVG，而不是一块空白/1×1 透明图"""
+        assert not sample_user.avatar_url
+        response = logged_in_client.get(f'/avatar/{sample_user.id}')
+        assert response.status_code == 200
+        assert response.mimetype == 'image/svg+xml'
+        body = response.get_data(as_text=True)
+        assert body.startswith('<svg')
+        assert 'linearGradient' in body
+        assert sample_user.username[:1].upper() in body
+        assert 'max-age=86400' in response.headers.get('Cache-Control', '')
+
     def test_get_avatar_default(self, logged_in_client):
         response = logged_in_client.get('/avatar/99999')
         assert response.status_code == 404

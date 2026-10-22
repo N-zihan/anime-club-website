@@ -584,6 +584,29 @@ class TestSettingsPage:
         for value in ('data-value="zh"', 'data-value="original"', 'data-value="both"'):
             assert value in body, f'缺少语言选项：{value}'
 
+    def test_about_page_has_stats_and_highlights(self, logged_in_client, sample_activity):
+        """社团简介不再只有两句话：有数据条（成员/活动/赛事）和「我们在做什么」"""
+        from app.models import Activity, Contest, User
+        body = logged_in_client.get('/about').text
+        assert '注册成员' in body
+        assert '社团活动' in body
+        assert '线上赛事' in body
+        assert '我们在做什么' in body
+        # 统计数字要和库里对得上
+        assert f'<strong>{User.query.count()}</strong>' in body
+        assert f'<strong>{Activity.query.count()}</strong>' in body
+        assert f'<strong>{Contest.query.count()}</strong>' in body
+
+    def test_activities_page_shows_activity(self, logged_in_client, sample_activity):
+        body = logged_in_client.get('/activities').text
+        assert '测试活动' in body
+        assert '共 1 场活动' in body
+
+    def test_members_page_shows_count(self, logged_in_client, sample_user):
+        body = logged_in_client.get('/members').text
+        assert '位成员' in body
+        assert sample_user.username in body
+
     def test_settings_page_hides_notification_form_for_guest(self, client):
         """通知免打扰是账号级设置：访客只能看到登录提示，看不到表单"""
         body = client.get('/settings').get_data(as_text=True)

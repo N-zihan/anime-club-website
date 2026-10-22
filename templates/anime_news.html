@@ -3,9 +3,13 @@
 {% block content %}
 
 <h2>番剧新闻</h2>
-<p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:16px;">
+<p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:8px;">
     数据来源：ANN / MAL / Crunchyroll / Comic Book 等多家媒体
 </p>
+<div class="news-toolbar">
+    <span id="newsCount" class="news-count">正在加载…</span>
+    <span class="news-toolbar-hint">译自英文媒体，可在「设置 → 语言与翻译」切换译文 / 原文 / 双语</span>
+</div>
 
 <!-- 搜索框（搜索历史面板锚点由下方 task-9 脚本按需插入，避免与并行改动冲突） -->
 <div id="newsSearchRow" style="display:flex; gap:8px; margin-bottom:16px;">
@@ -90,6 +94,7 @@
 (function () {
     const feed = document.getElementById('newsFeed');
     const statusEl = document.getElementById('newsStatus');
+    const newsCountEl = document.getElementById('newsCount');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     const filterBtns = document.querySelectorAll('.filter-btn');
 
@@ -178,9 +183,11 @@
         }
         const img = a.image ? thumbUrl(a.image) : '';
 
+        // 没有配图时也给一个占位块，避免卡片左半边空出来、整页显得很「空」
         const thumbHtml = img
             ? '<img class="news-thumb" src="' + escapeHtml(img) + '" loading="lazy" alt="" onerror="this.style.display=\'none\'">'
-            : '';
+            : '<div class="news-thumb news-thumb-empty" aria-hidden="true">' +
+                '<span>' + escapeHtml((source || 'NEWS').slice(0, 3).toUpperCase()) + '</span></div>';
 
         // 卡片直接链接到独立详情页，不再触发模态框
         const detailUrl = '/anime_news/article?url=' + encodeURIComponent(link);
@@ -194,6 +201,7 @@
                 '</div>' +
                 '<h3 class="news-title"><a href="' + detailUrl + '" class="news-link">' + title + '</a></h3>' +
                 (excerpt ? '<div class="news-excerpt">' + excerpt + '</div>' : '') +
+                '<a class="news-more" href="' + detailUrl + '">阅读全文 →</a>' +
             '</div>' +
         '</div>';
     }
@@ -209,6 +217,8 @@
         feed.insertAdjacentHTML('beforeend', articles.map(itemHtml).join(''));
         // 卡片是动态插入的，补一轮「从下往上淡入」（base.html 提供，减少动效时会自动跳过）
         if (window.acRiseCards) window.acRiseCards(feed);
+        const shown = feed.querySelectorAll('.news-item').length;
+        if (newsCountEl) newsCountEl.textContent = '当前显示 ' + shown + ' 条';
     }
 
     function load(tag, append) {

@@ -251,7 +251,10 @@ def about():
     users = User.query.all()
     staff = User.query.filter_by(is_staff=True).all()
     owner = User.query.filter_by(is_owner=True).first()
-    return render_template('about.html', users=users, staff=staff, owner=owner)
+    activity_count = Activity.query.count()
+    contest_count = Contest.query.count()
+    return render_template('about.html', users=users, staff=staff, owner=owner,
+                           activity_count=activity_count, contest_count=contest_count)
 
 
 @public_bp.route('/about/history')
@@ -667,6 +670,10 @@ def anime_news_article():
     source_zh = source_zh_map.get(article_meta.get('source') if article_meta else '', 
                                   article_meta.get('source') if article_meta else '')
 
+    # 翻译服务不可用/未配置时，后端会把 content 回落成原文并标记 translated_failed，
+    # 前端必须显式告知用户（否则读者只会看到一整页英文，不知道是没翻译还是就这样）。
+    translation_failed = (data or {}).get('status') == 'translated_failed'
+
     return render_template('anime_news_detail.html',
                            article=article_meta,
                            url=url,
@@ -679,6 +686,7 @@ def anime_news_article():
                            cn_videos=cn_videos,
                            overseas_videos=overseas_videos,
                            fetch_failed=(data is None),
+                           translation_failed=translation_failed,
                            source_zh=source_zh)
 
 

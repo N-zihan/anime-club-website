@@ -15,15 +15,16 @@
    - 已通过审核的番剧推荐
 
 3. 头像获取 (/avatar/<user_id>) —— 返回用户头像图片：
-   - 从数据库读取二进制数据
-   - 若未设置则返回默认透明图
+   - 有自定义头像：重定向到存储地址
+   - 没有自定义头像：按用户 id 生成「渐变底色 + 用户名首字」的 SVG 头像（原先返回 1×1 透明图，
+     被拉伸后就是一块空白方块，视觉上很丑）
    - 设置浏览器缓存（1天）
 """
 
-import base64
 import re
 import secrets
 from datetime import datetime, timedelta
+from html import escape as html_escape
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, abort, Response, jsonify
 from sqlalchemy import func
@@ -301,17 +302,47 @@ def user_profile():
 
 
 # ---------- 头像 ----------
+AVATAR_PALETTE = (
+    ('#5b9bea', '#3f7fd0'),   # 蓝
+    ('#7c6cf0', '#5b4fd0'),   # 紫
+    ('#e46c9a', '#c74f80'),   # 粉
+    ('#3fb8a8', '#2b9488'),   # 青
+    ('#e0a13c', '#c4831f'),   # 橙
+    ('#6c8ae4', '#4a68c9'),   # 靛
+)
+
+
+def _fallback_avatar_svg(user) -> str:
+    """按用户生成「渐变底色 + 用户名首字」的 SVG 头像。
+
+    没有自定义头像的社员占大多数，返回 1×1 透明图会让头像位看起来是空白方块，
+    这里直接给一枚可缓存的 SVG：颜色按 id 轮转，首字取用户名第一个字符。
+    """
+    user_id = getattr(user, 'id', 0) or 0
+    start, end = AVATAR_PALETTE[user_id % len(AVATAR_PALETTE)]
+    name = (getattr(user, 'username', '') or '').strip()
+    initial = html_escape(name[:1].upper() or '?')
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img">'
+        f'<defs><linearGradient id="g{user_id}" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0" stop-color="{start}"/><stop offset="1" stop-color="{end}"/>'
+        '</linearGradient></defs>'
+        f'<rect width="80" height="80" rx="40" fill="url(#g{user_id})"/>'
+        '<text x="40" y="53" text-anchor="middle" font-size="34" font-weight="600"'
+        f' font-family="system-ui, -apple-system, Segoe UI, sans-serif" fill="#ffffff">{initial}</text>'
+        '</svg>'
+    )
+
+
 @user_bp.route('/avatar/<int:user_id>')
 def get_avatar(user_id):
-    """头像兜底路由"""
+    """头像兜底路由：有自定义头像就跳转，否则返回按用户生成的 SVG 头像"""
     user = get_or_404(User, user_id)
 
     if user.avatar_url:
         return redirect(user.avatar_url)
 
-    default = base64.b64decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')
-    response = Response(default, mimetype='image/png')
+    response = Response(_fallback_avatar_svg(user), mimetype='image/svg+xml')
     response.headers['Cache-Control'] = 'public, max-age=86400, s-maxage=86400'
     return response
 

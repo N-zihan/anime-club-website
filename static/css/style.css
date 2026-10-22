@@ -2747,3 +2747,203 @@ body.has-composer footer {
         bottom: calc(20px + var(--composer-h, 104px));
     }
 }
+
+/* ===================== 21. 页面内容补全（社团简介 / 活动 / 名单 / 新闻） ===================== */
+/* ---- 通用 ---- */
+.page-sub {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: -4px 0 18px;
+}
+
+.empty-state {
+    padding: 46px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+/* ---- 社团简介：数据条 + 我们在做什么 ---- */
+.about-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 22px 0 8px;
+}
+
+.about-stat {
+    padding: 18px 16px;
+    text-align: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-weak);
+}
+
+.about-stat strong {
+    display: block;
+    font-size: 1.7rem;
+    line-height: 1.2;
+    color: var(--accent);
+}
+
+.about-stat span {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.about-highlights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.about-highlight {
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.about-highlight:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+.about-highlight-icon {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+}
+
+.about-highlight h3 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.about-highlight p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+/* ---- 社员名单：身份徽章 ---- */
+.member-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.member-badge.owner {
+    background: rgba(234, 179, 8, 0.16);
+    color: #a16207;
+}
+
+.member-badge.staff {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+}
+
+[data-theme="dark"] .member-badge.owner {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fbbf24;
+}
+
+/* ---- 近期活动：日期做成标签 ---- */
+.activity-card .activity-date {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 3px 12px;
+    border-radius: var(--radius-full);
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.activity-card p {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ---- 番剧新闻：工具条 / 无图占位 / 阅读全文 ---- */
+.news-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.news-count {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.news-toolbar-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.news-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent-soft), var(--bg-code));
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.news-more {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.news-more:hover {
+    text-decoration: underline;
+}
+
+/* ---- 新闻详情：翻译不可用提示 ---- */
+.news-translate-notice {
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--alert-border-warning);
+    background: var(--alert-bg-warning);
+    color: var(--alert-text-warning);
+    font-size: 0.86rem;
+    line-height: 1.7;
+}
+
+.news-translate-notice code {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.06);
+    font-size: 0.82em;
+}
+
+[data-theme="dark"] .news-translate-notice code {
+    background: rgba(255, 255, 255, 0.12);
+}

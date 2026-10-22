@@ -180,3 +180,32 @@ def test_detail_page_escapes_original_text(client, patched_detail):
     body = resp.get_data(as_text=True)
     assert resp.status_code == 200
     assert '<script>alert(1)</script>' not in body, '原文块未转义'
+
+
+def test_detail_page_warns_when_translation_failed(client, patched_detail):
+    """翻译服务不可用/未配置时，详情页必须显式提示「当前显示的是原文」"""
+    patched_detail({
+        'title': 'T',
+        'content': 'English only paragraph text',
+        'content_original': 'English only paragraph text',
+        'images': [],
+        'status': 'translated_failed',
+        'reason': '翻译服务不可用，当前显示原文',
+    })
+    resp = client.get('/anime_news/article', query_string={'url': _VALID_URL})
+    body = resp.get_data(as_text=True)
+    assert resp.status_code == 200
+    assert 'news-translate-notice' in body
+    assert '当前显示的是原文' in body
+
+
+def test_detail_page_has_no_warning_when_translation_ok(client, patched_detail):
+    patched_detail({
+        'title': 'T',
+        'content': '这里是中文译文正文',
+        'content_original': 'Here is the English body text',
+        'images': [],
+        'status': 'ok',
+    })
+    body = client.get('/anime_news/article', query_string={'url': _VALID_URL}).get_data(as_text=True)
+    assert 'news-translate-notice' not in body

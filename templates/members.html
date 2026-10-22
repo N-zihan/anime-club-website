@@ -2,17 +2,21 @@
 {% block title %}社员名单{% endblock %}
 {% block content %}
 <h2>👥 社员名单</h2>
-<p class="member-count">共 {{ users|length }} 位成员</p>
+<p class="member-count">共 {{ users|length }} 位成员 · 点击任意成员查看其个人主页</p>
 <div class="members-grid">
     {% for user in users %}
     <a class="member-link" href="{{ url_for('user.user_profile', name=user.username) }}">
         <div class="member-card">
             <div class="member-avatar">
                 <img alt="{{ user.username }}" src="{{ avatar_url(user) }}"
-                     style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid #e2e8f0;">
+                     style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}var(--border-color){% endif %};">
             </div>
             <div class="member-info">
-                <h3 style="color: var(--text-primary);">{{ user.username }}</h3>
+                <h3 style="color: var(--text-primary);">
+                    {{ user.username }}
+                    {% if user.is_owner %}<span class="member-badge owner">站长</span>
+                    {% elif user.is_staff %}<span class="member-badge staff">运营</span>{% endif %}
+                </h3>
                 <p class="member-time">加入时间：{{ user.registered_at.strftime('%Y-%m-%d') }}</p>
             </div>
         </div>

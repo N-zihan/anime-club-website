@@ -2,16 +2,21 @@
 {% block title %}社团活动{% endblock %}
 {% block content %}
 <h2>近期活动</h2>
+<p class="page-sub">共 {{ activities|length }} 场活动 · 按时间先后排列</p>
+
+{% if activities %}
 <div class="activities-grid">
     {% for activity in activities %}
     <div class="activity-card">
-        <div class="activity-date">
-            {{ activity.date }}
-        </div>
+        <div class="activity-date">{{ activity.date }}</div>
         <h3>{{ activity.title }}</h3>
         <p>{{ activity.content }}</p>
-        <!-- 如果有图片字段，可以加 img -->
     </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="empty-state">
+    <p>还没有记录活动，等社团下一次活动结束后就会出现在这里。</p>
+</div>
+{% endif %}
 {% endblock %}

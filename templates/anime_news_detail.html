@@ -3,6 +3,16 @@
 {% block content %}
 <div class="article-container" style="max-width:720px; margin:0 auto; padding:20px 0;">
 
+{% if translation_failed %}
+{# 翻译服务未配置或失败：后端已把正文回落成原文，这里必须说明原因，
+   否则读者只会看到一整页英文，分不清是「没翻译」还是「本来就该这样」 #}
+<div class="news-translate-notice">
+    <strong>当前显示的是原文</strong>：本环境未配置机器翻译服务（或翻译暂时不可用）。
+    配置 <code>ALIBABA_CLOUD_ACCESS_KEY_ID</code> / <code>ALIBABA_CLOUD_ACCESS_KEY_SECRET</code> 后即可自动翻译；
+    也可以在「设置 → 语言与翻译」里切换「译文优先 / 仅原文 / 双语对照」。
+</div>
+{% endif %}
+
 {% if article and article.image %}
 <div style="margin-bottom:24px;">
   <img src="/api/anime/news-image?url={{ article.image|urlencode }}"
