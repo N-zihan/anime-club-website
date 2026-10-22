@@ -52,12 +52,24 @@ def _build_email_html(title: str, content: str, link: str = None) -> str:
 
 
 def _absolute_link(link: str) -> str:
-    """把相对路径转成绝对 URL"""
+    """把相对路径转成绝对 URL
+
+    优先用 SITE_URL（自部署时显式配置最可靠）；未配置时退化为当前请求域名，
+    避免把某一个人的域名硬编码在模板项目里。
+    """
     if not link:
         return None
     if link.startswith('http'):
         return link
-    base = os.getenv('SITE_URL', 'https://www.nanyi-anime-club.top')
+
+    base = (os.getenv('SITE_URL') or '').strip()
+    if not base:
+        try:
+            from flask import has_request_context, request
+            if has_request_context():
+                base = request.url_root
+        except (ImportError, RuntimeError):
+            base = ''
     return base.rstrip('/') + link
 
 

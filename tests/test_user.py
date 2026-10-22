@@ -306,3 +306,23 @@ class TestNotificationPreferences:
 
     def test_notify_types_are_the_real_ones(self):
         assert NOTIFY_TYPES == ('reply', 'audit', 'system')
+
+
+class TestAbsoluteLink:
+    """邮件/通知里的相对链接转绝对链接（SITE_URL 未配置时不能硬编码个人域名）"""
+
+    def test_uses_site_url_env(self, app, monkeypatch):
+        from app.notify import _absolute_link
+        monkeypatch.setenv('SITE_URL', 'https://example.com/')
+        assert _absolute_link('/board/1') == 'https://example.com/board/1'
+
+    def test_falls_back_to_request_host(self, app, monkeypatch):
+        from app.notify import _absolute_link
+        monkeypatch.delenv('SITE_URL', raising=False)
+        with app.test_request_context('/x', base_url='https://club.test'):
+            assert _absolute_link('/notifications') == 'https://club.test/notifications'
+
+    def test_keeps_absolute_link_and_none(self, app):
+        from app.notify import _absolute_link
+        assert _absolute_link('https://a.test/x') == 'https://a.test/x'
+        assert _absolute_link('') is None

@@ -2,7 +2,7 @@
 
 # 动漫社网站
 
-[![Vercel](https://img.shields.io/badge/Deployments-Vercel-000000?logo=vercel)](https://www.nanyi-anime-club.top)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)](https://vercel.com)
 [![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask)](https://flask.palletsprojects.com)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
@@ -17,7 +17,7 @@
 
 动漫社网站，集社团展示、互动交流、资源分享、动漫资讯、线上赛事于一体
 
-***在线访问***：[www.nanyi-anime-club.top](https://www.nanyi-anime-club.top)
+> 本站点为社团内部使用：**仅社员登录访问，不对外开放注册**，因此不在此提供线上入口，部署方式见下文。
 
 </div>
 
@@ -36,6 +36,61 @@
 | 通知中心 | 回复 / 审核 / 系统通知，可按类型静音、关闭未读红点轮询、开关邮件提醒         |
 | 站点设置 | 主题 / 字号 / 动效、新闻显示语言、本机数据清理（本机偏好免登录可用）         |
 | 管理后台 | 站长 / 运营双角色权限分离                                                    |
+
+## 页面导览
+
+> 截图取自开发环境，使用演示数据，不含真实社员信息。站点仅社员登录访问，公开页仅用于登录/注册与资讯浏览。
+
+### 1. 入口与公开页
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/splash.webp" alt="着陆页" width="440"><br><sub><b>着陆页</b> · 访客首屏，引导登录 / 注册</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/login.webp" alt="登录页" width="440"><br><sub><b>登录页</b> · 支持用户名 / QQ 号 / 邮箱登录</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/news.webp" alt="动漫新闻" width="440"><br><sub><b>动漫新闻</b> · 聚合资讯、来源筛选、搜索历史、显示语言切换</sub></td>
+    <td align="center"><img src="docs/screenshots/news-detail.webp" alt="新闻详情" width="440"><br><sub><b>新闻详情</b> · 全文 + 译文优先 / 仅原文 / 双语对照、白名单视频嵌入</sub></td>
+  </tr>
+</table>
+
+### 2. 社员页面
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/home.webp" alt="首页" width="440"><br><sub><b>首页</b> · 站点入口卡片、绑定邮箱提示与引导</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/about.webp" alt="社团简介" width="440"><br><sub><b>社团简介</b> · 社团介绍 + 成员卡</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/activities.webp" alt="近期活动" width="440"><br><sub><b>近期活动</b> · 活动列表与详情</sub></td>
+    <td align="center"><img src="docs/screenshots/anime-resources.webp" alt="番剧百科" width="440"><br><sub><b>番剧百科</b> · Bangumi 条目、分页与搜索</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/members.webp" alt="社员名单" width="440"><br><sub><b>社员名单</b> · 头像 + 身份标识，点击进入个人主页</sub></td>
+    <td align="center"><img src="docs/screenshots/profile.webp" alt="个人主页" width="440"><br><sub><b>个人主页</b> · 头像、身份、加入时间、最近发帖</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/forum.webp" alt="社员论坛" width="440"><br><sub><b>社员论坛</b> · 主题帖列表，按最后活跃排序、支持分页</sub></td>
+    <td align="center"><img src="docs/screenshots/thread.webp" alt="帖子详情" width="440"><br><sub><b>帖子详情</b> · 楼层回复、@某楼、底部固定输入框</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/contest-center.webp" alt="赛事中心" width="440"><br><sub><b>赛事中心</b> · 进行中 / 即将开始 / 已结束赛事</sub></td>
+    <td align="center"><img src="docs/screenshots/contest-detail.webp" alt="赛事详情" width="440"><br><sub><b>赛事详情</b> · 阶段进度、提名 / 投票入口、公示与 AI 赛事中心</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/settings.webp" alt="设置页" width="440"><br><sub><b>设置页</b> · 外观与显示、语言与翻译、通知免打扰、数据与隐私</sub></td>
+    <td align="center"></td>
+  </tr>
+</table>
+
+### 3. 管理后台
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/screenshots/admin-dashboard.webp" alt="站长面板" width="440"><br><sub><b>站长面板</b> · 活动 / 照片 / 用户 / 帖子 / 赛事 / 通知入口</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/admin-messages.webp" alt="帖子管理" width="440"><br><sub><b>帖子管理</b> · 查看回复、删除帖子（级联回复）</sub></td>
+  </tr>
+</table>
 
 ## 萌战系统
 
@@ -186,7 +241,7 @@ MAIL_USERNAME=你的邮箱 # 建议额外注册一个
 MAIL_PASSWORD=SMTP邮箱授权码
 
 # 可选配置
-SITE_URL= # 站点公网地址，用于通知里的链接（默认 https://www.nanyi-anime-club.top）
+SITE_URL= # 站点公网地址，用于通知与邮件里的绝对链接（留空则按当前请求域名生成）
 ALIBABA_CLOUD_ACCESS_KEY_ID= # 阿里云 AccessKey，用于新闻正文机器翻译
 ALIBABA_CLOUD_ACCESS_KEY_SECRET= # 阿里云 AccessKey Secret，不配置则新闻不翻译
 ```
@@ -266,7 +321,7 @@ npm test
 
 ## 项目状态
 
-- 核心功能完整，已部署至生产环境（在线访问：https://www.nanyi-anime-club.top）
+- 核心功能完整，已部署至生产环境（站点仅社员访问，线上地址不在此公开）
 - 萌战引擎：禁赛 / 轮空 / 复活赛 / 冠军空缺等赛事守则完备，人数短缺全链路不崩
 - 论坛：主题帖列表（按最后活跃排序、分页）、发帖校验、楼层回复与底部固定输入框
 - 设置页：外观与显示、语言与翻译、通知免打扰、数据与隐私（本机偏好 + 账号级通知偏好）
