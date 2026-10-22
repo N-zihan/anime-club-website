@@ -1,9 +1,9 @@
 name: Release
 
-# 每次推送 v* 标签时，把标签自动发布成一个 GitHub Release：
-# - 发布者会显示为 github-actions[bot]（和关注者活动流里那种一样）
-# - 发布说明用 GitHub 自动生成的 release notes（基于提交/PR）
-# - 支持在 Actions 页面手动 Run workflow，补建历史标签的 Release
+# 发行版策略：只给「功能版本」（vX.Y.0）自动发 GitHub Release，
+# 补丁版本（vX.Y.Z，Z>0）只打 tag、不建 Release，避免发行版太频繁。
+# - 自动触发：推送 vX.Y.0 标签时创建 Release，发布者为 github-actions[bot]
+# - 手动触发：Actions 页面 Run workflow，可补建/更新任意标签的 Release（不受 x.y.0 限制）
 on:
   push:
     tags:
@@ -36,16 +36,28 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_TAG: ${{ inputs.tag }}
           INPUT_LATEST: ${{ inputs.latest }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -e
           tag="${INPUT_TAG:-}"
           if [ -z "$tag" ]; then
-            tag="${GITHUB_REF_NAME}"
+            tag="${REF_NAME}"
           fi
           if [ "$tag" = "main" ] || [ -z "$tag" ]; then
             tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
           fi
           echo "target tag: $tag"
+
+          # 自动触发（推标签）时只在「功能版本」x.y.0 发布 Release，
+          # 补丁版本只打 tag 不建 Release，避免发行版太频繁；
+          # 手动 Run workflow 时不受此限制（可补建任意标签）。
+          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            if ! echo "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.0$'; then
+              echo "标签 $tag 是补丁版本，自动跳过（只发 x.y.0 功能版本）"
+              exit 0
+            fi
+          fi
 
           if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
             echo "标签 $tag 不存在，跳过"
