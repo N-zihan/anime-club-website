@@ -3246,7 +3246,9 @@ body.has-composer footer {
     color: var(--text-secondary);
 }
 
-.ai-persona-form input,
+/* 注意：只给文本类输入框加样式，复选框/单选框单独处理，
+   否则复选框会被撑成一整条宽框，把后面的文字挤到一边 */
+.ai-persona-form input:not([type="checkbox"]):not([type="radio"]),
 .ai-persona-form textarea {
     padding: 8px 12px;
     border-radius: var(--radius-md);
@@ -3259,7 +3261,18 @@ body.has-composer footer {
     resize: vertical;
 }
 
-.ai-persona-form input:focus,
+.ai-persona-form input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    min-height: 16px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.ai-persona-form input:not([type="checkbox"]):focus,
 .ai-persona-form textarea:focus {
     border-color: var(--accent);
 }
@@ -3267,7 +3280,9 @@ body.has-composer footer {
 .ai-persona-form .ai-check {
     flex-direction: row;
     align-items: center;
+    justify-content: flex-start;
     gap: 8px;
+    cursor: pointer;
 }
 
 .ai-form-actions {

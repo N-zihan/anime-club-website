@@ -23,6 +23,17 @@ test.describe('AI 好友', () => {
         await expect(page.locator('.ai-chat')).toBeVisible();
     });
 
+    test('新建角色表单里的勾选框不会被撑宽（回归）', async ({page}) => {
+        await page.goto('/ai_friend');
+        await page.locator('.ai-create summary').click();
+        const box = await page.locator('.ai-create input[type="checkbox"]').boundingBox();
+        expect(box.width).toBeLessThan(40);
+        expect(box.height).toBeLessThan(40);
+        // 勾选框与文字在同一行，整行不能被拉成一条长条
+        const rowBox = await page.locator('.ai-create .ai-check').boundingBox();
+        expect(rowBox.width).toBeLessThan(320);
+    });
+
     test('创建自定义角色后出现在「我的角色」', async ({page}) => {
         const name = `测试角色${Date.now() % 100000}`;
         await page.goto('/ai_friend');
