@@ -1,9 +1,9 @@
 name: Release
 
 # 每次推送 v* 标签时，把标签自动发布成一个 GitHub Release：
-# - 发布者会显示为 github-actions[bot]（和你在活动流里看到的那种一样）
+# - 发布者会显示为 github-actions[bot]（和关注者活动流里那种一样）
 # - 发布说明用 GitHub 自动生成的 release notes（基于提交/PR）
-# - 这样仓库才有 Releases 页，也才会出现在关注者/探索的活动流里
+# - 支持在 Actions 页面手动 Run workflow，补建历史标签的 Release
 on:
   push:
     tags:
@@ -11,9 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '要补建 Release 的标签名（例如 v4.23.4）；留空则用当前分支最新的 v* 标签'
+        description: '要补建/更新的标签名（例如 v4.23.4）；留空则用当前分支最新的 v* 标签'
         required: false
         type: string
+      latest:
+        description: '是否设为 Latest Release（补建历史版本时请取消勾选）'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -30,6 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_TAG: ${{ inputs.tag }}
+          INPUT_LATEST: ${{ inputs.latest }}
         run: |
           set -e
           tag="${INPUT_TAG:-}"
@@ -46,14 +52,31 @@ jobs:
             exit 0
           fi
 
+          # 标签推送时 INPUT_LATEST 为空，按 true 处理
+          latest="true"
+          if [ -n "$INPUT_LATEST" ]; then
+            latest="$INPUT_LATEST"
+          fi
+
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $tag 已存在，跳过"
+            echo "Release $tag 已存在"
+            if [ "$latest" = "true" ]; then
+              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --latest
+              echo "已把 $tag 设为 Latest Release"
+            fi
             exit 0
           fi
 
-          gh release create "$tag" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "$tag" \
-            --generate-notes \
-            --latest
+          if [ "$latest" = "true" ]; then
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$tag" \
+              --generate-notes \
+              --latest
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$tag" \
+              --generate-notes
+          fi
           echo "已发布 Release $tag"
