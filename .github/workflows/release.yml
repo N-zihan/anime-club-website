@@ -61,7 +61,9 @@ jobs:
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release $tag 已存在"
             if [ "$latest" = "true" ]; then
-              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --latest
+              # 先确保不是草稿/预发布，否则「设为 Latest」会被 GitHub 以 422 拒绝
+              gh release edit "$tag" --repo "$GITHUB_REPOSITORY" \
+                --draft=false --prerelease=false --latest
               echo "已把 $tag 设为 Latest Release"
             fi
             exit 0
