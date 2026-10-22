@@ -34,6 +34,7 @@
 | 照片墙   | 活动照片分类展示，存储于 Supabase Storage                                    |
 | 萌战系统 | 线上赛事引擎：提名 → 海选 → 小组赛 → 淘汰赛 → 冠军，内置禁赛/轮空/复活赛守则 |
 | 通知中心 | 回复 / 审核 / 系统通知，可按类型静音、关闭未读红点轮询、开关邮件提醒         |
+| AI 虚拟好友 | 免费模型驱动的看板娘聊天；可自定义角色人格（手填 / AI 补全）、公开或仅自己可见；限额 + FAQ 兜底，不产生付费调用 |
 | 站点设置 | 主题 / 字号 / 动效、新闻显示语言、本机数据清理（本机偏好免登录可用）         |
 | 管理后台 | 站长 / 运营双角色权限分离                                                    |
 
@@ -81,7 +82,7 @@
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/settings.webp" alt="设置页" width="440"><br><sub><b>设置页</b> · 外观与显示、语言与翻译、通知免打扰、数据与隐私</sub></td>
-    <td align="center"></td>
+    <td align="center"><img src="docs/screenshots/ai-friend.webp" alt="AI 好友" width="440"><br><sub><b>AI 虚拟好友</b> · 免费模型聊天 + 自定义角色人格（可公开给其他社员）</sub></td>
   </tr>
 </table>
 
@@ -234,6 +235,11 @@ OPENAI_BASE_URL=https://api.siliconflow.cn/v1
 AI_MODEL=deepseek-ai/DeepSeek-V3
 AI_CACHE_ENABLED=true
 AI_CACHE_TTL=3600
+
+# AI 虚拟好友（只用免费模型，失败回落 FAQ，不会调用付费模型）
+AI_CHAT_ENABLED=true
+AI_CHAT_MODELS=tencent/Hunyuan-MT-7B,XingChenAGI/Xing4.0-29B
+AI_CHAT_DAILY_LIMIT=30
 
 # SMTP 邮件配置(用于发送验证码和重置链接以及通知)
 SMTP_HOST=smtp.qq.com # 默认smtp.qq.com

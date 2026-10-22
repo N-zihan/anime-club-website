@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}AI 好友{% endblock %}
+
+{% block content %}
+<div class="ai-page">
+    <header class="ai-header">
+        <div>
+            <h2>🤖 AI 好友</h2>
+            <p class="ai-sub">
+                和站内 AI 看板娘聊番剧、问站内功能；也可以自己捏一个角色人格。
+                {% if not ai_enabled %}当前 AI 服务未配置，只能按常见问题回答。{% endif %}
+            </p>
+        </div>
+        <div class="ai-quota">今日对话 <strong id="ai-used">{{ used_today }}</strong> / {{ daily_limit }} 条</div>
+    </header>
+
+    <div class="ai-layout">
+        <!-- ================= 聊天 ================= -->
+        <section class="ai-chat" aria-label="AI 对话">
+            <div class="ai-chat-toolbar">
+                <label class="ai-persona-select">
+                    <span>当前角色</span>
+                    <select id="ai-persona-select">
+                        <option value="">小动漫（默认看板娘）</option>
+                        {% for p in my_personas %}
+                        <option value="{{ p.id }}">{{ p.name }}（我的）</option>
+                        {% endfor %}
+                        {% for p in public_personas %}
+                        <option value="{{ p.id }}">{{ p.name }} · {{ p.user.username if p.user else '社员' }} 创建</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <span class="ai-model-hint">免费模型池 · 不可用时自动按常见问题回答</span>
+            </div>
+
+            <div class="ai-messages" id="ai-messages">
+                {% for m in history %}
+                <div class="ai-msg {{ 'ai-msg-user' if m.role == 'user' else 'ai-msg-bot' }}">
+                    <div class="ai-bubble">{{ m.content }}</div>
+                </div>
+                {% else %}
+                <div class="ai-msg ai-msg-bot">
+                    <div class="ai-bubble">前辈好呀～我是看板娘小动漫 (｡･ω･｡)ﾉ♡<br>
+                        可以问我：怎么参加萌战、怎么投票、怎么推荐番剧、怎么发帖，或者聊聊最近在追什么番。</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="ai-notice" id="ai-notice" hidden></div>
+
+            <form class="ai-composer" id="ai-composer">
+                <input id="ai-input" type="text" maxlength="300" autocomplete="off"
+                       placeholder="想聊点什么…（Enter 发送）" required>
+                <button class="btn btn-primary" type="submit" id="ai-send">发送</button>
+            </form>
+            <p class="ai-disclaimer">AI 生成内容仅供参考，可能会出错；请勿输入真实姓名、住址、联系方式等隐私。</p>
+        </section>
+
+        <!-- ================= 角色 ================= -->
+        <aside class="ai-personas" id="personas" aria-label="角色管理">
+            <h3>我的角色 <span class="ai-count">{{ my_personas|length }} / {{ max_personas }}</span></h3>
+
+            {% if my_personas %}
+            <div class="ai-persona-list">
+                {% for p in my_personas %}
+                <div class="ai-persona-card">
+                    <div class="ai-persona-head">
+                        <strong>{{ p.name }}</strong>
+                        <span class="ai-badge {{ 'public' if p.is_public else 'private' }}">{{ p.visibility_label }}</span>
+                    </div>
+                    <p class="ai-persona-meta">{{ p.source or '未填写出处' }} · {{ p.personality }}</p>
+                    <p class="ai-persona-style">{{ p.speech_style }}</p>
+                    <div class="ai-persona-actions">
+                        <button type="button" class="btn btn-ghost ai-use" data-id="{{ p.id }}">用它聊天</button>
+                        <details class="ai-edit-wrap">
+                            <summary class="btn btn-ghost">编辑</summary>
+                            <form class="ai-persona-form" method="POST"
+                                  action="{{ url_for('user.ai_friend_persona_edit', persona_id=p.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <label>角色名<input name="name" maxlength="20" required value="{{ p.name }}"></label>
+                                <label>出处<input name="source" maxlength="30" value="{{ p.source or '' }}"></label>
+                                <label>性格标签<input name="personality" maxlength="100" required value="{{ p.personality }}"></label>
+                                <label>说话风格<textarea name="speech_style" rows="2" maxlength="150" required>{{ p.speech_style }}</textarea></label>
+                                <label>口头禅<input name="catchphrases" maxlength="100" value="{{ p.catchphrases or '' }}"></label>
+                                <label>称呼你<input name="address_user" maxlength="20" value="{{ p.address_user or '' }}"></label>
+                                <label class="ai-check"><input type="checkbox" name="is_public" {% if p.is_public %}checked{% endif %}> 公开给其他社员使用</label>
+                                <button class="btn btn-primary" type="submit">保存</button>
+                            </form>
+                        </details>
+                        <form method="POST" action="{{ url_for('user.ai_friend_persona_delete', persona_id=p.id) }}"
+                              onsubmit="return confirm('确定删除这个角色吗？')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-danger" type="submit">删除</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="ai-empty">还没有自定义角色，下面捏一个吧。</p>
+            {% endif %}
+
+            <details class="ai-create">
+                <summary class="btn btn-primary">＋ 新建角色</summary>
+                <form class="ai-persona-form" method="POST" action="{{ url_for('user.ai_friend_persona_create') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label>角色名 *<input name="name" id="pf-name" maxlength="20" required placeholder="如：中野三玖"></label>
+                    <label>出处<input name="source" id="pf-source" maxlength="30" placeholder="如：五等分的新娘"></label>
+                    <label>性格标签 *<input name="personality" id="pf-personality" maxlength="100" required placeholder="如：内向,认真,爱历史"></label>
+                    <label>说话风格 *<textarea name="speech_style" id="pf-speech" rows="2" maxlength="150" required placeholder="如：话少、轻声，第一人称『我』"></textarea></label>
+                    <label>口头禅<input name="catchphrases" id="pf-catch" maxlength="100" placeholder="如：……嗯"></label>
+                    <label>怎么称呼你<input name="address_user" id="pf-address" maxlength="20" placeholder="如：前辈"></label>
+                    <label class="ai-check"><input type="checkbox" name="is_public"> 公开给其他社员使用</label>
+                    <div class="ai-form-actions">
+                        <button type="button" class="btn btn-ghost" id="ai-fill">✨ 帮我补全</button>
+                        <button class="btn btn-primary" type="submit">创建角色</button>
+                    </div>
+                    <p class="ai-form-hint" id="ai-fill-hint">填个角色名，点「帮我补全」可以让 AI 按名字起草人格，生成后请自行核对修改。</p>
+                </form>
+            </details>
+
+            {% if public_personas %}
+            <h3 style="margin-top:20px;">社员公开的角色</h3>
+            <div class="ai-persona-list">
+                {% for p in public_personas %}
+                <div class="ai-persona-card">
+                    <div class="ai-persona-head">
+                        <strong>{{ p.name }}</strong>
+                        <span class="ai-badge public">公开</span>
+                    </div>
+                    <p class="ai-persona-meta">{{ p.source or '未填写出处' }} · {{ p.personality }}</p>
+                    <button type="button" class="btn btn-ghost ai-use" data-id="{{ p.id }}">用它聊天</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+
+<script>
+(function () {
+    var CSRF = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+    var messages = document.getElementById('ai-messages');
+    var input = document.getElementById('ai-input');
+    var composer = document.getElementById('ai-composer');
+    var sendBtn = document.getElementById('ai-send');
+    var personaSelect = document.getElementById('ai-persona-select');
+    var noticeEl = document.getElementById('ai-notice');
+    var usedEl = document.getElementById('ai-used');
+    var used = {{ used_today|int }};
+    var limit = {{ daily_limit|int }};
+
+    function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, function (c) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+        });
+    }
+    function appendMessage(role, text) {
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-msg ' + (role === 'user' ? 'ai-msg-user' : 'ai-msg-bot');
+        var bubble = document.createElement('div');
+        bubble.className = 'ai-bubble';
+        bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+        wrap.appendChild(bubble);
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+    }
+    function showNotice(text) {
+        if (!text) { noticeEl.hidden = true; noticeEl.textContent = ''; return; }
+        noticeEl.hidden = false;
+        noticeEl.textContent = text;
+    }
+
+    // 记住上次选的角色
+    try {
+        var saved = localStorage.getItem('ai_persona_id');
+        if (saved) personaSelect.value = saved;
+    } catch (e) {}
+    personaSelect.addEventListener('change', function () {
+        try { localStorage.setItem('ai_persona_id', personaSelect.value); } catch (e) {}
+    });
+    document.querySelectorAll('.ai-use').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            personaSelect.value = btn.dataset.id;
+            personaSelect.dispatchEvent(new Event('change'));
+            personaSelect.scrollIntoView({behavior: 'smooth', block: 'center'});
+        });
+    });
+
+    composer.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var text = input.value.trim();
+        if (!text) return;
+        appendMessage('user', text);
+        input.value = '';
+        sendBtn.disabled = true;
+        showNotice('');
+
+        fetch('/api/ai_friend/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+            body: JSON.stringify({message: text, persona_id: personaSelect.value || null}),
+        }).then(function (r) { return r.json(); }).then(function (d) {
+            if (!d.ok) { showNotice(d.error || '发送失败，稍后再试'); return; }
+            appendMessage('bot', d.reply);
+            if (d.notice) showNotice(d.notice);
+            if (typeof d.used === 'number') { used = d.used; usedEl.textContent = used; }
+        }).catch(function () {
+            showNotice('网络好像不太稳定，稍后再试一次～');
+        }).finally(function () { sendBtn.disabled = false; input.focus(); });
+    });
+
+    // 「✨ 帮我补全」
+    var fillBtn = document.getElementById('ai-fill');
+    var hint = document.getElementById('ai-fill-hint');
+    if (fillBtn) {
+        fillBtn.addEventListener('click', function () {
+            var name = document.getElementById('pf-name').value.trim();
+            if (!name) { hint.textContent = '先填角色名，再点补全～'; return; }
+            fillBtn.disabled = true;
+            hint.textContent = '正在按名字起草人格…';
+            fetch('/api/ai_friend/fill', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+                body: JSON.stringify({name: name}),
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (!d.ok) { hint.textContent = d.error || '补全失败，手动填一下也可以'; return; }
+                var draft = d.draft || {};
+                document.getElementById('pf-personality').value = draft.personality || '';
+                document.getElementById('pf-speech').value = draft.speech_style || '';
+                document.getElementById('pf-catch').value = draft.catchphrases || '';
+                document.getElementById('pf-address').value = draft.address_user || '';
+                hint.textContent = '已按「' + name + '」起草，请核对后修改再创建（AI 可能记错角色设定）。';
+            }).catch(function () {
+                hint.textContent = '补全失败，手动填一下也可以';
+            }).finally(function () { fillBtn.disabled = false; });
+        });
+    }
+})();
+</script>
+{% endblock %}

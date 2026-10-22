@@ -258,4 +258,45 @@ class VideoProxy(db.Model):
 
     user = db.relationship('User', backref='video_proxy_logs')
 
-    user = db.relationship('User', backref='notifications')
+
+# ========== AI 虚拟好友 ==========
+class AIPersona(db.Model):
+    """用户自定义的 AI 角色人格。
+
+    人设内容全部由用户手填（或免费模型辅助补全），不抓取外部网页；
+    is_public=False 表示仅创建者可见；status='hidden' 表示被管理员下架。
+    """
+    __tablename__ = 'ai_personas'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    name = db.Column(db.String(30), nullable=False)
+    source = db.Column(db.String(50), nullable=True)
+    personality = db.Column(db.String(200), nullable=False)   # 逗号分隔的性格标签
+    speech_style = db.Column(db.Text, nullable=False)         # 说话风格
+    catchphrases = db.Column(db.String(200), nullable=True)   # 逗号分隔，最多 3 个
+    address_user = db.Column(db.String(30), nullable=True)    # 对用户的称呼
+    is_public = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(db.String(20), default='active', nullable=False)  # active / hidden
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref=db.backref('ai_personas', lazy='dynamic'))
+
+    @property
+    def visibility_label(self):
+        return '公开' if self.is_public else '仅自己'
+
+
+class AIChatMessage(db.Model):
+    """AI 好友聊天记录：只用于上下文与用量限额，不对外展示。"""
+    __tablename__ = 'ai_chat_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    persona_id = db.Column(db.Integer, db.ForeignKey('ai_personas.id'), nullable=True)
+    role = db.Column(db.String(10), nullable=False)   # user / assistant
+    content = db.Column(db.Text, nullable=False)
+    model = db.Column(db.String(60), nullable=True)   # 实际回答的模型（失败兜底为 null）
+    is_fallback = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    persona = db.relationship('AIPersona')

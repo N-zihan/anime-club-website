@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}AI 好友管理{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h2>🤖 AI 好友管理</h2>
+</div>
+
+<div class="ai-admin-stats">
+    <div class="ai-admin-stat"><strong>{{ stats.personas }}</strong><span>自定义角色</span></div>
+    <div class="ai-admin-stat"><strong>{{ stats.public_personas }}</strong><span>公开角色</span></div>
+    <div class="ai-admin-stat"><strong>{{ stats.hidden_personas }}</strong><span>已下架</span></div>
+    <div class="ai-admin-stat"><strong>{{ stats.messages_today }}</strong><span>今日消息</span></div>
+</div>
+
+<h3 style="margin-top:24px;">模型调用分布（全部为免费模型）</h3>
+{% if model_rows %}
+<table class="admin-table" style="max-width:560px;">
+    <thead>
+    <tr><th>模型</th><th style="width:120px;">助手消息数</th></tr>
+    </thead>
+    <tbody>
+    {% for model, count in model_rows %}
+    <tr>
+        <td>{{ model or '（FAQ 兜底 / 未调用模型）' }}</td>
+        <td>{{ count }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-hint">还没有调用记录</p>
+{% endif %}
+
+<h3 style="margin-top:28px;">角色审核</h3>
+{% if personas %}
+<table class="admin-table">
+    <thead>
+    <tr>
+        <th style="width:60px;">ID</th>
+        <th>角色名</th>
+        <th>创建者</th>
+        <th>性格</th>
+        <th style="width:90px;">可见性</th>
+        <th style="width:90px;">状态</th>
+        <th style="width:160px;">创建时间</th>
+        <th style="width:120px;">操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for p in personas %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>
+            <strong>{{ p.name }}</strong>
+            {% if p.source %}<br><small style="color:var(--text-muted);">{{ p.source }}</small>{% endif %}
+        </td>
+        <td>{{ p.user.username if p.user else '已注销' }}</td>
+        <td><small>{{ p.personality }}</small></td>
+        <td>{{ '公开' if p.is_public else '仅自己' }}</td>
+        <td>
+            {% if p.status == 'hidden' %}
+            <span style="color:#b91c1c;">已下架</span>
+            {% else %}
+            <span style="color:#15803d;">正常</span>
+            {% endif %}
+        </td>
+        <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '' }}</td>
+        <td>
+            <form method="POST" action="{{ url_for('admin.admin_ai_friend_toggle', persona_id=p.id) }}"
+                  style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-delete">
+                    {{ '恢复' if p.status == 'hidden' else '下架' }}
+                </button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty-hint">还没有用户创建角色</p>
+{% endif %}
+
+<p style="margin-top:20px; color: var(--text-muted); font-size:0.85rem;">
+    说明：AI 对话只调用免费模型（模型池由环境变量 <code>AI_CHAT_MODELS</code> 控制），
+    全部失败时回落到站内 FAQ，不会产生付费调用。
+</p>
+{% endblock %}

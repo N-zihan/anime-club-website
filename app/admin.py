@@ -21,7 +21,7 @@ import io
 import re
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
@@ -30,7 +30,9 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 
 from .models import (db, User, Activity, Photo, Message, Reply,
-                     Contest, Nomination, Candidate, ContestVote, Notification)
+                     Contest, Nomination, Candidate, ContestVote, Notification,
+                     AIPersona, AIChatMessage)
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from .utils import get_supabase, allowed_file, compress_image, get_or_404
@@ -771,3 +773,42 @@ def admin_notification_send():
             flash('通知已发送给全体社员', 'success')
             return redirect(url_for('admin.admin_notification_send'))
     return render_template('admin_notification_send.html')
+
+
+# ========== AI 虚拟好友管理 ==========
+@admin_bp.route('/admin/ai_friend')
+@admin_required
+def admin_ai_friend():
+    """AI 好友：用量概览 + 人设审核（下架/恢复）"""
+    now_cn = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    today_start = now_cn.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
+
+    personas = AIPersona.query.order_by(AIPersona.created_at.desc()).limit(200).all()
+    model_rows = db.session.query(
+        AIChatMessage.model, func.count(AIChatMessage.id)
+    ).filter(AIChatMessage.role == 'assistant').group_by(AIChatMessage.model).all()
+
+    stats = {
+        'personas': AIPersona.query.count(),
+        'public_personas': AIPersona.query.filter_by(is_public=True).count(),
+        'hidden_personas': AIPersona.query.filter_by(status='hidden').count(),
+        'messages_today': AIChatMessage.query.filter(
+            AIChatMessage.created_at >= today_start).count(),
+    }
+    return render_template('admin_ai_friend.html', personas=personas, stats=stats,
+                           model_rows=model_rows)
+
+
+@admin_bp.route('/admin/ai_friend/personas/<int:persona_id>/toggle', methods=['POST'])
+@admin_required
+def admin_ai_friend_toggle(persona_id):
+    """下架 / 恢复用户自定义人设"""
+    persona = get_or_404(AIPersona, persona_id)
+    if persona.status == 'hidden':
+        persona.status = 'active'
+        flash(f'已恢复角色「{persona.name}」', 'success')
+    else:
+        persona.status = 'hidden'
+        flash(f'已下架角色「{persona.name}」', 'success')
+    db.session.commit()
+    return redirect(url_for('admin.admin_ai_friend'))

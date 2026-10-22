@@ -90,6 +90,7 @@
                     <span id="notif-badge" class="notif-badge" style="display:none;"></span>
                 </a>
                 <a class="drawer-item" href="{{ url_for('user.profile') }}">👤 个人资料</a>
+                <a class="drawer-item" href="{{ url_for('user.ai_friend') }}">🤖 AI 好友</a>
                 <a class="drawer-item" href="{{ url_for('public.settings') }}">⚙️ 设置</a>
                 {% if is_admin %}
                 <a class="drawer-item" href="{{ url_for('admin.admin_entry') }}">🛠️ 管理后台</a>

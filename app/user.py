@@ -23,14 +23,15 @@
 
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from html import escape as html_escape
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, abort, Response, jsonify
 from sqlalchemy import func
 
 from .config import AVATAR_MAX_SIZE
-from .models import db, User, Message, Notification
+from .models import db, User, Message, Notification, AIPersona, AIChatMessage
+from . import ai_friend as ai_friend_mod
 from .preferences import (NOTIFY_LABELS, get_preferences, muted_types,
                           normalize_preferences, save_preferences)
 from .utils import (allowed_file, compress_image, get_or_404,
@@ -442,3 +443,279 @@ def save_notification_settings():
     db.session.commit()
     flash('通知设置已保存', 'success')
     return redirect(url_for('public.settings') + '#notify-section')
+
+
+# ========== AI 虚拟好友 ==========
+PERSONA_MAX_PER_USER = 5
+PERSONA_MAX_PER_DAY = 3
+CHAT_PAGE_SIZE = 20
+
+
+def _cn_today_start():
+    """东八区「今天 00:00」对应的 UTC naive 时间（库里存 naive UTC）"""
+    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    start_cn = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return start_cn - timedelta(hours=8)
+
+
+def _validate_persona(form):
+    """校验人设表单，返回 (data, errors)"""
+    data = {
+        'name': (form.get('name') or '').strip()[:30],
+        'source': (form.get('source') or '').strip()[:50],
+        'personality': (form.get('personality') or '').strip()[:200],
+        'speech_style': (form.get('speech_style') or '').strip()[:200],
+        'catchphrases': (form.get('catchphrases') or '').strip()[:200],
+        'address_user': (form.get('address_user') or '').strip()[:30],
+    }
+    errors = []
+    if not data['name']:
+        errors.append('角色名不能为空')
+    if not data['personality']:
+        errors.append('请至少填一个性格标签')
+    if len(data['speech_style']) < 2:
+        errors.append('说话风格至少 2 个字')
+
+    combined = ' '.join(v for v in data.values() if v)
+    if ai_friend_mod.check_input(combined):
+        errors.append('内容包含不允许的表述，请修改后重试')
+    return data, errors
+
+
+def _persona_to_dict(persona):
+    return {
+        'id': persona.id,
+        'name': persona.name,
+        'source': persona.source or '',
+        'personality': persona.personality,
+        'speech_style': persona.speech_style,
+        'catchphrases': persona.catchphrases or '',
+        'address_user': persona.address_user or '',
+        'is_public': bool(persona.is_public),
+        'is_mine': True,
+    }
+
+
+def _select_persona(persona_id, user_id):
+    """取聊天使用的 persona：自己的或公开的，其余一律视为无（用默认看板娘）"""
+    if not persona_id:
+        return None
+    try:
+        pid = int(persona_id)
+    except (TypeError, ValueError):
+        return None
+    persona = db.session.get(AIPersona, pid)
+    if persona is None or persona.status != 'active':
+        return None
+    if persona.user_id != user_id and not persona.is_public:
+        return None
+    return persona
+
+
+@user_bp.route('/ai_friend')
+def ai_friend():
+    """AI 虚拟好友：聊天 + 我的角色 / 公开角色"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    user_id = session['user_id']
+
+    mine = AIPersona.query.filter_by(user_id=user_id, status='active') \
+        .order_by(AIPersona.created_at.desc()).all()
+    public = AIPersona.query.filter(AIPersona.is_public.is_(True),
+                                    AIPersona.status == 'active',
+                                    AIPersona.user_id != user_id) \
+        .order_by(AIPersona.created_at.desc()).limit(20).all()
+
+    history = AIChatMessage.query.filter_by(user_id=user_id) \
+        .order_by(AIChatMessage.created_at.desc()).limit(CHAT_PAGE_SIZE).all()
+    history.reverse()
+
+    used = AIChatMessage.query.filter(
+        AIChatMessage.user_id == user_id,
+        AIChatMessage.role == 'user',
+        AIChatMessage.created_at >= _cn_today_start(),
+    ).count()
+
+    return render_template(
+        'ai_friend.html',
+        my_personas=mine,
+        public_personas=public,
+        history=history,
+        ai_enabled=ai_friend_mod.is_enabled(),
+        models=ai_friend_mod.models(),
+        daily_limit=ai_friend_mod.daily_limit(),
+        used_today=used,
+        max_personas=PERSONA_MAX_PER_USER,
+    )
+
+
+@user_bp.route('/ai_friend/personas', methods=['POST'])
+def ai_friend_persona_create():
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    user_id = session['user_id']
+
+    if AIPersona.query.filter_by(user_id=user_id, status='active').count() >= PERSONA_MAX_PER_USER:
+        flash(f'最多创建 {PERSONA_MAX_PER_USER} 个角色', 'danger')
+        return redirect(url_for('user.ai_friend') + '#personas')
+
+    created_today = AIPersona.query.filter(
+        AIPersona.user_id == user_id,
+        AIPersona.created_at >= _cn_today_start(),
+    ).count()
+    if created_today >= PERSONA_MAX_PER_DAY:
+        flash(f'每天最多新建 {PERSONA_MAX_PER_DAY} 个角色，明天再来吧', 'danger')
+        return redirect(url_for('user.ai_friend') + '#personas')
+
+    data, errors = _validate_persona(request.form)
+    if errors:
+        flash('；'.join(errors), 'danger')
+        return redirect(url_for('user.ai_friend') + '#personas')
+
+    persona = AIPersona(
+        user_id=user_id,
+        name=data['name'],
+        source=data['source'] or None,
+        personality=data['personality'],
+        speech_style=data['speech_style'],
+        catchphrases=data['catchphrases'] or None,
+        address_user=data['address_user'] or None,
+        is_public=request.form.get('is_public') is not None,
+    )
+    db.session.add(persona)
+    db.session.commit()
+    flash(f'角色「{persona.name}」创建成功', 'success')
+    return redirect(url_for('user.ai_friend') + '#personas')
+
+
+@user_bp.route('/ai_friend/personas/<int:persona_id>/edit', methods=['POST'])
+def ai_friend_persona_edit(persona_id):
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    persona = get_or_404(AIPersona, persona_id)
+    if persona.user_id != session['user_id']:
+        abort(403)
+
+    data, errors = _validate_persona(request.form)
+    if errors:
+        flash('；'.join(errors), 'danger')
+        return redirect(url_for('user.ai_friend') + '#personas')
+
+    persona.name = data['name']
+    persona.source = data['source'] or None
+    persona.personality = data['personality']
+    persona.speech_style = data['speech_style']
+    persona.catchphrases = data['catchphrases'] or None
+    persona.address_user = data['address_user'] or None
+    persona.is_public = request.form.get('is_public') is not None
+    persona.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    db.session.commit()
+    flash('角色已更新', 'success')
+    return redirect(url_for('user.ai_friend') + '#personas')
+
+
+@user_bp.route('/ai_friend/personas/<int:persona_id>/delete', methods=['POST'])
+def ai_friend_persona_delete(persona_id):
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    persona = get_or_404(AIPersona, persona_id)
+    if persona.user_id != session['user_id']:
+        abort(403)
+    db.session.delete(persona)
+    db.session.commit()
+    flash('角色已删除', 'success')
+    return redirect(url_for('user.ai_friend') + '#personas')
+
+
+@user_bp.route('/api/ai_friend/fill', methods=['POST'])
+def ai_friend_fill():
+    """「✨ 帮我补全」：用免费模型按角色名生成人设草稿（不落库，用户可改）"""
+    if not session.get('user_id'):
+        return jsonify({'ok': False, 'error': '请先登录'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get('name') or '').strip()
+    hint = (payload.get('hint') or '').strip()
+    if not name:
+        return jsonify({'ok': False, 'error': '先填写角色名'}), 400
+    if ai_friend_mod.check_input(name + ' ' + hint):
+        return jsonify({'ok': False, 'error': '这个角色名不在允许范围内'}), 400
+
+    draft = ai_friend_mod.fill_persona(name, hint)
+    if not draft:
+        return jsonify({'ok': False, 'error': 'AI 补全暂时不可用，请手动填写'}), 503
+    return jsonify({'ok': True, 'draft': draft})
+
+
+@user_bp.route('/api/ai_friend/chat', methods=['POST'])
+def ai_friend_chat():
+    """聊天接口：免费模型池 → FAQ 兜底，永不调用付费模型"""
+    if not session.get('user_id'):
+        return jsonify({'ok': False, 'error': '请先登录'}), 401
+    user_id = session['user_id']
+
+    payload = request.get_json(silent=True) or {}
+    message = (payload.get('message') or '').strip()
+    if not message:
+        return jsonify({'ok': False, 'error': '消息不能为空'}), 400
+    if len(message) > ai_friend_mod.MAX_MESSAGE_LEN:
+        return jsonify({'ok': False, 'error': '消息太长了，精简到 %d 字以内吧'
+                        % ai_friend_mod.MAX_MESSAGE_LEN}), 400
+
+    used = AIChatMessage.query.filter(
+        AIChatMessage.user_id == user_id,
+        AIChatMessage.role == 'user',
+        AIChatMessage.created_at >= _cn_today_start(),
+    ).count()
+    limit = ai_friend_mod.daily_limit()
+    if used >= limit:
+        return jsonify({
+            'ok': True,
+            'reply': ai_friend_mod.faq_answer(message),
+            'fallback': True,
+            'model': None,
+            'reason': 'quota',
+            'notice': f'今天的 AI 对话次数已用完（{limit} 条/天），下面先按常见问题回答',
+            'used': used,
+            'limit': limit,
+        })
+
+    persona = _select_persona(payload.get('persona_id'), user_id)
+    persona_dict = None
+    if persona is not None:
+        persona_dict = {'name': persona.name, 'source': persona.source,
+                        'personality': persona.personality,
+                        'speech_style': persona.speech_style,
+                        'catchphrases': persona.catchphrases,
+                        'address_user': persona.address_user}
+
+    history_q = AIChatMessage.query.filter_by(user_id=user_id)
+    if persona is None:
+        history_q = history_q.filter(AIChatMessage.persona_id.is_(None))
+    else:
+        history_q = history_q.filter(AIChatMessage.persona_id == persona.id)
+    history_rows = history_q.order_by(AIChatMessage.created_at.desc()).limit(6).all()
+    history = [{'role': r.role, 'content': r.content} for r in reversed(history_rows)]
+
+    result = ai_friend_mod.chat(message, persona=persona_dict, history=history)
+
+    db.session.add(AIChatMessage(user_id=user_id, persona_id=persona.id if persona else None,
+                                 role='user', content=message))
+    db.session.add(AIChatMessage(user_id=user_id, persona_id=persona.id if persona else None,
+                                 role='assistant', content=result['reply'],
+                                 model=result.get('model'),
+                                 is_fallback=bool(result.get('fallback'))))
+    db.session.commit()
+
+    return jsonify({
+        'ok': True,
+        'reply': result['reply'],
+        'fallback': bool(result.get('fallback')),
+        'model': result.get('model'),
+        'reason': result.get('reason'),
+        'notice': ('AI 暂时不可用，先按站内常见问题回答你～'
+                   if result.get('fallback') else None),
+        'persona': persona.name if persona else '小动漫',
+        'used': used + 1,
+        'limit': limit,
+    })
