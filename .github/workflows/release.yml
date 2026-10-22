@@ -1,0 +1,59 @@
+name: Release
+
+# 每次推送 v* 标签时，把标签自动发布成一个 GitHub Release：
+# - 发布者会显示为 github-actions[bot]（和你在活动流里看到的那种一样）
+# - 发布说明用 GitHub 自动生成的 release notes（基于提交/PR）
+# - 这样仓库才有 Releases 页，也才会出现在关注者/探索的活动流里
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要补建 Release 的标签名（例如 v4.23.4）；留空则用当前分支最新的 v* 标签'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 发布 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -e
+          tag="${INPUT_TAG:-}"
+          if [ -z "$tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          fi
+          if [ "$tag" = "main" ] || [ -z "$tag" ]; then
+            tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          fi
+          echo "target tag: $tag"
+
+          if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "标签 $tag 不存在，跳过"
+            exit 0
+          fi
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag 已存在，跳过"
+            exit 0
+          fi
+
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$tag" \
+            --generate-notes \
+            --latest
+          echo "已发布 Release $tag"
