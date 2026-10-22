@@ -51,8 +51,8 @@
     <td align="center" width="50%"><img src="docs/screenshots/login.webp" alt="登录页" width="440"><br><sub><b>登录页</b> · 支持用户名 / QQ 号 / 邮箱登录</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/news.webp" alt="动漫新闻" width="440"><br><sub><b>动漫新闻</b> · 聚合资讯、来源筛选、搜索历史、显示语言切换</sub></td>
-    <td align="center"><img src="docs/screenshots/news-detail.webp" alt="新闻详情" width="440"><br><sub><b>新闻详情</b> · 全文 + 译文优先 / 仅原文 / 双语对照、白名单视频嵌入</sub></td>
+    <td align="center"><img src="docs/screenshots/news.webp" alt="动漫新闻" width="440"><br><sub><b>动漫新闻</b> · 聚合资讯、来源筛选、搜索历史、显示语言切换（截图为线上环境，20 条/页）</sub></td>
+    <td align="center"><img src="docs/screenshots/news-detail.webp" alt="新闻详情" width="440"><br><sub><b>新闻详情</b> · 全文 + 译文优先 / 仅原文 / 双语对照、白名单视频嵌入（截图为线上环境，已开启机器翻译）</sub></td>
   </tr>
 </table>
 
