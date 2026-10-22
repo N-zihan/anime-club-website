@@ -3,6 +3,11 @@
 !!! info "本文档不含 Vercel / Supabase 控制台截图"
     控制台页面会暴露环境变量、连接串、API Key 等敏感信息。所以这里用配置文件、命令输出和公开页面截图来说明流程——照着做即可，不需要任何后台截图对照。
 
+!!! warning "这是「自建部署」文档：域名请用你自己的"
+    本文档面向任何想自建社团站的人。所有示例域名（`<你的域名>`、`your-site.example.com`）都是占位符；
+    文中提到的 `www.nanyi-anime-club.top` **只是本社团已经部署好的那个实例**，
+    请不要把它绑定到你的项目、不要照抄成解析记录，也不要拿它当验证目标。
+
 ## 1. 部署拓扑
 
 ```text
@@ -14,7 +19,7 @@ Vercel 自动构建 ──► Python Serverless 函数（@vercel/python, hkg1 �
    │                     ├──► Supabase PostgreSQL（数据）
    │                     └──► Supabase Storage（头像 / 照片 / 赛事图）
    ▼
-https://www.nanyi-anime-club.top
+https://<你的域名>        # 每个部署用自己的域名；本社团实例的域名见「相关链接」
 ```
 
 - 仓库根目录的 `vercel.json` 决定构建方式：

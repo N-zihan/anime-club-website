@@ -49,6 +49,6 @@
 
 ## 相关链接
 
-- 线上站点：<https://www.nanyi-anime-club.top>（仅社员可登录）
+- 本社团线上实例：<https://www.nanyi-anime-club.top>（**仅本社团使用、仅社员可登录**；自建部署请用你自己的域名）
 - 代码仓库：<https://github.com/N-zihan/anime-club-website>
 - README / 功能导览：仓库根目录 [`README.md`](https://github.com/N-zihan/anime-club-website#readme)
