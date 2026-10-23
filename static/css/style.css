@@ -3382,3 +3382,39 @@ body.has-composer footer {
         max-width: 88%;
     }
 }
+
+/* ===================== 23. 论坛：删除自己的帖子 / 回复 ===================== */
+.thread-delete-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.thread-delete-btn:hover {
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.45);
+    background: rgba(220, 38, 38, 0.06);
+}
+
+.thread-op-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.thread-op-actions form,
+.thread-reply-delete {
+    display: inline-block;
+    margin: 0;
+}
+
+.thread-reply-delete {
+    margin-left: 8px;
+}

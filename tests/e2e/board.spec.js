@@ -84,6 +84,32 @@ test.describe('论坛（原留言板）', () => {
         await ctx.close();
     });
 
+    test('社员可以删除自己的回复和帖子', async ({page}) => {
+        const title = `可删除主题-${Date.now()}`;
+        await page.goto('/board/new');
+        await page.fill('input[name="title"]', title);
+        await page.fill('textarea[name="content"]', '待删除的正文');
+        await page.click('.forum-form-actions button[type="submit"]');
+        await expect(page.locator('.thread-title')).toHaveText(title);
+
+        // 发一条回复并删除
+        await page.fill('#thread-reply-input', '这条回复会被删除');
+        await page.click('.thread-composer-send');
+        await expect(page.locator('.thread-posts')).toContainText('这条回复会被删除');
+
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.locator('.thread-posts .thread-delete-btn').last().click();
+        // 删掉最后一条回复后，列表区变成空状态
+        await expect(page.locator('.thread-empty')).toBeVisible();
+        await expect(page.locator('body')).not.toContainText('这条回复会被删除');
+
+        // 删除主题帖：回到论坛列表，且帖子消失
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.locator('.thread-op-actions .thread-delete-btn').click();
+        await expect(page).toHaveURL(/\/board$/);
+        await expect(page.locator('.forum-row-title', {hasText: title})).toHaveCount(0);
+    });
+
     test('窄屏下看板娘不遮挡发布/发送按钮，发送后输入框清空', async ({browser}) => {
         // 回归：之前看板娘在手机上盖住表单右下角按钮，点「发布」实际点到了立绘，
         // 表单没提交、输入框内容当然还在（表现为"发送后输入框未清空"）

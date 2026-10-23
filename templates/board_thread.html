@@ -19,6 +19,15 @@
         </header>
         <h2 class="thread-title">{{ thread.display_title }}</h2>
         <div class="thread-body">{{ thread.content }}</div>
+        {% if can_delete_thread %}
+        <div class="thread-op-actions">
+            <form method="POST" action="{{ url_for('public.delete_thread', thread_id=thread.id) }}"
+                  onsubmit="return confirm('确定删除这个帖子吗？帖子下的全部回复也会一起删除。')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="thread-delete-btn">删除主题</button>
+            </form>
+        </div>
+        {% endif %}
     </article>
 
     <h3 class="thread-reply-title">全部回复 <span class="thread-reply-count">{{ reply_count }}</span></h3>
@@ -42,6 +51,14 @@
             {% if session.user_id %}
             <button type="button" class="thread-reply-btn" data-target="reply-form-{{ r.id }}"
                     onclick="toggleReply(this)">回复</button>
+            {% if r.id in deletable_reply_ids %}
+            <form class="thread-reply-delete" method="POST"
+                  action="{{ url_for('public.delete_reply', reply_id=r.id) }}"
+                  onsubmit="return confirm('确定删除这条回复吗？')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="thread-delete-btn">删除</button>
+            </form>
+            {% endif %}
             <form class="thread-reply-form" id="reply-form-{{ r.id }}" method="POST"
                   action="{{ url_for('public.add_reply', message_id=thread.id) }}" style="display:none;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

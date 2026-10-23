@@ -1,6 +1,6 @@
 import pytest
 from app.auth import CLUB_NAME
-from app.models import ContestVote, Contest
+from app.models import ContestVote, Contest, Message, Reply, User
 from datetime import timedelta, datetime
 from unittest.mock import patch
 
@@ -634,3 +634,85 @@ class TestFlashMessages:
         client.get('/anime_news')
         later = client.get('/settings').get_data(as_text=True)
         assert '禁赛相关提示' not in later, '提示残留到了后续页面'
+
+
+class TestBoardDelete:
+    """社员删除自己的帖子 / 回复（作者本人或运营/站长）"""
+
+    def _thread(self, db_session, user, title='可删除的帖子'):
+        msg = Message(title=title, content='正文', nickname=user.username, user_id=user.id)
+        db_session.add(msg)
+        db_session.commit()
+        db_session.refresh(msg)
+        return msg
+
+    def _reply(self, db_session, user, msg, content='一条回复', parent_id=None):
+        reply = Reply(nickname=user.username, content=content,
+                      message_id=msg.id, user_id=user.id, parent_reply_id=parent_id)
+        db_session.add(reply)
+        db_session.commit()
+        db_session.refresh(reply)
+        return reply
+
+    def test_author_can_delete_own_thread(self, logged_in_client, db_session, sample_user):
+        msg = self._thread(db_session, sample_user)
+        self._reply(db_session, sample_user, msg)
+        resp = logged_in_client.post(f'/board/{msg.id}/delete')
+        assert resp.status_code == 302
+        assert '/board' in resp.headers['Location']
+        assert db_session.get(Message, msg.id) is None
+        assert Reply.query.filter_by(message_id=msg.id).count() == 0
+
+    def test_cannot_delete_others_thread(self, logged_in_client, db_session):
+        other = User(username='别人的号', qq='111222333', email='other@example.com')
+        other.set_password('x')
+        db_session.add(other)
+        db_session.commit()
+        msg = self._thread(db_session, other)
+        resp = logged_in_client.post(f'/board/{msg.id}/delete')
+        assert resp.status_code == 403
+        assert db_session.get(Message, msg.id) is not None
+
+    def test_moderator_can_delete_others_thread(self, admin_client, db_session, sample_user):
+        msg = self._thread(db_session, sample_user)
+        resp = admin_client.post(f'/board/{msg.id}/delete')
+        assert resp.status_code == 302
+        assert db_session.get(Message, msg.id) is None
+
+    def test_author_can_delete_own_reply(self, logged_in_client, db_session, sample_user):
+        msg = self._thread(db_session, sample_user)
+        reply = self._reply(db_session, sample_user, msg)
+        resp = logged_in_client.post(f'/reply/{reply.id}/delete')
+        assert resp.status_code == 302
+        assert db_session.get(Reply, reply.id) is None
+
+    def test_deleting_reply_detaches_children(self, logged_in_client, db_session, sample_user):
+        msg = self._thread(db_session, sample_user)
+        parent = self._reply(db_session, sample_user, msg, '父楼层')
+        other = User(username='围观群众', qq='444555666', email='watch@example.com')
+        other.set_password('x')
+        db_session.add(other)
+        db_session.commit()
+        child = self._reply(db_session, other, msg, '子楼层', parent_id=parent.id)
+
+        logged_in_client.post(f'/reply/{parent.id}/delete')
+        db_session.refresh(child)
+        assert child.parent_reply_id is None
+        assert db_session.get(Reply, child.id) is not None
+
+    def test_cannot_delete_others_reply(self, logged_in_client, db_session):
+        other = User(username='回复的人', qq='777888999', email='reply@example.com')
+        other.set_password('x')
+        db_session.add(other)
+        db_session.commit()
+        msg = self._thread(db_session, other)
+        reply = self._reply(db_session, other, msg)
+        resp = logged_in_client.post(f'/reply/{reply.id}/delete')
+        assert resp.status_code == 403
+        assert db_session.get(Reply, reply.id) is not None
+
+    def test_guest_cannot_delete(self, client, db_session, sample_user):
+        msg = self._thread(db_session, sample_user)
+        resp = client.post(f'/board/{msg.id}/delete')
+        assert resp.status_code in (302, 400)
+        assert db_session.get(Message, msg.id) is not None

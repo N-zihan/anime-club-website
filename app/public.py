@@ -50,7 +50,7 @@ from .contest_engine import (
     prepare_group_round_data
 )
 from .models import (db, User, Activity, Photo, Message, Reply, Contest,
-                     Nomination, Candidate, ContestVote)
+                     Nomination, Candidate, ContestVote, Notification)
 from .preferences import BADGE_POLL_CHOICES, NOTIFY_LABELS, NOTIFY_TYPES
 from .utils import (get_supabase, compress_image, get_or_404, allowed_file,
                     is_public_http_url, safe_get)
@@ -414,6 +414,15 @@ def board_thread(thread_id):
             else:
                 parent_names[reply.id] = parent.user.username if parent.user else parent.nickname
 
+    # 删除权限：作者本人可删自己的帖子/回复；运营/站长可删任意内容
+    uid = session.get('user_id')
+    me = db.session.get(User, uid) if uid else None
+    is_moderator = bool(me and (me.is_staff or me.is_owner))
+    can_delete_thread = bool(uid and (is_moderator or thread.user_id == uid))
+    deletable_reply_ids = {
+        r.id for r in replies if uid and (is_moderator or r.user_id == uid)
+    }
+
     return render_template(
         'board_thread.html',
         thread=thread,
@@ -421,6 +430,8 @@ def board_thread(thread_id):
         replies=replies,
         parent_names=parent_names,
         reply_count=len(replies),
+        can_delete_thread=can_delete_thread,
+        deletable_reply_ids=deletable_reply_ids,
     )
 
 
@@ -483,6 +494,59 @@ def add_reply(message_id):
 
     return redirect(url_for('public.board_thread', thread_id=message_id))
 
+
+def _can_delete_board_item(author_id):
+    """作者本人可删自己的帖子/回复；运营（staff）/站长（owner）可删任意。"""
+    uid = session.get('user_id')
+    if not uid:
+        return False
+    if author_id == uid:
+        return True
+    user = db.session.get(User, uid)
+    return bool(user and (user.is_staff or user.is_owner))
+
+
+@public_bp.route('/board/<int:thread_id>/delete', methods=['POST'])
+def delete_thread(thread_id):
+    """删除主题帖（连带回复与指向它的通知）"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    thread = db.session.get(Message, thread_id)
+    if not thread:
+        abort(404)
+    if not _can_delete_board_item(thread.user_id):
+        abort(403)
+
+    Reply.query.filter_by(message_id=thread_id).delete(synchronize_session=False)
+    # 站内通知里的链接指向该帖子，帖子没了就一起清掉，避免点进去 404
+    Notification.query.filter(
+        Notification.link.like(f'%/board/{thread_id}')).delete(synchronize_session=False)
+    db.session.delete(thread)
+    db.session.commit()
+    flash('帖子已删除', 'success')
+    return redirect(url_for('public.board'))
+
+
+@public_bp.route('/reply/<int:reply_id>/delete', methods=['POST'])
+def delete_reply(reply_id):
+    """删除单条回复；它下面的子回复改为顶层，避免引用到不存在的楼层"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    reply = db.session.get(Reply, reply_id)
+    if not reply:
+        abort(404)
+    if not _can_delete_board_item(reply.user_id):
+        abort(403)
+
+    thread_id = reply.message_id
+    Reply.query.filter_by(parent_reply_id=reply.id).update(
+        {'parent_reply_id': None}, synchronize_session=False)
+    db.session.delete(reply)
+    db.session.commit()
+    flash('回复已删除', 'success')
+    return redirect(url_for('public.board_thread', thread_id=thread_id))
 
 
 @public_bp.route('/anime_resources')
