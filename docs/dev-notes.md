@@ -89,7 +89,7 @@ mkdocs build            # 输出到 site/
 
 | 指标 | 数值 | 备注 |
 |---|---|---|
-| `app/public.py` | 约 1950 行 | 已抽走离线路由/RSS/实时票数（`public_misc.py`）；目标 < 800 行 |
+| `app/public.py` | 约 2000 行 | 已抽走「论坛/举报」（`public_board.py` 424 行）、「离线/RSS/实时票数」（`public_misc.py`）；目标 < 800 行 |
 | `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
 | `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
 | 测试覆盖率 | 66% → 约 67% | `python -m pytest --cov=app --cov-report=term-missing` |
@@ -101,6 +101,12 @@ mkdocs build            # 输出到 site/
   `datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)`；时区错一次就是整站时间错 8 小时。
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
+
+### 第三批已还（v4.28.4）
+
+- **拆出 `public_board.py`**：论坛列表/发帖/帖子详情/回复/编辑/删除/举报整块（424 行）独立，
+  共用 `public_bp`，endpoint 名不变；全量 pytest 576 通过。
+- **剩余拆分项**：`public_contest.py`（赛事公开路由，最大块）与 `public_news.py`，下一轮继续。
 
 ### 第二批已还（v4.28.3）
 
