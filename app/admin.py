@@ -31,7 +31,7 @@ from openpyxl.styles import Font, Alignment
 
 from .models import (db, User, Activity, Photo, Message, Reply,
                      Contest, Nomination, Candidate, ContestVote, Notification,
-                     AIPersona, AIChatMessage)
+                     AIPersona, AIChatMessage, AdminLog)
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
@@ -812,3 +812,84 @@ def admin_ai_friend_toggle(persona_id):
         flash(f'已下架角色「{persona.name}」', 'success')
     db.session.commit()
     return redirect(url_for('admin.admin_ai_friend'))
+
+
+# ========== 操作日志：自动记录后台写操作 ==========
+_ADMIN_ACTION_LABELS = {
+    '/admin/messages/delete/<int:message_id>': '删除帖子',
+    '/admin/replies/delete/<int:reply_id>': '删除回复',
+    '/admin/users/delete/<int:user_id>': '删除用户',
+    '/admin/users/toggle_staff/<int:user_id>': '切换运营权限',
+    '/admin/users/toggle_owner/<int:user_id>': '切换站长权限',
+    '/admin/users/bind_email/<int:user_id>': '绑定邮箱',
+    '/admin/users/reset_password/<int:user_id>': '重置密码',
+    '/admin/activities/add': '新增活动',
+    '/admin/activities/edit/<int:id>': '编辑活动',
+    '/admin/activities/delete/<int:id>': '删除活动',
+    '/admin/gallery/upload': '上传照片',
+    '/admin/gallery/delete/<int:photo_id>': '删除照片',
+    '/admin/contests/create': '创建赛事',
+    '/admin/contests/edit/<int:contest_id>': '编辑赛事',
+    '/admin/contests/delete/<int:contest_id>': '删除赛事',
+    '/admin/nominations/approve/<int:nomination_id>': '通过提名',
+    '/admin/nominations/reject/<int:nomination_id>': '驳回提名',
+    '/admin/candidates/delete/<int:candidate_id>': '删除候选角色',
+    '/admin/candidates/ban/<int:candidate_id>': '禁赛角色',
+    '/admin/candidates/unban/<int:candidate_id>': '解除禁赛',
+    '/admin/notifications/send': '群发通知',
+    '/admin/ai_friend/personas/<int:persona_id>/toggle': '审核 AI 人设',
+}
+
+
+@admin_bp.after_request
+def log_admin_action(response):
+    """后台的 POST 成功操作自动留痕（谁、对什么、做了什么、从哪来）。
+
+    放在 after_request 里而不是每条路由手写，新增后台路由也能自动被记录
+    （没有专门中文名的路由会退回记录路径本身）。
+    """
+    try:
+        if request.method != 'POST' or not session.get('user_id'):
+            return response
+        if response.status_code >= 400:
+            return response
+        me = db.session.get(User, session['user_id'])
+        if me is None or not (me.is_staff or me.is_owner):
+            return response
+        rule = request.url_rule.rule if request.url_rule else request.path
+        if not rule.startswith('/admin/'):
+            return response
+        action = _ADMIN_ACTION_LABELS.get(rule, rule)
+        target = ', '.join(f'{k}={v}' for k, v in (request.view_args or {}).items())
+        detail = (request.form.get('content') or request.form.get('title')
+                  or request.form.get('description') or '')[:300]
+        db.session.add(AdminLog(
+            user_id=session['user_id'],
+            username=session.get('username', ''),
+            action=action,
+            target=(target[:120] or None),
+            detail=(detail or request.path)[:500],
+            ip=request.remote_addr,
+        ))
+        db.session.commit()
+    except Exception:  # 日志失败绝不能影响正常操作
+        db.session.rollback()
+    return response
+
+
+@admin_bp.route('/admin/logs')
+@admin_required
+def admin_logs():
+    """管理员操作日志（分页）"""
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+    per_page = 50
+    total = AdminLog.query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    logs = (AdminLog.query
+            .order_by(AdminLog.created_at.desc(), AdminLog.id.desc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all())
+    return render_template('admin_logs.html', logs=logs, page=page,
+                           total=total, total_pages=total_pages)

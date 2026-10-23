@@ -45,7 +45,7 @@
                     {% endif %}
                     <time>{{ r.timestamp.strftime('%Y-%m-%d %H:%M') }}</time>
                 </div>
-                <span class="thread-floor">{{ loop.index }} 楼</span>
+                <span class="thread-floor">{{ reply_offset + loop.index }} 楼</span>
             </header>
             <div class="thread-body">{{ r.content }}</div>
             {% if session.user_id %}
@@ -56,6 +56,7 @@
                   action="{{ url_for('public.delete_reply', reply_id=r.id) }}"
                   onsubmit="return confirm('确定删除这条回复吗？')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="page" value="{{ page }}">
                 <button type="submit" class="thread-delete-btn">删除</button>
             </form>
             {% endif %}
@@ -73,6 +74,18 @@
     </div>
     {% else %}
     <p class="thread-empty">还没有回复，抢个沙发吧。</p>
+    {% endif %}
+
+    {% if total_pages > 1 %}
+    <nav class="forum-pager thread-pager">
+        {% if page > 1 %}
+        <a class="btn btn-ghost" href="{{ url_for('public.board_thread', thread_id=thread.id, page=page - 1) }}">← 上一页</a>
+        {% endif %}
+        <span class="forum-pager-info">第 {{ page }} / {{ total_pages }} 页（共 {{ reply_count }} 条回复）</span>
+        {% if page < total_pages %}
+        <a class="btn btn-ghost" href="{{ url_for('public.board_thread', thread_id=thread.id, page=page + 1) }}">下一页 →</a>
+        {% endif %}
+    </nav>
     {% endif %}
 </div>
 

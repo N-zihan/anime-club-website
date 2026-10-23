@@ -288,6 +288,7 @@ def gallery():
 
 # ========== 论坛（原留言板） ==========
 BOARD_PAGE_SIZE = 20
+BOARD_REPLY_PAGE_SIZE = 30      # 帖子详情里每页楼层数（热门帖不一次性拉全部回复）
 BOARD_TITLE_MAX = 120
 BOARD_CONTENT_MAX = 5000
 
@@ -389,10 +390,16 @@ def board_new():
 
 @public_bp.route('/board/<int:thread_id>')
 def board_thread(thread_id):
-    # 帖子详情：主楼 + 全部楼层，底部固定输入框可直接回复本主题
+    # 帖子详情：主楼 + 分页楼层，底部固定输入框可直接回复本主题
     thread = db.session.get(Message, thread_id)
     if not thread:
         abort(404)
+
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+    reply_total = Reply.query.filter_by(message_id=thread_id).count()
+    total_pages = max(1, (reply_total + BOARD_REPLY_PAGE_SIZE - 1) // BOARD_REPLY_PAGE_SIZE)
+    page = min(page, total_pages)
+    reply_offset = (page - 1) * BOARD_REPLY_PAGE_SIZE
 
     replies = (
         Reply.query.options(
@@ -400,7 +407,9 @@ def board_thread(thread_id):
             joinedload(Reply.parent_reply).joinedload(Reply.user),
         )
         .filter_by(message_id=thread_id)
-        .order_by(Reply.timestamp.asc())
+        .order_by(Reply.timestamp.asc(), Reply.id.asc())
+        .offset(reply_offset)
+        .limit(BOARD_REPLY_PAGE_SIZE)
         .all()
     )
 
@@ -429,7 +438,10 @@ def board_thread(thread_id):
         thread_time=_cn_time(thread.timestamp),
         replies=replies,
         parent_names=parent_names,
-        reply_count=len(replies),
+        reply_count=reply_total,
+        reply_offset=reply_offset,
+        page=page,
+        total_pages=total_pages,
         can_delete_thread=can_delete_thread,
         deletable_reply_ids=deletable_reply_ids,
     )
@@ -541,12 +553,13 @@ def delete_reply(reply_id):
         abort(403)
 
     thread_id = reply.message_id
+    page = max(1, request.form.get('page', 1, type=int) or 1)
     Reply.query.filter_by(parent_reply_id=reply.id).update(
         {'parent_reply_id': None}, synchronize_session=False)
     db.session.delete(reply)
     db.session.commit()
     flash('回复已删除', 'success')
-    return redirect(url_for('public.board_thread', thread_id=thread_id))
+    return redirect(url_for('public.board_thread', thread_id=thread_id, page=page))
 
 
 @public_bp.route('/anime_resources')

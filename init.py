@@ -133,6 +133,60 @@ def ensure_buckets():
     return created
 
 
+# 热点查询索引：create_all() 只会给「新建的表」建索引，已有表不会补，
+# 所以这里用 CREATE INDEX IF NOT EXISTS 幂等补一遍（兼容 PostgreSQL / SQLite）。
+REQUIRED_INDEXES = [
+    ('ix_message_timestamp', 'message', ['timestamp']),
+    ('ix_message_user_id', 'message', ['user_id']),
+    ('ix_reply_timestamp', 'reply', ['timestamp']),
+    ('ix_reply_message_id', 'reply', ['message_id']),
+    ('ix_reply_user_id', 'reply', ['user_id']),
+    ('ix_reply_parent_reply_id', 'reply', ['parent_reply_id']),
+    ('ix_photo_activity_id', 'photo', ['activity_id']),
+    ('ix_notifications_user_id', 'notifications', ['user_id']),
+    ('ix_notifications_created_at', 'notifications', ['created_at']),
+    ('ix_notifications_user_read', 'notifications', ['user_id', 'is_read']),
+    ('ix_nominations_contest_id', 'nominations', ['contest_id']),
+    ('ix_nominations_user_id', 'nominations', ['user_id']),
+    ('ix_candidates_contest_id', 'candidates', ['contest_id']),
+    ('ix_contest_votes_contest_id', 'contest_votes', ['contest_id']),
+    ('ix_contest_votes_candidate_id', 'contest_votes', ['candidate_id']),
+    ('ix_contest_votes_user_id', 'contest_votes', ['user_id']),
+    ('ix_admin_logs_created_at', 'admin_logs', ['created_at']),
+]
+
+
+def ensure_indexes():
+    """幂等补齐热点索引，返回本次新建的数量。"""
+    inspector = inspect(db.engine)
+    tables = set(inspector.get_table_names())
+    created = 0
+    skipped_tables = set()
+
+    for name, table, columns in REQUIRED_INDEXES:
+        if table not in tables:
+            skipped_tables.add(table)
+            continue
+        existing = {idx['name'] for idx in inspector.get_indexes(table)}
+        if name in existing:
+            continue
+        cols = ', '.join(f'"{c}"' for c in columns)
+        ddl = f'CREATE INDEX IF NOT EXISTS "{name}" ON "{table}" ({cols})'
+        try:
+            db.session.execute(text(ddl))
+            db.session.commit()
+            created += 1
+            log(f'  + 索引 {name} ({table})')
+        except Exception as exc:
+            db.session.rollback()
+            log(f'✗ 建索引失败 {name}: {exc}')
+
+    if skipped_tables:
+        log(f'  跳过（表不存在）: {", ".join(sorted(skipped_tables))}')
+    return created
+
+
+
 def main():
     log('=== 初始化开始 ===')
 
@@ -144,6 +198,7 @@ def main():
         sys.exit(1)
 
     added_cols = ensure_columns()
+    added_indexes = ensure_indexes()
     created_buckets = ensure_buckets()
     
     # 视频代理系统（当前按设计未启用，init_video_proxy 为幂等空操作）
@@ -160,7 +215,7 @@ def main():
         log(f'orphan 检查跳过: {e}')
 
     log('=== 初始化完成 ===')
-    log(f'本次新增 {added_cols} 列，新建 {created_buckets} 个存储桶')
+    log(f'本次新增 {added_cols} 列 / {added_indexes} 个索引，新建 {created_buckets} 个存储桶')
 
 
 if __name__ == '__main__':

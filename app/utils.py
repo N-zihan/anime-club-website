@@ -228,19 +228,13 @@ _ACTION_THROTTLE = {}
 
 
 def throttle_ok(key, seconds):
-    """进程内简易限流，用于挡住最粗暴的邮件轰炸/验证码枚举循环。
+    """限流：同一 key 在 seconds 秒内只放行一次（验证码发送、找回密码等）。
 
-    注意：Serverless 多实例下不是强保证，生产建议再叠加 Flask-Limiter
-    或平台级（WAF）限流。
+    实现落在数据库（app/throttle.py），Vercel 多实例共享同一份计数；
+    数据库不可用时自动回退到进程内实现，不会把正常用户锁在门外。
     """
-    now = time.monotonic()
-    last = _ACTION_THROTTLE.get(key)
-    if last is not None and now - last < seconds:
-        return False
-    if len(_ACTION_THROTTLE) > 5000:  # 防止自身无上限增长
-        _ACTION_THROTTLE.clear()
-    _ACTION_THROTTLE[key] = now
-    return True
+    from . import throttle  # pylint: disable=import-outside-toplevel
+    return throttle.throttle_ok(key, seconds)
 
 
 # 登录失败计数器：window 秒内连续失败 max_failures 次才拦截，
@@ -250,32 +244,20 @@ _LOGIN_FAILS = {}
 
 def login_fail_hit_limit(key, max_failures=5, window=60):
     """记录一次登录失败；该 key 在 window 秒内失败超过 max_failures 次时返回 True。"""
-    now = time.monotonic()
-    count, start = _LOGIN_FAILS.get(key, (0, now))
-    if now - start > window:
-        count, start = 0, now
-    count += 1
-    if len(_LOGIN_FAILS) > 5000:  # 防止自身无上限增长
-        _LOGIN_FAILS.clear()
-    _LOGIN_FAILS[key] = (count, start)
-    return count > max_failures
+    from . import throttle  # pylint: disable=import-outside-toplevel
+    return throttle.login_fail_hit_limit(key, max_failures=max_failures, window=window)
 
 
 def login_fail_is_limited(key, max_failures=5, window=60):
     """该 key 在 window 秒内失败次数是否已超过 max_failures（不计数，只查询）。"""
-    now = time.monotonic()
-    entry = _LOGIN_FAILS.get(key)
-    if entry is None:
-        return False
-    count, start = entry
-    if now - start > window:
-        return False
-    return count > max_failures
+    from . import throttle  # pylint: disable=import-outside-toplevel
+    return throttle.login_fail_is_limited(key, max_failures=max_failures, window=window)
 
 
 def login_fail_reset(key):
     """登录成功后清除失败计数。"""
-    _LOGIN_FAILS.pop(key, None)
+    from . import throttle  # pylint: disable=import-outside-toplevel
+    throttle.login_fail_reset(key)
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

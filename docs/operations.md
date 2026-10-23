@@ -86,9 +86,14 @@ git ls-remote origin refs/heads/main refs/tags/v4.24.0
 
 | 脚本 | 用途 |
 |---|---|
-| `python init.py` | 幂等建表/补列/建桶/孤儿数据报告 |
+| `python init.py` | 幂等建表 / 补列 / 补热点索引 / 建桶 / 孤儿数据报告 |
 | `INIT_DB=1 python run.py` | 只建缺失的表（不补列），本地或一次性使用 |
 | `python run.py`（`TESTING=1`） | 演示模式，带种子数据 |
+
+!!! note "限流与操作日志"
+    - 登录失败计数、验证码发送节流走数据库表 `rate_limits`（跨 Serverless 实例共享），
+      数据库不可用时自动回退进程内计数，不会把用户锁死。
+    - 后台写操作写入 `admin_logs`，可在 `/admin/logs` 查看（分页，最近在前）。
 
 ## 8. 常见"历史坑"提醒
 

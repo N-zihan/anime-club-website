@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}操作日志{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h2>🧾 操作日志</h2>
+</div>
+
+<p class="page-sub">后台的删除、权限变更、审核等写操作自动留痕，共 {{ total }} 条（最近的在前）</p>
+
+{% if logs %}
+<table class="admin-table">
+    <thead>
+    <tr>
+        <th style="width:150px;">时间</th>
+        <th style="width:130px;">操作者</th>
+        <th style="width:150px;">动作</th>
+        <th style="width:170px;">目标</th>
+        <th>详情 / 路径</th>
+        <th style="width:120px;">IP</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for log in logs %}
+    <tr>
+        <td>{{ log.created_cn.strftime('%Y-%m-%d %H:%M:%S') if log.created_cn else '' }}</td>
+        <td>{{ log.username or ('用户#' ~ log.user_id) }}</td>
+        <td><strong>{{ log.action }}</strong></td>
+        <td><small>{{ log.target or '-' }}</small></td>
+        <td><small>{{ log.detail or '-' }}</small></td>
+        <td><small>{{ log.ip or '-' }}</small></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if total_pages > 1 %}
+<nav class="forum-pager" style="margin-top:16px;">
+    {% if page > 1 %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.admin_logs', page=page - 1) }}">← 上一页</a>
+    {% endif %}
+    <span class="forum-pager-info">第 {{ page }} / {{ total_pages }} 页</span>
+    {% if page < total_pages %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.admin_logs', page=page + 1) }}">下一页 →</a>
+    {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<p class="empty-hint">还没有操作记录：后台第一次执行删除 / 审核 / 权限变更后就会出现在这里。</p>
+{% endif %}
+{% endblock %}

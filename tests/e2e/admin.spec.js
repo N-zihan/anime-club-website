@@ -48,6 +48,12 @@ test.describe('后台管理', () => {
         await expect(page.locator('h2')).toHaveText('帖子管理');
     });
 
+    test('操作日志页加载', async ({page}) => {
+        await page.goto('/admin/logs');
+        await expect(page.locator('h2')).toHaveText('🧾 操作日志');
+        await expect(page.locator('.page-sub')).toContainText('共');
+    });
+
     test('赛事管理加载', async ({page}) => {
         await page.goto('/admin/contests/manage');
         await expect(page.locator('h2')).toHaveText('赛事管理');

@@ -110,6 +110,27 @@ INIT_DB=1 python run.py
 | `video_cache` | 视频解析缓存 | `cache_key`、`data`(JSON)、`expires_at` |
 | `video_hosts` | 视频源白名单 | 域名、启用状态 |
 | `video_proxy_logs` | 视频代理审计 | `url`、`method`、`status`、`ip_address` |
+| `admin_logs` | 管理员操作留痕 | `user_id`、`username`、`action`、`target`、`detail`、`ip`、`created_at` |
+| `rate_limits` | 跨实例限流计数 | `key`(主键)、`count`、`window_start` |
+
+### 索引
+
+热点查询都建了索引（`init.py` 的 `ensure_indexes()` 幂等补齐，`CREATE INDEX IF NOT EXISTS`，
+PostgreSQL / SQLite 通用）：
+
+| 表 | 索引 |
+|---|---|
+| `message` | `timestamp`、`user_id` |
+| `reply` | `timestamp`、`message_id`、`user_id`、`parent_reply_id` |
+| `notifications` | `user_id`、`created_at`、`(user_id, is_read)` 复合（未读红点查询） |
+| `nominations` / `candidates` | `contest_id`、`user_id` |
+| `contest_votes` | `contest_id`、`candidate_id`、`user_id` |
+| `photo` | `activity_id` |
+| `admin_logs` | `created_at` |
+
+!!! note "为什么索引不在 create_all 里"
+    `db.create_all()` **只给新建的表**建索引，已存在的表不会补。所以 `init.py` 单独用
+    `CREATE INDEX IF NOT EXISTS` 补一遍，既兼容老库也能重复执行。
 
 ## 4. 备份与恢复
 

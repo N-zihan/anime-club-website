@@ -79,8 +79,8 @@ class Message(db.Model):
     title = db.Column(db.String(120), nullable=True)
     nickname = db.Column(db.String(50), nullable=False, default='匿名')
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     user = db.relationship('User', backref='messages')
 
     @property
@@ -105,20 +105,20 @@ class Reply(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nickname = db.Column(db.String(50), nullable=False, default='匿名')
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False, index=True)
     message = db.relationship('Message', backref=db.backref('replies', lazy='dynamic', order_by='Reply.timestamp'))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     user = db.relationship('User', backref='replies')
 
-    parent_reply_id = db.Column(db.Integer, db.ForeignKey('reply.id'), nullable=True)
+    parent_reply_id = db.Column(db.Integer, db.ForeignKey('reply.id'), nullable=True, index=True)
     parent_reply = db.relationship('Reply', remote_side=[id], backref=db.backref('children', lazy='dynamic'))
 
 
 class Photo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(200), nullable=False)
-    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('activity.id'), nullable=True, index=True)
     activity = db.relationship('Activity', backref='photos')
     upload_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     uploader = db.Column(db.String(50))
@@ -148,8 +148,8 @@ class Contest(db.Model):
 class Nomination(db.Model):
     __tablename__ = 'nominations'
     id = db.Column(db.Integer, primary_key=True)
-    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False)
     source = db.Column(db.String(200), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
@@ -169,7 +169,7 @@ class Nomination(db.Model):
 class Candidate(db.Model):
     __tablename__ = 'candidates'
     id = db.Column(db.Integer, primary_key=True)
-    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False)
+    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False, index=True)
     nomination_id = db.Column(db.Integer, db.ForeignKey('nominations.id'), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     source = db.Column(db.String(200), nullable=False)
@@ -187,9 +187,9 @@ class Candidate(db.Model):
 class ContestVote(db.Model):
     __tablename__ = 'contest_votes'
     id = db.Column(db.Integer, primary_key=True)
-    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False)
-    candidate_id = db.Column(db.Integer, db.ForeignKey('candidates.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    contest_id = db.Column(db.Integer, db.ForeignKey('contests.id'), nullable=False, index=True)
+    candidate_id = db.Column(db.Integer, db.ForeignKey('candidates.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     weight = db.Column(db.Integer, default=1)
     round_number = db.Column(db.Integer, default=0)
     gender = db.Column(db.String(10), nullable=True)
@@ -208,13 +208,18 @@ class ContestVote(db.Model):
 class Notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=True)
     type = db.Column(db.String(20), nullable=False)  # contest / audit / reply / system
     link = db.Column(db.String(500), nullable=True)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    # 未读红点查询走 (user_id, is_read) 复合索引
+    __table_args__ = (
+        db.Index('ix_notifications_user_read', 'user_id', 'is_read'),
+    )
 
 
 # ========== 视频代理系统 ==========
@@ -300,3 +305,40 @@ class AIChatMessage(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
     persona = db.relationship('AIPersona')
+
+
+# ========== 运维：管理员操作日志 ==========
+class AdminLog(db.Model):
+    """管理后台的关键操作留痕：谁、什么时候、对什么、做了什么。
+
+    由 admin 蓝图的 after_request 自动写入（POST 且成功），不用在每条路由里手写。
+    """
+    __tablename__ = 'admin_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    username = db.Column(db.String(50), nullable=False, default='')   # 冗余存一份，用户删了也能追溯
+    action = db.Column(db.String(80), nullable=False)                # 人类可读的动作名
+    target = db.Column(db.String(120), nullable=True)                 # 目标对象（如帖子 id）
+    detail = db.Column(db.Text, nullable=True)                        # 路径 / 关键参数摘要
+    ip = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    user = db.relationship('User')
+
+    @property
+    def created_cn(self):
+        """库里存 naive UTC，页面统一按东八区展示"""
+        return (self.created_at + timedelta(hours=8)) if self.created_at else None
+
+
+# ========== 运维：跨实例限流计数 ==========
+class RateLimit(db.Model):
+    """固定窗口限流计数（落库，多 Serverless 实例共享）。
+
+    用「自增计数 + 窗口起点」实现：窗口过期后计数归零重新累计。
+    只保存短窗口（分钟级）的键，另有概率性清理过期行。
+    """
+    __tablename__ = 'rate_limits'
+    key = db.Column(db.String(160), primary_key=True)
+    count = db.Column(db.Integer, nullable=False, default=0)
+    window_start = db.Column(db.DateTime, nullable=False)

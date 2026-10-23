@@ -40,6 +40,11 @@
         <h3>系统通知</h3>
         <p>向全体社员发送通知</p>
     </a>
+    <a class="card" href="{{ url_for('admin.admin_logs') }}">
+        <div class="card-icon">🧾</div>
+        <h3>操作日志</h3>
+        <p>后台删除 / 审核 / 权限变更留痕</p>
+    </a>
     <!-- 以后可以扩展更多管理功能 -->
 </div>
 {% endblock %}
