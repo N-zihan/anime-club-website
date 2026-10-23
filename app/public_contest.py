@@ -8,6 +8,7 @@ import os
 import re
 import threading
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from flask import (render_template, request, redirect, url_for, session,
@@ -35,7 +36,8 @@ from .notify import notify
 from .public import (supabase_render_ctx, _calc_current_phase, _cn_now,
                      _validate_input, PHASE_CN)
 from .public_bp import public_bp
-from .utils import get_supabase, compress_image, get_or_404, is_public_http_url
+from .utils import (get_supabase, compress_image, get_or_404,
+                    is_public_http_url, allowed_file)
 
 
 @public_bp.route('/contest_center')
