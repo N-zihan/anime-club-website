@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}举报审核{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <h2>🚩 举报审核</h2>
+</div>
+
+<p class="page-sub">
+    当前待处理 <strong>{{ pending_total }}</strong> 条 ·
+    <a href="{{ url_for('admin.admin_reports', status='pending') }}">待处理</a> /
+    <a href="{{ url_for('admin.admin_reports', status='resolved') }}">已处理</a> /
+    <a href="{{ url_for('admin.admin_reports', status='dismissed') }}">已忽略</a> /
+    <a href="{{ url_for('admin.admin_reports', status='all') }}">全部</a>
+</p>
+
+{% if rows %}
+<table class="admin-table">
+    <thead>
+    <tr>
+        <th style="width:60px;">ID</th>
+        <th style="width:110px;">时间</th>
+        <th style="width:90px;">类型</th>
+        <th>被举报内容</th>
+        <th style="width:120px;">原因</th>
+        <th style="width:100px;">举报人</th>
+        <th style="width:90px;">状态</th>
+        <th style="width:210px;">操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+    {% set r = row.report %}
+    <tr>
+        <td>{{ r.id }}</td>
+        <td><small>{{ r.created_cn.strftime('%m-%d %H:%M') if r.created_cn else '' }}</small></td>
+        <td>{{ r.target_type }}</td>
+        <td>
+            <small>{{ row.preview }}</small>
+            {% if row.link %}<br><a href="{{ row.link }}" target="_blank" rel="noopener">查看内容 →</a>{% endif %}
+        </td>
+        <td><small>{{ r.reason }}{% if r.detail %}<br>{{ r.detail }}{% endif %}</small></td>
+        <td>{{ row.reporter }}</td>
+        <td>{{ r.status }}</td>
+        <td>
+            {% if r.status == 'pending' %}
+            <form method="POST" action="{{ url_for('admin.admin_report_handle', report_id=r.id) }}" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="action" value="delete" class="btn-delete"
+                        onclick="return confirm('删除被举报内容并标记已处理？')">删除内容</button>
+                <button type="submit" name="action" value="resolve" class="btn-delete">已处理</button>
+                <button type="submit" name="action" value="dismiss" class="btn-delete">忽略</button>
+            </form>
+            {% else %}
+            <small>{{ r.note or '' }}</small>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if total_pages > 1 %}
+<nav class="forum-pager" style="margin-top:16px;">
+    {% if page > 1 %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.admin_reports', status=status, page=page - 1) }}">← 上一页</a>
+    {% endif %}
+    <span class="forum-pager-info">第 {{ page }} / {{ total_pages }} 页（共 {{ total }} 条）</span>
+    {% if page < total_pages %}
+    <a class="btn btn-ghost" href="{{ url_for('admin.admin_reports', status=status, page=page + 1) }}">下一页 →</a>
+    {% endif %}
+</nav>
+{% endif %}
+
+{% else %}
+<p class="empty-hint">这个状态下没有举报记录。</p>
+{% endif %}
+{% endblock %}

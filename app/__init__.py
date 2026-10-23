@@ -215,6 +215,7 @@ def create_app():
             'public.api_anime_news_detail',
             'public.anime_news',
             'public.anime_news_article',
+            'public.anime_news_rss',
             # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用
             'public.settings',
         ]

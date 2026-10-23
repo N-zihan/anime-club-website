@@ -18,8 +18,15 @@
     <meta property="og:description" content="{{ og_description | default(club_name ~ '官网，集社团展示、互动交流、资源分享、线上赛事于一体') }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url_root }}">
-    <meta property="og:image" content="{{ request.url_root }}static/images/icon-512.png">
-    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="{{ club_name }}">
+    <meta property="og:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ club_name }} · 社团网站">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <link rel="alternate" type="application/rss+xml"
+          title="{{ club_name }} · 番剧新闻" href="{{ url_for('public.anime_news_rss') }}">
 
     <!-- 本地偏好初始化：尽早执行，避免主题 / 字号 / 动效闪烁 -->
     <script>

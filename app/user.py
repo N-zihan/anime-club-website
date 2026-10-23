@@ -364,13 +364,35 @@ def notifications():
     query = Notification.query.filter_by(user_id=session['user_id'])
     if muted:
         query = query.filter(~Notification.type.in_(muted))
-    items = query.order_by(Notification.created_at.desc()).all()
+
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+    per_page = 30
+    total = query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    items = (query.order_by(Notification.created_at.desc(), Notification.id.desc())
+             .offset((page - 1) * per_page)
+             .limit(per_page)
+             .all())
     # 时间转东八区
     for n in items:
         n.created_at = n.created_at + timedelta(hours=8)
 
     return render_template('notifications.html', notifications=items, muted_types=muted,
-                           notify_labels=NOTIFY_LABELS)
+                           notify_labels=NOTIFY_LABELS, page=page,
+                           total_pages=total_pages, total=total)
+
+
+@user_bp.route('/notifications/clear_read', methods=['POST'])
+def notifications_clear_read():
+    """清空已读通知（分页多了以后给用户一个收拾抽屉的按钮）"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+    deleted = Notification.query.filter_by(user_id=session['user_id'],
+                                           is_read=True).delete(synchronize_session=False)
+    db.session.commit()
+    flash(f'已清理 {deleted} 条已读通知', 'success')
+    return redirect(url_for('user.notifications'))
 
 
 @user_bp.route('/notifications/read/<int:nid>')

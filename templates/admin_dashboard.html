@@ -45,6 +45,11 @@
         <h3>操作日志</h3>
         <p>后台删除 / 审核 / 权限变更留痕</p>
     </a>
+    <a class="card" href="{{ url_for('admin.admin_reports') }}">
+        <div class="card-icon">🚩</div>
+        <h3>举报审核</h3>
+        <p>处理社员对帖子 / 回复 / 照片的举报</p>
+    </a>
     <!-- 以后可以扩展更多管理功能 -->
 </div>
 {% endblock %}

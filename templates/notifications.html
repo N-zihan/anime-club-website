@@ -3,9 +3,16 @@
 {% block content %}
 <div class="admin-header">
     <h2>我的通知</h2>
-    {% if notifications %}
-    <a class="btn-add" href="{{ url_for('user.notification_read_all') }}">全部已读</a>
-    {% endif %}
+    <div style="display:flex; gap:10px; align-items:center;">
+        {% if notifications %}
+        <a class="btn-add" href="{{ url_for('user.notification_read_all') }}">全部已读</a>
+        <form method="POST" action="{{ url_for('user.notifications_clear_read') }}"
+              onsubmit="return confirm('清空所有已读通知？未读的会保留。')" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-add" type="submit" style="cursor:pointer;">清空已读</button>
+        </form>
+        {% endif %}
+    </div>
 </div>
 
 {% if muted_types %}
@@ -32,6 +39,18 @@
     </a>
     {% endfor %}
 </div>
+
+{% if total_pages > 1 %}
+<nav class="forum-pager" style="margin-top:18px;">
+    {% if page > 1 %}
+    <a class="btn btn-ghost" href="{{ url_for('user.notifications', page=page - 1) }}">← 上一页</a>
+    {% endif %}
+    <span class="forum-pager-info">第 {{ page }} / {{ total_pages }} 页（共 {{ total }} 条）</span>
+    {% if page < total_pages %}
+    <a class="btn btn-ghost" href="{{ url_for('user.notifications', page=page + 1) }}">下一页 →</a>
+    {% endif %}
+</nav>
+{% endif %}
 {% else %}
 <p style="text-align:center; color:#94a3b8; padding:40px 0;">暂无通知</p>
 {% endif %}

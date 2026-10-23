@@ -18,6 +18,7 @@
 """
 
 import io
+import logging
 import re
 import secrets
 import uuid
@@ -31,7 +32,7 @@ from openpyxl.styles import Font, Alignment
 
 from .models import (db, User, Activity, Photo, Message, Reply,
                      Contest, Nomination, Candidate, ContestVote, Notification,
-                     AIPersona, AIChatMessage, AdminLog)
+                     AIPersona, AIChatMessage, AdminLog, Report)
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
@@ -591,7 +592,10 @@ def admin_contest_edit(contest_id):
             contest.open_at = datetime.strptime(open_at_str, '%Y-%m-%dT%H:%M')
             contest.close_at = calc_stage_times(contest.open_at)['final_result_end']
 
+        old_status = contest.status
         db.session.commit()
+        if old_status != 'open' and contest.status == 'open':
+            _notify_contest_open(contest)
         flash('赛事信息已更新', 'success')
         return redirect(url_for('admin.admin_contest_edit', contest_id=contest.id))
 
@@ -893,3 +897,115 @@ def admin_logs():
             .all())
     return render_template('admin_logs.html', logs=logs, page=page,
                            total=total, total_pages=total_pages)
+
+
+def _notify_contest_open(contest):
+    """赛事进入 open 状态时给全体社员发一条 contest 通知（失败不影响主流程）。"""
+    try:
+        link = url_for('public.contest_detail', contest_id=contest.id)
+        users = User.query.filter(User.id.isnot(None)).all()
+        for u in users:
+            notify(u.id, f'{contest.title} 开赛啦',
+                   '提名/投票入口已开放，来赛事中心看看吧',
+                   notify_type='contest', link=link)
+        db.session.commit()
+    except Exception as exc:  # pragma: no cover - 通知失败不影响开赛
+        db.session.rollback()
+        log = logging.getLogger(__name__)
+        log.warning('开赛通知发送失败: %s', exc)
+
+
+# ========== 举报审核队列 ==========
+def _report_target_preview(report):
+    """返回被举报内容的预览与链接（目标可能已被删除）。"""
+    if report.target_type == 'thread':
+        obj = db.session.get(Message, report.target_id)
+        if obj:
+            return obj.display_title, url_for('public.board_thread', thread_id=obj.id)
+    elif report.target_type == 'reply':
+        obj = db.session.get(Reply, report.target_id)
+        if obj:
+            return obj.content[:120], url_for('public.board_thread', thread_id=obj.message_id)
+    elif report.target_type == 'photo':
+        obj = db.session.get(Photo, report.target_id)
+        if obj:
+            return obj.filename, url_for('public.gallery')
+    return '（内容已被删除）', None
+
+
+@admin_bp.route('/admin/reports')
+@admin_required
+def admin_reports():
+    """举报审核队列：默认只看待处理"""
+    status = request.args.get('status', 'pending')
+    if status not in ('pending', 'resolved', 'dismissed', 'all'):
+        status = 'pending'
+    page = max(1, request.args.get('page', 1, type=int) or 1)
+    per_page = 30
+
+    query = Report.query
+    if status != 'all':
+        query = query.filter_by(status=status)
+    total = query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    reports = (query.order_by(Report.created_at.desc(), Report.id.desc())
+               .offset((page - 1) * per_page).limit(per_page).all())
+
+    rows = [{
+        'report': r,
+        'preview': _report_target_preview(r)[0],
+        'link': _report_target_preview(r)[1],
+        'reporter': r.reporter.username if r.reporter else '已注销',
+    } for r in reports]
+    pending_total = Report.query.filter_by(status='pending').count()
+    return render_template('admin_reports.html', rows=rows, status=status,
+                           page=page, total=total, total_pages=total_pages,
+                           pending_total=pending_total)
+
+
+@admin_bp.route('/admin/reports/<int:report_id>/handle', methods=['POST'])
+@admin_required
+def admin_report_handle(report_id):
+    """处理举报：删除内容并处理 / 仅标记已处理 / 忽略"""
+    report = get_or_404(Report, report_id)
+    action = request.form.get('action', 'resolve')
+
+    note = ''
+    if action == 'delete':
+        if report.target_type == 'thread':
+            obj = db.session.get(Message, report.target_id)
+            if obj:
+                Reply.query.filter_by(message_id=obj.id).delete(synchronize_session=False)
+                Notification.query.filter(
+                    Notification.link.like(f'%/board/{obj.id}')).delete(synchronize_session=False)
+                db.session.delete(obj)
+        elif report.target_type == 'reply':
+            obj = db.session.get(Reply, report.target_id)
+            if obj:
+                Reply.query.filter_by(parent_reply_id=obj.id).update(
+                    {'parent_reply_id': None}, synchronize_session=False)
+                db.session.delete(obj)
+        elif report.target_type == 'photo':
+            obj = db.session.get(Photo, report.target_id)
+            if obj:
+                try:
+                    get_supabase().storage.from_('photos').remove([obj.filename])
+                except Exception:  # pragma: no cover - 存储删除失败不阻塞
+                    pass
+                db.session.delete(obj)
+        report.status = 'resolved'
+        note = '已删除内容'
+    elif action == 'dismiss':
+        report.status = 'dismissed'
+        note = '举报忽略'
+    else:
+        report.status = 'resolved'
+        note = '标记已处理'
+
+    report.handled_by = session.get('user_id')
+    report.handled_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    report.note = note
+    db.session.commit()
+    flash(f'举报 #{report_id} 已处理（{note}）', 'success')
+    return redirect(url_for('admin.admin_reports'))

@@ -50,7 +50,7 @@ from .contest_engine import (
     prepare_group_round_data
 )
 from .models import (db, User, Activity, Photo, Message, Reply, Contest,
-                     Nomination, Candidate, ContestVote, Notification)
+                     Nomination, Candidate, ContestVote, Notification, Report)
 from .preferences import BADGE_POLL_CHOICES, NOTIFY_LABELS, NOTIFY_TYPES
 from .utils import (get_supabase, compress_image, get_or_404, allowed_file,
                     is_public_http_url, safe_get)
@@ -562,6 +562,132 @@ def delete_reply(reply_id):
     return redirect(url_for('public.board_thread', thread_id=thread_id, page=page))
 
 
+@public_bp.route('/board/<int:thread_id>/edit', methods=['GET', 'POST'])
+def edit_thread(thread_id):
+    """编辑主题帖：作者本人 / 运营 / 站长"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    thread = db.session.get(Message, thread_id)
+    if not thread:
+        abort(404)
+    if not _can_delete_board_item(thread.user_id):
+        abort(403)
+
+    form = {'title': thread.title or '', 'content': thread.content}
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        content = (request.form.get('content') or '').strip()
+        form = {'title': title, 'content': content}
+        if len(title) < 2:
+            flash('标题至少 2 个字', 'danger')
+        elif len(title) > BOARD_TITLE_MAX:
+            flash(f'标题不能超过 {BOARD_TITLE_MAX} 个字', 'danger')
+        elif not content:
+            flash('正文不能为空', 'danger')
+        elif len(content) > BOARD_CONTENT_MAX:
+            flash(f'正文不能超过 {BOARD_CONTENT_MAX} 字', 'danger')
+        else:
+            thread.title = title
+            thread.content = content
+            thread.edited_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            db.session.commit()
+            flash('帖子已更新', 'success')
+            return redirect(url_for('public.board_thread', thread_id=thread.id))
+
+    return render_template('board_edit.html', thread=thread, form=form,
+                           title_max=BOARD_TITLE_MAX, content_max=BOARD_CONTENT_MAX)
+
+
+@public_bp.route('/reply/<int:reply_id>/edit', methods=['POST'])
+def edit_reply(reply_id):
+    """编辑单条回复：作者本人 / 运营 / 站长"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    reply = db.session.get(Reply, reply_id)
+    if not reply:
+        abort(404)
+    if not _can_delete_board_item(reply.user_id):
+        abort(403)
+
+    page = max(1, request.form.get('page', 1, type=int) or 1)
+    content = (request.form.get('content') or '').strip()
+    if not content:
+        flash('回复不能为空', 'danger')
+    elif len(content) > BOARD_CONTENT_MAX:
+        flash(f'回复不能超过 {BOARD_CONTENT_MAX} 字', 'danger')
+    else:
+        reply.content = content
+        reply.edited_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.session.commit()
+        flash('回复已更新', 'success')
+    return redirect(url_for('public.board_thread', thread_id=reply.message_id, page=page))
+
+
+REPORT_REASONS = ('广告/刷屏', '辱骂/攻击', '色情/不适内容', '泄露隐私', '其他')
+REPORT_TARGETS = ('thread', 'reply', 'photo')
+
+
+def _report_target(ttype, tid):
+    """按类型取被举报对象，返回 (对象, 预览文本, 来源链接)"""
+    if ttype == 'thread':
+        obj = db.session.get(Message, tid)
+        if obj:
+            return obj, obj.display_title, url_for('public.board_thread', thread_id=obj.id)
+    elif ttype == 'reply':
+        obj = db.session.get(Reply, tid)
+        if obj:
+            return obj, obj.content[:120], url_for('public.board_thread', thread_id=obj.message_id)
+    elif ttype == 'photo':
+        obj = db.session.get(Photo, tid)
+        if obj:
+            return obj, obj.filename, url_for('public.gallery')
+    return None, '', url_for('public.board')
+
+
+@public_bp.route('/report', methods=['GET', 'POST'])
+def report_content():
+    """举报帖子 / 回复 / 照片，进入管理后台审核队列"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    ttype = request.values.get('type', '')
+    tid = request.values.get('id', type=int)
+    if ttype not in REPORT_TARGETS or not tid:
+        flash('举报目标无效', 'danger')
+        return redirect(url_for('public.board'))
+
+    target, preview, back_url = _report_target(ttype, tid)
+    if target is None:
+        flash('举报目标不存在或已被删除', 'danger')
+        return redirect(back_url)
+    if getattr(target, 'user_id', None) == session['user_id']:
+        flash('不能举报自己发布的内容', 'info')
+        return redirect(back_url)
+
+    if request.method == 'POST':
+        reason = request.form.get('reason', '')
+        detail = (request.form.get('detail') or '').strip()[:300]
+        if reason not in REPORT_REASONS:
+            flash('请选择举报原因', 'danger')
+        else:
+            dup = Report.query.filter_by(reporter_id=session['user_id'],
+                                         target_type=ttype, target_id=tid,
+                                         status='pending').first()
+            if dup:
+                flash('你已经举报过这条内容，管理员正在处理', 'info')
+            else:
+                db.session.add(Report(reporter_id=session['user_id'], target_type=ttype,
+                                      target_id=tid, reason=reason, detail=detail or None))
+                db.session.commit()
+                flash('举报已提交，管理员会尽快处理', 'success')
+            return redirect(back_url)
+
+    return render_template('report.html', target_type=ttype, target_id=tid,
+                           preview=preview, reasons=REPORT_REASONS, back_url=back_url)
+
+
 @public_bp.route('/anime_resources')
 def anime_resources():
     """番剧百科（数据来自 Bangumi）"""
@@ -657,6 +783,50 @@ def api_anime_character_detail(char_id):
     if not d:
         return jsonify({'error': 'Not found'}), 404
     return jsonify(d)
+
+
+@public_bp.route('/anime_news/rss.xml')
+def anime_news_rss():
+    """番剧新闻 RSS（公开页）：方便阅读器订阅，也给外部抓取一个规范入口。"""
+    from .anime_news import get_anime_news  # pylint: disable=import-outside-toplevel
+    from urllib.parse import quote  # pylint: disable=import-outside-toplevel
+    from xml.sax.saxutils import escape  # pylint: disable=import-outside-toplevel
+
+    try:
+        articles, _meta = get_anime_news(limit=30)
+    except Exception:  # 上游/翻译异常时给空 feed，不 500
+        articles = []
+
+    club = os.getenv('CLUB_NAME') or '动漫社'
+    base = request.url_root.rstrip('/')
+    items = []
+    for a in articles or []:
+        title = a.get('title_zh') or a.get('title') or '(无标题)'
+        link = a.get('link') or a.get('url') or ''
+        detail = f'{base}/anime_news/article?url={quote(link, safe="")}'
+        desc = a.get('excerpt_zh') or a.get('excerpt') or ''
+        source = a.get('source') or ''
+        items.append(
+            '<item>'
+            f'<title>{escape(title)}</title>'
+            f'<link>{escape(detail)}</link>'
+            f'<guid isPermaLink="false">{escape(detail)}</guid>'
+            f'<description>{escape(desc)}</description>'
+            f'<category>{escape(source)}</category>'
+            '</item>'
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel>'
+        f'<title>{escape(club)} · 番剧新闻</title>'
+        f'<link>{escape(base + "/anime_news")}</link>'
+        f'<description>{escape(club + " 聚合的番剧新闻")}</description>'
+        '<language>zh-cn</language>'
+        + ''.join(items) +
+        '</channel></rss>'
+    )
+    return Response(xml, mimetype='application/rss+xml')
 
 
 @public_bp.route('/anime_news')

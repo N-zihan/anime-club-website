@@ -84,6 +84,36 @@ test.describe('论坛（原留言板）', () => {
         await ctx.close();
     });
 
+
+    test('作者可以编辑自己的帖子和回复', async ({page}) => {
+        const title = `可编辑主题-${Date.now()}`;
+        await page.goto('/board/new');
+        await page.fill('input[name="title"]', title);
+        await page.fill('textarea[name="content"]', '原始正文');
+        await page.click('.forum-form-actions button[type="submit"]');
+        await expect(page.locator('.thread-title')).toHaveText(title);
+
+        // 改主题
+        await page.click('.thread-edit-link');
+        await page.fill('input[name="title"]', title + '-改');
+        await page.fill('textarea[name="content"]', '改过的正文');
+        await page.click('.forum-form-actions button[type="submit"]');
+        await expect(page.locator('.thread-title')).toHaveText(title + '-改');
+        await expect(page.locator('.thread-body').first()).toContainText('改过的正文');
+        await expect(page.locator('.thread-post-op .thread-edited')).toBeVisible();
+
+        // 发一条回复再改
+        await page.fill('#thread-reply-input', '原始回复');
+        await page.click('.thread-composer-send');
+        await expect(page.locator('.thread-posts')).toContainText('原始回复');
+        await page.locator('.thread-posts .thread-reply-btn', {hasText: '编辑'}).last().click();
+        const editForm = page.locator('.thread-reply-form[id^="edit-form-"]').last();
+        await editForm.locator('textarea').fill('改过的回复');
+        await editForm.locator('button[type="submit"]').click();
+        await expect(page.locator('.thread-posts')).toContainText('改过的回复');
+        await expect(page.locator('.thread-posts .thread-edited')).toHaveCount(1);
+    });
+
     test('社员可以删除自己的回复和帖子', async ({page}) => {
         const title = `可删除主题-${Date.now()}`;
         await page.goto('/board/new');
@@ -105,7 +135,7 @@ test.describe('论坛（原留言板）', () => {
 
         // 删除主题帖：回到论坛列表，且帖子消失
         page.once('dialog', (dialog) => dialog.accept());
-        await page.locator('.thread-op-actions .thread-delete-btn').click();
+        await page.locator('.thread-op-actions form button.thread-delete-btn').click();
         await expect(page).toHaveURL(/\/board$/);
         await expect(page.locator('.forum-row-title', {hasText: title})).toHaveCount(0);
     });

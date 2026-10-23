@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ article.title_zh if article and article.title_zh else (article.title if article else '文章详情') }}{% endblock %}
 {% block content %}
+{% set jsonld_title = article.title_zh if article and article.title_zh else (article.title if article else '') %}
+<script type="application/ld+json">
+{{ {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": jsonld_title,
+    "image": ([request.url_root.rstrip('/') ~ '/api/anime/news-image?url=' ~ (article.image|urlencode)] if article and article.image else []),
+    "url": request.url,
+    "mainEntityOfPage": {"@type": "WebPage", "@id": request.url},
+    "inLanguage": "zh-CN",
+    "publisher": {"@type": "Organization", "name": club_name}
+} | tojson }}
+</script>
 <div class="article-container" style="max-width:720px; margin:0 auto; padding:20px 0;">
 
 {% if translation_failed %}

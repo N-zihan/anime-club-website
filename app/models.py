@@ -81,6 +81,7 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    edited_at = db.Column(db.DateTime, nullable=True)   # 最后编辑时间（NULL = 从未编辑）
     user = db.relationship('User', backref='messages')
 
     @property
@@ -112,6 +113,7 @@ class Reply(db.Model):
     user = db.relationship('User', backref='replies')
 
     parent_reply_id = db.Column(db.Integer, db.ForeignKey('reply.id'), nullable=True, index=True)
+    edited_at = db.Column(db.DateTime, nullable=True)   # 最后编辑时间（NULL = 从未编辑）
     parent_reply = db.relationship('Reply', remote_side=[id], backref=db.backref('children', lazy='dynamic'))
 
 
@@ -342,3 +344,28 @@ class RateLimit(db.Model):
     key = db.Column(db.String(160), primary_key=True)
     count = db.Column(db.Integer, nullable=False, default=0)
     window_start = db.Column(db.DateTime, nullable=False)
+
+
+# ========== 举报与审核 ==========
+class Report(db.Model):
+    """社员对帖子 / 回复 / 照片的举报，进管理员审核队列。"""
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    target_type = db.Column(db.String(20), nullable=False)   # thread / reply / photo
+    target_id = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(30), nullable=False)        # 广告/辱骂/色情/隐私/其他
+    detail = db.Column(db.String(300), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)  # pending/resolved/dismissed
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    handled_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    handled_at = db.Column(db.DateTime, nullable=True)
+    note = db.Column(db.String(200), nullable=True)
+
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+    handler = db.relationship('User', foreign_keys=[handled_by])
+
+    @property
+    def created_cn(self):
+        """库里存 naive UTC，页面统一按东八区展示"""
+        return (self.created_at + timedelta(hours=8)) if self.created_at else None

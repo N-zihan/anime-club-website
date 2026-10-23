@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}举报内容{% endblock %}
+
+{% block content %}
+<div class="forum-page forum-compose">
+    <nav class="thread-crumb">
+        <a href="{{ back_url }}">← 返回</a>
+    </nav>
+
+    <header class="forum-header">
+        <div class="forum-header-text">
+            <h2>举报内容</h2>
+            <p class="forum-sub">举报会进入管理后台审核队列，恶意举报会被记录</p>
+        </div>
+    </header>
+
+    <div class="report-preview">
+        <span class="report-preview-label">被举报内容</span>
+        <p>{{ preview }}</p>
+    </div>
+
+    <form class="forum-form" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label class="forum-field">
+            <span class="forum-field-name">举报原因</span>
+            <select name="reason" required>
+                <option value="">请选择…</option>
+                {% for r in reasons %}
+                <option value="{{ r }}">{{ r }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="forum-field">
+            <span class="forum-field-name">补充说明（可选）</span>
+            <textarea name="detail" rows="3" maxlength="300"
+                      placeholder="比如具体哪句话、什么情况…"></textarea>
+        </label>
+
+        <div class="forum-form-actions">
+            <a class="btn btn-ghost" href="{{ back_url }}">取消</a>
+            <button class="btn btn-primary" type="submit">提交举报</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

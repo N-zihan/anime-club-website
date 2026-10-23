@@ -105,6 +105,7 @@ INIT_DB=1 python run.py
 | `candidates` | 参战角色 | `contest_id`、`name`、`source`、`gender`、`image_url`、`stage`、`banned`、票数缓存 |
 | `contest_votes` | 投票记录 | `contest_id`、`candidate_id`、`user_id`、`phase`、`weight` |
 | `notifications` | 站内通知 | `user_id`、`type`(contest/audit/reply/system)、`link`、`is_read` |
+| `reports` | 举报记录 | `reporter_id`、`target_type`(thread/reply/photo)、`target_id`、`reason`、`status`、`handled_by` |
 | `ai_personas` | AI 好友角色人设 | `user_id`、`name`、`personality`、`speech_style`、`is_public`、`status` |
 | `ai_chat_messages` | AI 好友聊天记录 | `user_id`、`persona_id`、`role`、`content`、`model`、`is_fallback` |
 | `video_cache` | 视频解析缓存 | `cache_key`、`data`(JSON)、`expires_at` |
@@ -126,6 +127,7 @@ PostgreSQL / SQLite 通用）：
 | `nominations` / `candidates` | `contest_id`、`user_id` |
 | `contest_votes` | `contest_id`、`candidate_id`、`user_id` |
 | `photo` | `activity_id` |
+| `reports` | `created_at`、`target_id`、`status`（待处理列表筛选） |
 | `admin_logs` | `created_at` |
 
 !!! note "为什么索引不在 create_all 里"

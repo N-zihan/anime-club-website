@@ -3418,3 +3418,79 @@ body.has-composer footer {
 .thread-reply-delete {
     margin-left: 8px;
 }
+
+/* ===================== 24. P1：编辑 / 举报 ===================== */
+.thread-edited {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-left: 4px;
+}
+
+.thread-report-link {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.thread-report-link:hover {
+    color: #b45309;
+    border-color: rgba(180, 83, 9, 0.35);
+}
+
+.report-preview {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.report-preview-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.report-preview p {
+    margin: 0;
+    color: var(--text-primary);
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+.gallery-item {
+    position: relative;
+}
+
+.gallery-report {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    background: rgba(15, 23, 42, 0.6);
+    color: #fff;
+    font-size: 0.72rem;
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.gallery-item:hover .gallery-report,
+.gallery-report:focus {
+    opacity: 1;
+}
+
+@media (pointer: coarse) {
+    /* 触屏没有 hover，举报入口常显 */
+    .gallery-report {
+        opacity: 1;
+    }
+}
