@@ -3888,3 +3888,13 @@ body.has-composer footer {
         transform: none;
     }
 }
+
+/* 论坛列表行：flex 子项必须允许收缩，否则超长标题会把整页撑出横向滚动 */
+.forum-row-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.forum-row-title {
+    overflow-wrap: anywhere;
+}

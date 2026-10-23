@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.bangumi.com https://api.github.com; frame-ancestors 'none'; base-uri 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.bangumi.com https://api.github.com https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; base-uri 'self';">
     <meta content="Sv5yDeDt3X" name="sogou_site_verification"/>
     <meta content="codeva-mVPCgddV5r" name="baidu-site-verification"/>
     <title>{{ club_name }} - {% block title %}{% endblock %}</title>
@@ -51,9 +51,7 @@
        （此前固定 ?v=6，换版后浏览器仍可能直接用几年前缓存的那份） #}
     <link href="{{ url_for('static', filename='css/style.css') }}?v={{ app_version }}" rel="stylesheet">
 
-    <!-- Cloudflare Turnstile 验证码修复 -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-</head>
+    </head>
 <body class="{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">跳到主要内容</a>
 <!-- ====== CSRF Token（所有表单通过 {{ csrf_token() }} 使用） ====== -->

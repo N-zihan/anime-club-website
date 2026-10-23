@@ -75,6 +75,35 @@ test.describe('论坛（原留言板）', () => {
         await expect(page.locator('.forum-row-title').first()).toHaveText(title);
     });
 
+    test('移动端论坛不横向溢出（长标题回归）', async ({browser}) => {
+        const ctx = await browser.newContext({ viewport: { width: 393, height: 851 } });
+        const page = await ctx.newPage();
+        await page.addInitScript(() => {
+            for (let i = 0; i < 100; i++) {
+                localStorage.setItem(`onboarding_done_${i}`, 'true');
+            }
+        });
+        await page.goto('/login');
+        await page.fill('input[name="username"]', 'testuser');
+        await page.fill('input[name="password"]', 'password123');
+        await page.click('button[type="submit"]');
+        await expect(page).not.toHaveURL(/\/login/);
+
+        // 造一个超长无空格标题，旧版会把页面撑出横向滚动
+        const longTitle = '6767676767676767676767676767676767676767676767';
+        await page.goto('/board/new');
+        await page.fill('input[name="title"]', longTitle);
+        await page.fill('textarea[name="content"]', '长标题溢出回归');
+        await page.click('.forum-form-actions button[type="submit"]');
+        await expect(page.locator('.thread-title')).toContainText('6767');
+
+        await page.goto('/board');
+        const spreads = await page.evaluate(() => document.documentElement.scrollWidth
+            > window.innerWidth + 1);
+        expect(spreads).toBe(false);
+        await ctx.close();
+    });
+
     test('访客访问论坛会被引导登录', async ({page, browser}) => {
         // 用全新上下文（无登录态）：论坛仍要求登录后查看
         const ctx = await browser.newContext();
