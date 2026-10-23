@@ -82,3 +82,38 @@ mkdocs build            # 输出到 site/
 ```
 
 - 新增页面记得在 `mkdocs.yml` 的 `nav` 里挂上，否则侧边栏看不到。
+
+## 6. 技术债与重构路线
+
+### 现状（2026-10 量化）
+
+| 指标 | 数值 | 备注 |
+|---|---|---|
+| `app/public.py` | 约 2000 行 | 单文件承载论坛 / 赛事 / 新闻 / 设置等大量公开路由，最大债 |
+| `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
+| `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
+| 测试覆盖率 | 66% | `python -m pytest --cov=app --cov-report=term-missing` |
+| 低覆盖模块 | `changelog` 0%、`bangumi` 9%、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 这些是下一步补测试的重点 |
+
+### 已还的债
+
+- **时间口径收口**：`app/utils.py` 提供 `cn_now()` / `to_cn()`，替换了各模块里手写的
+  `datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)`；时区错一次就是整站时间错 8 小时。
+- **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
+  （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
+
+### 待办（按性价比排序）
+
+1. **拆 `app/public.py`**：保持 `public` 蓝图名与 endpoint 不变，抽出 `public_contest.py`（赛事公开路由）、
+   `public_board.py`（论坛路由），用共享蓝图对象避免 `url_for` 全站改名。目标：public.py < 800 行。
+2. **赛事阶段计算去重**：`contest_engine` 增加 `current_group_round()` / `current_knockout_sub_round()`，
+   替换 4 个投票路由 + `vote-stats` 接口里重复的 `calc_stage_times` 分支。
+3. **补低覆盖模块测试**：`changelog`（纯函数，可 100%）、`bangumi`（mock HTTP）、`auth` 的验证码/重置密码分支。
+4. **评估 migrations 框架**：目前 `init.py` 只加列不删改；长期改表结构时 Alembic 更稳，但要权衡 Vercel 冷启动成本。
+5. **死代码确认**：`app/video_proxy.py` 相关系统当前未启用（`init.py` 里是幂等空操作），确认无用后连表一起下线。
+6. **CSS/模板内联样式收敛**：`contest_detail.html` 等页面仍有大量 `style="..."`，逐步换成 class。
+
+### 原则
+
+- 重构必须**保持 endpoint 名与模板变量不变**，每次改完跑全量 pytest + 至少 board/admin e2e。
+- 不为了"看起来整洁"引入构建链（Webpack/Vite）；本站是 Flask + 服务端渲染，简单即优势。

@@ -18,6 +18,7 @@ from openai import OpenAI
 # contest_engine 只依赖 config/models，不反向依赖本模块，可顶层安全导入。
 # 此前阶段计算要靠 public._calc_current_phase 延迟导入（public 顶层又 import 本模块），
 # 形成 ai → public 的反向依赖，现改为直接复用引擎的阶段计算函数。
+from .utils import cn_now
 from .contest_engine import (
     calc_phase, calc_stage_times, auto_activate_contest, prepare_group_round_data,
 )
@@ -156,7 +157,7 @@ def _current_phase(contest: Contest) -> str:
     """
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = cn_now()
     times = calc_stage_times(contest.open_at)
     auto_activate_contest(contest, now)
     return calc_phase(contest, now, times)

@@ -35,7 +35,7 @@ from .models import (db, User, Message, Notification, AIPersona, AIChatMessage,
 from . import ai_friend as ai_friend_mod
 from .preferences import (NOTIFY_LABELS, get_preferences, muted_types,
                           normalize_preferences, save_preferences)
-from .utils import (allowed_file, compress_image, get_or_404,
+from .utils import (allowed_file, compress_image, get_or_404, cn_now,
                     upload_avatar_to_storage, code_digest, code_matches)
 from .auth import send_verification_email, send_welcome_email
 
@@ -476,7 +476,7 @@ CHAT_PAGE_SIZE = 20
 
 def _cn_today_start():
     """东八区「今天 00:00」对应的 UTC naive 时间（库里存 naive UTC）"""
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = cn_now()
     start_cn = now.replace(hour=0, minute=0, second=0, microsecond=0)
     return start_cn - timedelta(hours=8)
 

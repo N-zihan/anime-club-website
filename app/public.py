@@ -164,7 +164,7 @@ def _calc_current_phase(contest):
     # 统一 naive datetime：contest.open_at 来自数据库，统一去掉 tzinfo
     if contest.open_at and hasattr(contest.open_at, 'tzinfo') and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at)
     auto_activate_contest(contest, now)
     return calc_phase(contest, now, times)
@@ -1036,7 +1036,7 @@ def api_contest_vote_stats(contest_id):
     # 时区：库里 open_at 是 naive 东八区，和投票路由保持一致
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at) if contest.open_at else {}
 
     base = ContestVote.query.filter_by(contest_id=contest.id, gender=gender)
@@ -1100,7 +1100,7 @@ def api_contest_vote_stats(contest_id):
 
 @public_bp.route('/contest_center')
 def contest_center():
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     for c in Contest.query.filter_by(status='draft').all():
         auto_activate_contest(c, now)
 
@@ -1133,6 +1133,16 @@ def contest_rules(contest_id):
     return render_template('contest_rules.html', contest=contest)
 
 
+def _cn_now():
+    """当前东八区时间（naive）。
+
+    为什么不用 utils.cn_now：测试会 patch('app.public.datetime') 来冻结时间，
+    时间逻辑必须走本模块的 datetime 引用，否则 patch 失效。
+    其它模块直接用 utils.cn_now() 即可。
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+
+
 PHASE_CN = {
     'nomination': '提名期',
     'review': '审核期',
@@ -1163,7 +1173,7 @@ def contest_detail(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
 
     # 1. 计算赛程时间
     times = calc_stage_times(contest.open_at)
@@ -1601,7 +1611,7 @@ def qualifying_vote_submit(contest_id):
         contest.open_at = contest.open_at.replace(tzinfo=None)
     if not contest.open_at:
         return fail('赛事开始时间未设置')
-    _now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    _now = _cn_now()
     _times = calc_stage_times(contest.open_at)
     if _now <= _times['review_end']:
         return fail('海选投票尚未开始')
@@ -1726,7 +1736,7 @@ def qualifying_vote_reset(contest_id):
         contest.open_at = contest.open_at.replace(tzinfo=None)
     if not contest.open_at:
         return jsonify({'success': False, 'message': '赛事开始时间未设置'})
-    _now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    _now = _cn_now()
     _times = calc_stage_times(contest.open_at)
     if _now <= _times['review_end'] or _now > _times['qualifying_vote_end']:
         return jsonify({'success': False, 'message': '当前不在海选投票期，无法清空投票'})
@@ -1767,7 +1777,7 @@ def group_vote_female(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
     # 计算当前阶段和轮次
@@ -1836,7 +1846,7 @@ def group_vote_male(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
     phase = _calc_current_phase(contest)
@@ -1899,7 +1909,7 @@ def group_vote_submit(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     open_at = contest.open_at
     if not open_at:
         return fail('赛事开始时间未设置')
@@ -2031,7 +2041,7 @@ def knockout_vote_female(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
     sub_round = None
@@ -2123,7 +2133,7 @@ def knockout_vote_male(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
     sub_round = None
@@ -2207,7 +2217,7 @@ def knockout_vote_submit(contest_id):
     if contest.open_at and contest.open_at.tzinfo is not None:
         contest.open_at = contest.open_at.replace(tzinfo=None)
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
     open_at = contest.open_at
     if not open_at:
         return fail('赛事开始时间未设置')
@@ -2502,7 +2512,7 @@ def api_kanban_lines():
     """返回看板娘的真实数据台词 + 闲聊池"""
     import random
 
-    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now = _cn_now()
 
     # 缓存部分：公共数据（不含用户名）
     if not (_kanban_cache['lines'] and _kanban_cache['expires'] > now):

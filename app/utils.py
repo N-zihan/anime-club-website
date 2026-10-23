@@ -25,6 +25,7 @@ import socket
 import time
 import uuid
 import re
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -258,6 +259,20 @@ def login_fail_reset(key):
     """登录成功后清除失败计数。"""
     from . import throttle  # pylint: disable=import-outside-toplevel
     throttle.login_fail_reset(key)
+
+
+def cn_now():
+    """当前东八区时间（naive）：库里统一存 naive UTC，展示/赛程判定都转东八区。
+
+    收口这个表达式，避免各模块各写一遍 `datetime.now(timezone.utc).replace(tzinfo=None)
+    + timedelta(hours=8)`（时区错一次就是整站时间错 8 小时）。
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+
+
+def to_cn(dt):
+    """naive UTC → 东八区 naive；None 原样返回。"""
+    return dt + timedelta(hours=8) if dt else dt
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

@@ -36,7 +36,7 @@ from .models import (db, User, Activity, Photo, Message, Reply,
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from .utils import get_supabase, allowed_file, compress_image, get_or_404
+from .utils import get_supabase, allowed_file, compress_image, get_or_404, cn_now
 from .notify import notify
 from .auth import send_reset_email, EMAIL_PATTERN
 from .contest_engine import calc_stage_times
@@ -784,7 +784,7 @@ def admin_notification_send():
 @admin_required
 def admin_ai_friend():
     """AI 好友：用量概览 + 人设审核（下架/恢复）"""
-    now_cn = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    now_cn = cn_now()
     today_start = now_cn.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
 
     personas = AIPersona.query.order_by(AIPersona.created_at.desc()).limit(200).all()
