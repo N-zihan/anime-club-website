@@ -8,6 +8,8 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com)
 [![Python application](https://github.com/N-zihan/anime-club-website/actions/workflows/python-app.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/python-app.yml)
 [![Playwright Tests](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/node.js.yml)
+[![Pylint](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/pylint.yml)
+[![CodeQL Advanced](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml/badge.svg)](https://github.com/N-zihan/anime-club-website/actions/workflows/codeql.yml)
 [![Docs](https://github.com/N-zihan/anime-club-website/actions/workflows/docs.yml/badge.svg)](https://n-zihan.github.io/anime-club-website/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/tag/N-zihan/anime-club-website?label=Version)](https://github.com/N-zihan/anime-club-website/tags)

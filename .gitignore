@@ -22,3 +22,9 @@ tmp*
 
 # mkdocs 构建产物
 site/
+
+# 本地/测试产生的数据库与日志（绝不入库）
+*.db
+*.sqlite
+*.sqlite3
+*.log

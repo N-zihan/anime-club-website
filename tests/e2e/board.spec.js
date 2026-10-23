@@ -83,4 +83,36 @@ test.describe('论坛（原留言板）', () => {
         await expect(guest).toHaveURL(/\/login/);
         await ctx.close();
     });
+
+    test('窄屏下看板娘不遮挡发布/发送按钮，发送后输入框清空', async ({browser}) => {
+        // 回归：之前看板娘在手机上盖住表单右下角按钮，点「发布」实际点到了立绘，
+        // 表单没提交、输入框内容当然还在（表现为"发送后输入框未清空"）
+        const ctx = await browser.newContext({ viewport: { width: 393, height: 851 } });
+        const page = await ctx.newPage();
+        await page.addInitScript(() => {
+            for (let i = 0; i < 100; i++) {
+                localStorage.setItem(`onboarding_done_${i}`, 'true');
+            }
+        });
+
+        await page.goto('/login');
+        await page.fill('input[name="username"]', 'testuser');
+        await page.fill('input[name="password"]', 'password123');
+        await page.click('button[type="submit"]');
+        await expect(page).not.toHaveURL(/\/login/);
+
+        const title = `窄屏发帖-${Date.now()}`;
+        await page.goto('/board/new');
+        await page.fill('input[name="title"]', title);
+        await page.fill('textarea[name="content"]', '窄屏发帖正文');
+        await page.click('.forum-form-actions button[type="submit"]');
+        await expect(page.locator('.thread-title')).toHaveText(title);
+
+        await page.fill('#thread-reply-input', '窄屏回复');
+        await page.click('.thread-composer-send');
+        await expect(page.locator('.thread-posts')).toContainText('窄屏回复');
+        await expect(page.locator('#thread-reply-input')).toHaveValue('');
+
+        await ctx.close();
+    });
 });
