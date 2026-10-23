@@ -185,7 +185,7 @@ def test_run_knockout_advance_guards_none_config(app, sample_contest):
 # ---------------------------------------------------------------------------
 def test_ai_predict_anonymous_first_call_succeeds(app, sample_contest, monkeypatch):
     """★ 不能被修成「必须登录」：匿名首次必须仍能拿到预测。"""
-    import app.public as public_mod
+    import app.public_contest as public_mod
     calls = []
 
     def fake(contest_id, *a, **k):
@@ -205,7 +205,7 @@ def test_ai_predict_anonymous_first_call_succeeds(app, sample_contest, monkeypat
 def test_ai_predict_second_call_within_cooldown_is_429_without_model_call(
         app, sample_contest, monkeypatch):
     """60s 内第二次必须 429，且绝不触发真实模型调用（资损防护）。"""
-    import app.public as public_mod
+    import app.public_contest as public_mod
     calls = []
 
     def fake(contest_id, *a, **k):
@@ -229,7 +229,7 @@ def test_ai_predict_second_call_within_cooldown_is_429_without_model_call(
 
 def test_ai_predict_cooldown_expires(app, sample_contest, monkeypatch):
     """冷却窗口过后应允许再次调用（不能永久锁死）。"""
-    import app.public as public_mod
+    import app.public_contest as public_mod
     calls = []
 
     def fake(contest_id, *a, **k):
@@ -251,7 +251,7 @@ def test_ai_predict_cooldown_expires(app, sample_contest, monkeypatch):
 
 def test_ai_predict_failure_does_not_set_cooldown(app, sample_contest, monkeypatch):
     """模型失败时不应写入冷却时间戳（否则一次失败会锁死 60s）。"""
-    import app.public as public_mod
+    import app.public_contest as public_mod
     monkeypatch.setattr(public_mod, 'generate_prediction',
                         lambda cid, *a, **k: (False, None, 'model error'))
     public_mod._predict_cooldown.clear()

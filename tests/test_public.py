@@ -555,12 +555,12 @@ class TestPublicExtra:
         assert resp.get_json()['success'] is False
 
     def test_ai_commentary_api(self, logged_in_client, sample_contest):
-        with patch('app.public.generate_commentary', return_value=(True, 'AI commentary', None)):
+        with patch('app.public_contest.generate_commentary', return_value=(True, 'AI commentary', None)):
             resp = logged_in_client.get(f'/contest/{sample_contest.id}/commentary?phase=qualifying')
             assert resp.get_json()['commentary'] == 'AI commentary'
 
     def test_ai_prediction_api(self, logged_in_client, sample_contest):
-        with patch('app.public.generate_prediction', return_value=(True, 'AI prediction', None)):
+        with patch('app.public_contest.generate_prediction', return_value=(True, 'AI prediction', None)):
             resp = logged_in_client.get(f'/contest/{sample_contest.id}/predict')
             assert resp.get_json()['prediction'] == 'AI prediction'
 

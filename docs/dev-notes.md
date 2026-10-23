@@ -89,11 +89,11 @@ mkdocs build            # 输出到 site/
 
 | 指标 | 数值 | 备注 |
 |---|---|---|
-| `app/public.py` | 约 2000 行 | 已抽走「论坛/举报」（`public_board.py` 424 行）、「离线/RSS/实时票数」（`public_misc.py`）；目标 < 800 行 |
+| `app/public.py` | **595 行**（原约 2000） | 已拆出 `public_contest.py`（1051）、`public_board.py`（351）、`public_misc.py`（112）、`public_bp.py` |
 | `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
 | `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
-| 测试覆盖率 | 66% → 约 67% | `python -m pytest --cov=app --cov-report=term-missing` |
-| 低覆盖模块 | `changelog` 49%（原 0%）、`bangumi` 9%、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 这些是下一步补测试的重点 |
+| 测试覆盖率 | 66% → 约 70% | `python -m pytest --cov=app --cov-report=term-missing` |
+| 低覆盖模块 | `bangumi` **90%**（原 9%）、`changelog` 49%（原 0%）、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 下一步补 auth/utils |
 
 ### 已还的债
 
@@ -101,6 +101,15 @@ mkdocs build            # 输出到 site/
   `datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)`；时区错一次就是整站时间错 8 小时。
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
+
+### 第四批已还（v4.28.5）
+
+- **拆出 `public_contest.py`**：赛事中心/规则/详情、提名、海选/小组/淘汰赛投票与提交、
+  票数接口、AI 解说与预测（1051 行）；`public.py` 降到 **595 行**（达成 <800 目标）。
+  拆分时按 pytest 报错逐个补了 `threading` / `time` / `os` / `func` 导入，并把 3 处测试 patch
+  目标从 `app.public` 改到 `app.public_contest`（AI 解说/预测、冷却机制）。
+- **补测试**：`tests/test_bangumi.py` 18 条（mock requests，覆盖成功/失败/空响应/异常），
+  bangumi 覆盖率 **9% → 90%**；全量 pytest **594 passed**。
 
 ### 第三批已还（v4.28.4）
 
