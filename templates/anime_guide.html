@@ -120,8 +120,65 @@
                     '<span style="color: var(--text-muted);">' + escapeHtml(a.date) + '</span>' +
                 '</div>' +
                 rank +
+                '<div class="anime-status-actions" onclick="event.stopPropagation();">' +
+                    '<button type="button" class="anime-status-btn" data-status="want" ' +
+                        'onclick="addAnimeToList(event, this)">想看</button>' +
+                    '<button type="button" class="anime-status-btn" data-status="watching" ' +
+                        'onclick="addAnimeToList(event, this)">在看</button>' +
+                    '<button type="button" class="anime-status-btn" data-status="done" ' +
+                        'onclick="addAnimeToList(event, this)">看过</button>' +
+                '</div>' +
             '</div>' +
         '</div>';
+    }
+
+    // 把番剧加入追番清单（重名会更新状态，不会重复插入）
+    function addAnimeToList(event, btn) {
+        event.preventDefault();
+        event.stopPropagation();
+        var card = btn.closest('[onclick^="openAnimeModal"]');
+        var animeId = card ? card.getAttribute('onclick').match(/\d+/)[0] : null;
+        if (!animeId) return;
+        var cache = window.__animeCache || {};
+        var anime = cache[animeId] || {};
+        var csrfEl = document.querySelector('input[name="csrf_token"]');
+        var csrf = csrfEl ? csrfEl.value : '';
+
+        fetch('/api/anime_list', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+            body: JSON.stringify({
+                bangumi_id: parseInt(animeId, 10),
+                title: anime.name || '',
+                image: anime.cover || '',
+                status: btn.dataset.status || 'want'
+            })
+        }).then(function (r) { return r.json(); }).then(function (data) {
+            if (!data.ok) throw new Error(data.error || '加入失败');
+            var labels = {want: '想看', watching: '在看', done: '看过'};
+            btn.parentElement.querySelectorAll('.anime-status-btn').forEach(function (b) {
+                b.classList.toggle('is-active', b === btn);
+            });
+            showAnimeToast('已标记为「' + (labels[data.status] || data.status) + '」');
+        }).catch(function (err) {
+            showAnimeToast(err.message || '加入失败，请先登录');
+        });
+    }
+
+    var animeToastTimer = null;
+    function showAnimeToast(text) {
+        var el = document.getElementById('animeToast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'animeToast';
+            el.className = 'toast-mini';
+            document.body.appendChild(el);
+        }
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(animeToastTimer);
+        animeToastTimer = setTimeout(function () { el.classList.remove('show'); }, 1800);
     }
 
     function appendItems(items) {

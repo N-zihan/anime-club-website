@@ -95,6 +95,12 @@
 {% endif %}
 
 <h2>{{ contest.title }}</h2>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 4px;">
+    <button type="button" class="poster-btn" id="posterBtn">📸 生成分享海报</button>
+    <span style="font-size:0.78rem; color: var(--text-muted);">一键生成 1200×630 战报图，发群/发空间都好看</span>
+</div>
+<script id="posterData" type="application/json">{{ poster_data | tojson }}</script>
 <p>{{ contest.description }}</p>
 
 <div style="display:flex; gap:20px; flex-wrap:wrap; background: var(--bg-card); padding:12px 16px; border-radius:12px; margin-bottom:20px;">
@@ -605,4 +611,5 @@
     })();
 </script>
 
+<script src="{{ url_for('static', filename='js/share-poster.js') }}" defer></script>
 {% endblock %}

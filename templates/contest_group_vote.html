@@ -13,6 +13,11 @@
 <p style="color: var(--text-secondary);">当前轮次：第 <strong>{{ round_num }}</strong> 轮（共3轮）</p>
 <p style="color: var(--text-secondary);">每轮每组有 <strong>2场</strong> 对决，每场可投 <strong>1票</strong>，共可投 <strong>16票</strong></p>
 
+<div id="voteLive" class="vote-live-root" data-contest="{{ contest.id }}"
+     data-gender="{{ gender }}" data-mode="group">
+    <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
+</div>
+
 {% if groups %}
 {% for group in groups %}
 {% set group_index = loop.index0 %}
@@ -30,6 +35,21 @@
     {% for pair in pairs %}
     {% set match_index = loop.index %}
     <div style="background: var(--bg-card); border-radius:10px; padding:12px; margin-bottom:10px; border:1px solid var(--border-color); {% if loop.last %}margin-bottom:0;{% endif %}">
+        {% set va = vote_totals.get(pair[0], 0) if pair[0] is not none else 0 %}
+        {% set vb = vote_totals.get(pair[1], 0) if pair[1] is not none else 0 %}
+        {% set vtotal = va + vb %}
+        {% set pct_a = (va / vtotal * 100) | round(1) if vtotal else 50 %}
+        <div class="vote-vs-bar {% if not vtotal %}is-empty{% endif %}"
+             data-vs-a="{{ pair[0] if pair[0] is not none else '' }}"
+             data-vs-b="{{ pair[1] if pair[1] is not none else '' }}">
+            <span class="vote-vs-left" style="width: {{ pct_a }}%"></span>
+            <span class="vote-vs-right" style="width: {{ (100 - pct_a) | round(1) }}%"></span>
+        </div>
+        <div class="vote-vs-meta">
+            <span class="vote-vs-pct" data-side="a">{{ pct_a }}%</span>
+            <span class="vote-vs-total">共 {{ vtotal }} 票</span>
+            <span class="vote-vs-pct" data-side="b">{{ (100 - pct_a) | round(1) }}%</span>
+        </div>
         <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center;">
             <div style="text-align:center;" data-candidate-id="{{ pair[0] }}">
                 {% set c1 = candidates.get(pair[0]) %}
@@ -379,4 +399,5 @@
     })();
 </script>
 
+<script src="{{ url_for('static', filename='js/vote-live.js') }}" defer></script>
 {% endblock %}

@@ -3494,3 +3494,397 @@ body.has-composer footer {
         opacity: 1;
     }
 }
+
+/* ===================== 25. 投票实时票数 + 对抗进度条 ===================== */
+.vote-live-root {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 16px;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    background: var(--bg-code);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.vote-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+    animation: vote-live-pulse 2s infinite;
+}
+
+@keyframes vote-live-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45); }
+    70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.vote-live-state.stale {
+    color: #b45309;
+}
+
+.vote-live-state.stale + .vote-live-dot,
+.vote-live-root:has(.stale) .vote-live-dot {
+    background: #f59e0b;
+    animation: none;
+}
+
+/* 对抗条：左右两段按本场得票占比伸缩 */
+.vote-vs-bar {
+    display: flex;
+    height: 10px;
+    margin: 10px 0 6px;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background: var(--bg-code);
+    border: 1px solid var(--border-color);
+}
+
+.vote-vs-left,
+.vote-vs-right {
+    display: block;
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vote-vs-left {
+    background: linear-gradient(90deg, #5b9bea, #3f7fd0);
+}
+
+.vote-vs-right {
+    background: linear-gradient(90deg, #e46c9a, #c74f80);
+}
+
+.vote-vs-bar.is-empty {
+    opacity: 0.45;
+}
+
+.vote-vs-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.vote-vs-pct {
+    min-width: 3em;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.vote-vs-pct[data-side="b"] {
+    text-align: right;
+}
+
+.vote-vs-total {
+    color: var(--text-muted);
+}
+
+/* 海选：单条得票占比 */
+.vote-share {
+    height: 6px;
+    margin: 8px 0 4px;
+    border-radius: var(--radius-full);
+    background: var(--bg-code);
+    overflow: hidden;
+}
+
+.vote-share-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: var(--radius-full);
+    background: linear-gradient(90deg, #5b9bea, #e46c9a);
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vote-share-pct {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vote-vs-left,
+    .vote-vs-right,
+    .vote-share-fill {
+        transition: none;
+    }
+
+    .vote-live-dot {
+        animation: none;
+    }
+}
+
+/* ===================== 26. PWA 离线页 / 无障碍 / 分享海报 / 追番 ===================== */
+/* ---- 无障碍：跳转正文 + 键盘焦点 ---- */
+.skip-link {
+    position: fixed;
+    top: -100px;
+    left: 12px;
+    z-index: 3000;
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+    text-decoration: none;
+    transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+    top: 12px;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* 触屏设备：按钮/链接的点击目标别太小 */
+@media (pointer: coarse) {
+    .btn,
+    .btn-add,
+    .btn-primary,
+    .thread-reply-btn {
+        min-height: 42px;
+    }
+
+    .thread-delete-btn,
+    .thread-report-link {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+/* ---- 离线兜底页 ---- */
+.offline-wrap {
+    max-width: 520px;
+    margin: 8vh auto 0;
+    padding: 0 20px;
+    text-align: center;
+}
+
+.offline-img {
+    width: 160px;
+    height: auto;
+    opacity: 0.9;
+    animation: kanban-breathe 3s ease-in-out infinite;
+}
+
+.offline-title {
+    margin: 8px 0 10px;
+    color: var(--text-primary);
+}
+
+.offline-desc {
+    color: var(--text-secondary);
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+
+.offline-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 22px 0 14px;
+    flex-wrap: wrap;
+}
+
+.offline-tip {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+/* ---- 分享海报 ---- */
+.poster-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.poster-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.poster-btn[disabled] {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+}
+
+/* ---- 追番清单 ---- */
+.anime-status-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.anime-status-btn {
+    flex: 1 1 auto;
+    padding: 5px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.anime-status-btn:hover,
+.anime-status-btn.is-active {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: var(--bg-code);
+}
+
+.anime-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.anime-list-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.anime-list-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    background: var(--bg-code);
+}
+
+.anime-list-body {
+    padding: 10px 12px 12px;
+}
+
+.anime-list-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 2.7em;
+}
+
+.anime-list-select {
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+}
+
+.anime-list-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.anime-list-remove {
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.anime-list-remove:hover {
+    color: #dc2626;
+}
+
+.anime-list-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 60px 0;
+}
+
+.anime-status-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 14px 0 4px;
+}
+
+.anime-status-tab {
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+
+.anime-status-tab.is-active {
+    border-color: var(--accent);
+    color: var(--text-primary);
+    background: var(--bg-code);
+}
+
+.toast-mini {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 2500;
+    padding: 10px 20px;
+    border-radius: var(--radius-full);
+    background: rgba(17, 24, 39, 0.92);
+    color: #fff;
+    font-size: 0.85rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.toast-mini.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .offline-img {
+        animation: none;
+    }
+
+    .poster-btn:hover {
+        transform: none;
+    }
+}

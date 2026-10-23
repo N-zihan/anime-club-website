@@ -4,6 +4,11 @@
 
 {% if phase == 'qualifying' %}
 <h2>海选投票：{{ contest.title }}</h2>
+
+<div id="voteLive" class="vote-live-root" data-contest="{{ contest.id }}"
+     data-gender="{{ gender }}" data-mode="qualifying">
+    <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
+</div>
 <p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
 <p style="color: var(--text-secondary);">
     每组 <strong>15票</strong>，最多投给 <strong>5个</strong> 角色，每个角色最多 <strong>3票</strong>
@@ -30,6 +35,12 @@
             <div style="font-size:0.8rem; color:#4caf50; margin-top:6px; font-weight:600;">
                 总票数：<span class="total-votes" data-candidate-id="{{ c.id }}">{{ vote_totals.get(c.id, 0) }}</span>
             </div>
+            {% set total_all = vote_totals.values() | sum %}
+            {% set pct = (vote_totals.get(c.id, 0) / total_all * 100) | round(1) if total_all else 0 %}
+            <div class="vote-share">
+                <span class="vote-share-fill" data-candidate-id="{{ c.id }}" style="width: {{ pct }}%"></span>
+            </div>
+            <div class="vote-share-pct" data-candidate-id="{{ c.id }}">{{ pct }}%</div>
 
             {% if c.banned %}
             <div style="font-size:0.78rem; color:#e11d48; margin-top:10px; font-weight:600;">🚫 已禁赛，无法投票</div>
@@ -297,4 +308,5 @@
 
 <p style="margin-top:20px;"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">返回赛事详情</a></p>
 
+<script src="{{ url_for('static', filename='js/vote-live.js') }}" defer></script>
 {% endblock %}

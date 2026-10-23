@@ -23,7 +23,7 @@ from urllib.parse import quote
 
 from app import create_app, db
 from app.models import (User, Contest, Candidate, Activity, Photo,
-                        Notification, AIPersona, AIChatMessage)
+                        Notification, AIPersona, AIChatMessage, AnimeListEntry)
 
 app = create_app()
 
@@ -165,6 +165,19 @@ if os.getenv('TESTING') == '1':
                                          content='《夏目友人帐》吧，温柔又治愈，适合慢慢看。',
                                          model='demo-free-model'))
             print("  - 演示 AI 人设已就绪: 1 个角色 + 2 条聊天")
+
+        # 8. 演示追番清单：我的追番页/文档截图需要至少两条记录（仅 TESTING）
+        if not AnimeListEntry.query.filter_by(user_id=user.id).first():
+            db.session.add_all([
+                AnimeListEntry(user_id=user.id, bangumi_id=400602, title='五等分的新娘',
+                              status='done', rating=9),
+                AnimeListEntry(user_id=user.id, bangumi_id=302766, title='CLANNAD',
+                              status='watching'),
+                AnimeListEntry(user_id=user.id, bangumi_id=218971, title='紫罗兰永恒花园',
+                              status='want'),
+            ])
+            db.session.commit()
+            print("  - 演示追番清单已就绪: 3 条")
 
         db.session.commit()
         print("测试数据初始化完成")

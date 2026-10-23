@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}我的追番{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <h2>📺 我的追番</h2>
+</div>
+
+<p class="page-sub">
+    共 <strong>{{ total }}</strong> 部 ·
+    想看 {{ counts.get('want', 0) }} · 在看 {{ counts.get('watching', 0) }} · 看过 {{ counts.get('done', 0) }}
+</p>
+
+<div class="anime-status-tabs">
+    <a class="anime-status-tab {% if status == 'all' %}is-active{% endif %}"
+       href="{{ url_for('user.anime_list') }}">全部</a>
+    {% for key, label in labels.items() %}
+    <a class="anime-status-tab {% if status == key %}is-active{% endif %}"
+       href="{{ url_for('user.anime_list', status=key) }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if entries %}
+<div class="anime-list-grid" id="animeListGrid">
+    {% for entry in entries %}
+    <div class="anime-list-card" data-entry-id="{{ entry.id }}">
+        {% if entry.image %}
+        <img alt="{{ entry.title }}" loading="lazy"
+             src="{{ url_for('public.api_anime_cover') }}?url={{ entry.image|urlencode }}">
+        {% else %}
+        <img alt="{{ entry.title }}" loading="lazy"
+             src="{{ url_for('static', filename='images/kanban.png') }}">
+        {% endif %}
+        <div class="anime-list-body">
+            <div class="anime-list-title">{{ entry.title }}</div>
+            <select class="anime-list-select" data-role="status">
+                {% for key, label in labels.items() %}
+                <option value="{{ key }}" {% if entry.status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <div class="anime-list-foot">
+                <select class="anime-list-select" data-role="rating" style="width:auto; margin:0;">
+                    <option value="">评分</option>
+                    {% for score in range(1, 11) %}
+                    <option value="{{ score }}" {% if entry.rating == score %}selected{% endif %}>{{ score }} 分</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="anime-list-remove" data-role="remove">移除</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="anime-list-empty">
+    这个分类还是空的～<br>
+    去 <a href="{{ url_for('public.anime_resources') }}">番剧百科</a> 逛逛，点「想看 / 在看 / 看过」就能收进来。
+</p>
+{% endif %}
+
+<div class="toast-mini" id="toastMini"></div>
+
+<script>
+    (function () {
+        var CSRF = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+        var toastEl = document.getElementById('toastMini');
+        var toastTimer = null;
+
+        function toast(text) {
+            if (!toastEl) return;
+            toastEl.textContent = text;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+        }
+
+        function post(url, body) {
+            return fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+                body: JSON.stringify(body)
+            }).then(function (resp) {
+                return resp.json().then(function (data) {
+                    if (!resp.ok || !data.ok) throw new Error(data.error || '操作失败');
+                    return data;
+                });
+            });
+        }
+
+        document.querySelectorAll('.anime-list-card').forEach(function (card) {
+            var entryId = card.dataset.entryId;
+            var statusSel = card.querySelector('[data-role="status"]');
+            var ratingSel = card.querySelector('[data-role="rating"]');
+            var removeBtn = card.querySelector('[data-role="remove"]');
+
+            statusSel.addEventListener('change', function () {
+                post('/api/anime_list/' + entryId, {status: statusSel.value})
+                    .then(function () { toast('状态已更新'); })
+                    .catch(function (err) { toast(err.message); statusSel.blur(); });
+            });
+
+            ratingSel.addEventListener('change', function () {
+                var value = ratingSel.value;
+                post('/api/anime_list/' + entryId, {rating: value === '' ? null : value})
+                    .then(function () { toast(value === '' ? '已清除评分' : '评分已保存'); })
+                    .catch(function (err) { toast(err.message); });
+            });
+
+            removeBtn.addEventListener('click', function () {
+                if (!confirm('确定从追番清单移除这部番吗？')) return;
+                post('/api/anime_list/' + entryId, {action: 'delete'})
+                    .then(function () { card.remove(); toast('已移除'); })
+                    .catch(function (err) { toast(err.message); });
+            });
+        });
+    })();
+</script>
+{% endblock %}

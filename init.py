@@ -153,6 +153,8 @@ REQUIRED_INDEXES = [
     ('ix_contest_votes_candidate_id', 'contest_votes', ['candidate_id']),
     ('ix_contest_votes_user_id', 'contest_votes', ['user_id']),
     ('ix_admin_logs_created_at', 'admin_logs', ['created_at']),
+    ('ix_anime_list_user_id', 'anime_list', ['user_id']),
+    ('ix_anime_list_bangumi_id', 'anime_list', ['bangumi_id']),
 ]
 
 

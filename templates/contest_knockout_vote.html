@@ -11,6 +11,11 @@
 {% macro winner_label(match) %}{% if match.winner and candidates.get(match.winner) %}{{ candidates.get(match.winner).name }}{% elif match.repechage and candidates.get(match.repechage) %}双方禁赛，由 {{ candidates.get(match.repechage).name }} 替补晋级{% else %}无人晋级{% endif %}{% endmacro %}
 
 <h2>淘汰赛：{{ contest.title }}</h2>
+
+<div id="voteLive" class="vote-live-root" data-contest="{{ contest.id }}"
+     data-gender="{{ gender }}" data-mode="knockout">
+    <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
+</div>
 <p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
 
 {# ============ 公示期：显示上一轮结果 ============ #}
@@ -106,6 +111,23 @@
             {% endif %}
         </div>
     </div>
+
+    {% if phase in voting_phases and match.candidate1 and match.candidate2 %}
+    {% set va = vote_totals.get(match.candidate1, 0) %}
+    {% set vb = vote_totals.get(match.candidate2, 0) %}
+    {% set vtotal = va + vb %}
+    {% set pct_a = (va / vtotal * 100) | round(1) if vtotal else 50 %}
+    <div class="vote-vs-bar {% if not vtotal %}is-empty{% endif %}"
+         data-vs-a="{{ match.candidate1 }}" data-vs-b="{{ match.candidate2 }}">
+        <span class="vote-vs-left" style="width: {{ pct_a }}%"></span>
+        <span class="vote-vs-right" style="width: {{ (100 - pct_a) | round(1) }}%"></span>
+    </div>
+    <div class="vote-vs-meta">
+        <span class="vote-vs-pct" data-side="a">{{ pct_a }}%</span>
+        <span class="vote-vs-total">共 {{ vtotal }} 票</span>
+        <span class="vote-vs-pct" data-side="b">{{ (100 - pct_a) | round(1) }}%</span>
+    </div>
+    {% endif %}
 
     {# 投票按钮：只在投票期显示；禁赛方禁用按钮 #}
     {% if phase in voting_phases and match.status == 'active' %}
@@ -350,4 +372,5 @@
 </script>
 {% endif %}
 
+<script src="{{ url_for('static', filename='js/vote-live.js') }}" defer></script>
 {% endblock %}

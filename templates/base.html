@@ -55,6 +55,7 @@
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main-content">跳到主要内容</a>
 <!-- ====== CSRF Token（所有表单通过 {{ csrf_token() }} 使用） ====== -->
 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
 <!-- =============================================================== -->
@@ -98,6 +99,7 @@
                 </a>
                 <a class="drawer-item" href="{{ url_for('user.profile') }}">👤 个人资料</a>
                 <a class="drawer-item" href="{{ url_for('user.ai_friend') }}">🤖 AI 好友</a>
+        <a class="drawer-item" href="{{ url_for('user.anime_list') }}">📺 我的追番</a>
                 <a class="drawer-item" href="{{ url_for('public.settings') }}">⚙️ 设置</a>
                 {% if is_admin %}
                 <a class="drawer-item" href="{{ url_for('admin.admin_entry') }}">🛠️ 管理后台</a>
@@ -428,12 +430,12 @@
 </script>
 {% endif %}
 
-<main class="main-content">
+<main class="main-content" id="main-content" tabindex="-1">
     {# 一次性提示统一在这里渲染：每个页面都会消费掉 flash，
        避免后台操作/AJAX 产生的提示残留在 session 里，隔几个页面才莫名弹出 #}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="flash-stack">
+            <div class="flash-stack" role="status" aria-live="polite">
                 {% for category, message in messages %}
                     <div class="flash {{ category }}">{{ message }}</div>
                 {% endfor %}

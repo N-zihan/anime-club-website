@@ -1024,6 +1024,80 @@ def members():
 
 # ========== 萌战系统 · 前台 ==========
 
+@public_bp.route('/api/contest/<int:contest_id>/vote-stats')
+def api_contest_vote_stats(contest_id):
+    """投票页实时票数（轮询接口）：mode=group|knockout|qualifying, gender=female|male"""
+    contest = get_or_404(Contest, contest_id)
+    mode = request.args.get('mode', 'group')
+    gender = request.args.get('gender', 'female')
+    if mode not in ('group', 'knockout', 'qualifying') or gender not in ('female', 'male'):
+        return jsonify({'ok': False, 'error': 'bad params'}), 400
+
+    # 时区：库里 open_at 是 naive 东八区，和投票路由保持一致
+    if contest.open_at and contest.open_at.tzinfo is not None:
+        contest.open_at = contest.open_at.replace(tzinfo=None)
+    now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
+    times = calc_stage_times(contest.open_at) if contest.open_at else {}
+
+    base = ContestVote.query.filter_by(contest_id=contest.id, gender=gender)
+    round_number = None
+    sub_round = None
+
+    if mode == 'qualifying':
+        base = base.filter_by(round_number=0)
+    elif mode == 'group':
+        for n in (1, 2, 3):
+            end = times.get(f'group_round_{n}_end')
+            if end and now <= end:
+                round_number = n
+                break
+        if round_number is None:
+            # 投票窗口已过（公示期）：回退到最近有票的一轮
+            round_number = db.session.query(func.max(ContestVote.round_number)).filter(
+                ContestVote.contest_id == contest.id,
+                ContestVote.gender == gender,
+                ContestVote.round_number.in_((1, 2, 3)),
+            ).scalar()
+        if round_number:
+            base = base.filter_by(round_number=round_number)
+        else:
+            base = base.filter(ContestVote.id == -1)
+    else:
+        for n, key in ((1, 'knockout_16_end'), (2, 'knockout_8_end'),
+                       (3, 'knockout_4_end'), (4, 'final_vote_end')):
+            end = times.get(key)
+            if end and now <= end:
+                sub_round = n
+                break
+        if sub_round is None:
+            sub_round = db.session.query(func.max(ContestVote.sub_round)).filter(
+                ContestVote.contest_id == contest.id,
+                ContestVote.round_number == 4,
+                ContestVote.gender == gender,
+            ).scalar()
+        if sub_round:
+            round_number = 4
+            base = base.filter_by(round_number=4, sub_round=sub_round)
+        else:
+            base = base.filter(ContestVote.id == -1)
+
+    rows = (base.with_entities(ContestVote.candidate_id,
+                               func.sum(ContestVote.weight))
+            .group_by(ContestVote.candidate_id).all())
+    totals = {str(cid): int(votes or 0) for cid, votes in rows if cid is not None}
+
+    return jsonify({
+        'ok': True,
+        'mode': mode,
+        'gender': gender,
+        'round': round_number,
+        'sub_round': sub_round,
+        'total': sum(totals.values()),
+        'totals': totals,
+        'updated_at': datetime.now().strftime('%H:%M:%S'),
+    })
+
+
 @public_bp.route('/contest_center')
 def contest_center():
     now = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)
@@ -1057,6 +1131,28 @@ def contest_rules(contest_id):
     """赛事规则确认页"""
     contest = get_or_404(Contest, contest_id)
     return render_template('contest_rules.html', contest=contest)
+
+
+PHASE_CN = {
+    'nomination': '提名期',
+    'review': '审核期',
+    'qualifying': '海选投票',
+    'qualifying_result': '海选结果公示',
+    'group_round_1': '小组赛第1轮',
+    'group_round_1_result': '小组赛第1轮公示',
+    'group_round_2': '小组赛第2轮',
+    'group_round_2_result': '小组赛第2轮公示',
+    'group_round_3': '小组赛第3轮',
+    'group_round_3_result': '小组赛第3轮公示',
+    'knockout_16': '淘汰赛16强',
+    'knockout_16_result': '淘汰赛16强公示',
+    'knockout_8': '淘汰赛8强',
+    'knockout_8_result': '淘汰赛8强公示',
+    'knockout_4': '淘汰赛4强',
+    'knockout_4_result': '淘汰赛4强公示',
+    'final_vote': '决赛投票',
+    'final_result': '最终结果',
+}
 
 
 @public_bp.route('/contest/<int:contest_id>')
@@ -1231,8 +1327,28 @@ def contest_detail(contest_id):
             'round_info': phase
         }
 
+    # 分享海报数据：当前总票数前 6 名（所有阶段累计），供前端 canvas 绘制
+    vote_rows = (db.session.query(ContestVote.candidate_id, func.sum(ContestVote.weight))
+                 .filter(ContestVote.contest_id == contest.id)
+                 .group_by(ContestVote.candidate_id).all())
+    vote_map = {cid: int(votes or 0) for cid, votes in vote_rows}
+    top_candidates = sorted(candidates, key=lambda c: vote_map.get(c.id, 0), reverse=True)[:6]
+    poster_data = {
+        'title': contest.title,
+        'phase_label': PHASE_CN.get(phase, phase),
+        'club': os.getenv('CLUB_NAME') or '动漫社',
+        'site': request.host,
+        'total_votes': sum(vote_map.values()),
+        'entries': [{
+            'name': c.name,
+            'source': c.source or '',
+            'votes': vote_map.get(c.id, 0),
+        } for c in top_candidates],
+    }
+
     return render_template('contest_detail.html',
                            contest=contest,
+                           poster_data=poster_data,
                            candidates=candidates,
                            phase=phase,
                            user_female_count=user_female_count,
@@ -2344,6 +2460,12 @@ def manifest():
 @public_bp.route('/robots.txt')
 def robots():
     return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'static'), 'robots.txt')
+
+
+@public_bp.route('/offline')
+def offline():
+    """PWA 离线兜底页：断网时 service worker 返回它（访客可访问）。"""
+    return render_template('offline.html')
 
 
 @public_bp.route('/sw.js')

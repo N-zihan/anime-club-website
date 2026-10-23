@@ -369,3 +369,25 @@ class Report(db.Model):
     def created_cn(self):
         """库里存 naive UTC，页面统一按东八区展示"""
         return (self.created_at + timedelta(hours=8)) if self.created_at else None
+
+
+# ========== 追番清单 ==========
+class AnimeListEntry(db.Model):
+    """社员自己的追番清单：想看 / 在看 / 看过（数据来自 Bangumi 条目）。"""
+    __tablename__ = 'anime_list'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    bangumi_id = db.Column(db.Integer, nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    image = db.Column(db.String(500), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='want')  # want/watching/done
+    rating = db.Column(db.Integer, nullable=True)   # 1-10，看完可评
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
+                           onupdate=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'bangumi_id', name='uq_anime_list_user_bangumi'),
+    )

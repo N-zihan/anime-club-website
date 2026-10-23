@@ -1,13 +1,16 @@
 // 缓存的版本号——每次更新缓存时修改这个版本号
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_STATIC = `anime-club-static-${CACHE_VERSION}`;
+const OFFLINE_URL = '/offline';
 
-// 只预缓存静态资源
+// 预缓存静态资源 + 离线兜底页
 const STATIC_URLS = [
     '/static/css/style.css',
     '/static/images/icon-192.png',
     '/static/images/icon-512.png',
+    '/static/images/kanban.png',
     '/static/favicon.ico',
+    OFFLINE_URL,
 ];
 
 // 安装 —— 预缓存静态资源，并立即跳过等待
@@ -33,7 +36,20 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 拦截请求：只处理静态资源，动态页面一律交给浏览器
+function offlineFallback() {
+    return caches.match(OFFLINE_URL).then((cached) => {
+        if (cached) return cached;
+        return new Response(
+            '<!doctype html><meta charset="utf-8"><title>离线</title>' +
+            '<p style="font-family:sans-serif;padding:40px;text-align:center;">网络开小差了，请稍后重试。</p>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+    });
+}
+
+// 拦截请求：
+// 1) 页面导航：网络优先，断网回落到离线兜底页
+// 2) 静态资源：缓存优先，网络成功后写回缓存
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
@@ -44,6 +60,14 @@ self.addEventListener('fetch', (event) => {
 
     // 只处理同源
     if (url.origin !== self.location.origin) return;
+
+    // 页面导航（含浏览器地址栏 / 链接跳转）
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request).catch(() => offlineFallback())
+        );
+        return;
+    }
 
     // 只有静态资源走 SW；其他一律放过，让浏览器自己处理
     if (!url.pathname.startsWith('/static/') && url.pathname !== '/favicon.ico') {

@@ -30,7 +30,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from sqlalchemy import func
 
 from .config import AVATAR_MAX_SIZE
-from .models import db, User, Message, Notification, AIPersona, AIChatMessage
+from .models import (db, User, Message, Notification, AIPersona, AIChatMessage,
+                     AnimeListEntry)
 from . import ai_friend as ai_friend_mod
 from .preferences import (NOTIFY_LABELS, get_preferences, muted_types,
                           normalize_preferences, save_preferences)
@@ -741,3 +742,97 @@ def ai_friend_chat():
         'used': used + 1,
         'limit': limit,
     })
+
+
+# ========== 追番清单 ==========
+ANIME_STATUSES = {'want': '想看', 'watching': '在看', 'done': '看过'}
+
+
+@user_bp.route('/my/anime_list')
+def anime_list():
+    """我的追番：按状态筛选，卡片可直接改状态/评分/移除"""
+    if not session.get('user_id'):
+        return redirect(url_for('auth.login'))
+
+    status = request.args.get('status', 'all')
+    query = AnimeListEntry.query.filter_by(user_id=session['user_id'])
+    if status in ANIME_STATUSES:
+        query = query.filter_by(status=status)
+    entries = query.order_by(AnimeListEntry.updated_at.desc()).all()
+
+    counts = dict(
+        db.session.query(AnimeListEntry.status, func.count(AnimeListEntry.id))
+        .filter(AnimeListEntry.user_id == session['user_id'])
+        .group_by(AnimeListEntry.status).all()
+    )
+    total = sum(counts.values())
+    return render_template('anime_list.html', entries=entries, status=status,
+                           counts=counts, total=total, labels=ANIME_STATUSES)
+
+
+@user_bp.route('/api/anime_list', methods=['POST'])
+def api_anime_list_add():
+    """把番剧加入追番清单 / 更新状态（已存在则改状态，不重复插入）"""
+    if not session.get('user_id'):
+        return jsonify({'ok': False, 'error': '请先登录'}), 401
+
+    data = request.get_json(silent=True) or {}
+    try:
+        bangumi_id = int(data.get('bangumi_id'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'bangumi_id 无效'}), 400
+
+    title = (data.get('title') or '').strip()[:200]
+    if not title:
+        return jsonify({'ok': False, 'error': '缺少番剧名'}), 400
+    status = data.get('status') or 'want'
+    if status not in ANIME_STATUSES:
+        status = 'want'
+    image = (data.get('image') or '').strip()[:500] or None
+
+    entry = AnimeListEntry.query.filter_by(user_id=session['user_id'],
+                                           bangumi_id=bangumi_id).first()
+    if entry:
+        entry.title = title
+        entry.image = image or entry.image
+        entry.status = status
+    else:
+        entry = AnimeListEntry(user_id=session['user_id'], bangumi_id=bangumi_id,
+                               title=title, image=image, status=status)
+        db.session.add(entry)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': entry.id, 'status': entry.status,
+                    'label': ANIME_STATUSES.get(entry.status, '')})
+
+
+@user_bp.route('/api/anime_list/<int:entry_id>', methods=['POST'])
+def api_anime_list_update(entry_id):
+    """更新状态/评分，或移除（action=delete）"""
+    if not session.get('user_id'):
+        return jsonify({'ok': False, 'error': '请先登录'}), 401
+
+    entry = db.session.get(AnimeListEntry, entry_id)
+    if entry is None or entry.user_id != session['user_id']:
+        return jsonify({'ok': False, 'error': '记录不存在'}), 404
+
+    data = request.get_json(silent=True) or {}
+    action = data.get('action')
+    if action == 'delete':
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({'ok': True, 'deleted': True})
+
+    if data.get('status') in ANIME_STATUSES:
+        entry.status = data['status']
+
+    rating = data.get('rating')
+    if rating is not None:
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            rating = None
+        entry.rating = rating if rating and 1 <= rating <= 10 else None
+
+    db.session.commit()
+    return jsonify({'ok': True, 'id': entry.id, 'status': entry.status,
+                    'rating': entry.rating})
