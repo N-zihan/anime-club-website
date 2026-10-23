@@ -89,11 +89,11 @@ mkdocs build            # 输出到 site/
 
 | 指标 | 数值 | 备注 |
 |---|---|---|
-| `app/public.py` | 约 2000 行 | 单文件承载论坛 / 赛事 / 新闻 / 设置等大量公开路由，最大债 |
+| `app/public.py` | 约 1950 行 | 已抽走离线路由/RSS/实时票数（`public_misc.py`）；目标 < 800 行 |
 | `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
 | `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
-| 测试覆盖率 | 66% | `python -m pytest --cov=app --cov-report=term-missing` |
-| 低覆盖模块 | `changelog` 0%、`bangumi` 9%、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 这些是下一步补测试的重点 |
+| 测试覆盖率 | 66% → 约 67% | `python -m pytest --cov=app --cov-report=term-missing` |
+| 低覆盖模块 | `changelog` 49%（原 0%）、`bangumi` 9%、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 这些是下一步补测试的重点 |
 
 ### 已还的债
 
@@ -102,12 +102,19 @@ mkdocs build            # 输出到 site/
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
 
+### 第二批已还（v4.28.3）
+
+- **拆 `public.py` 第一刀**：`public` 蓝图对象抽到 `public_bp.py`；离线页 / RSS / 实时票数接口抽到
+  `public_misc.py`（共用蓝图，endpoint 名不变）。public.py 约 1950 行。
+- **阶段计算去重**：`contest_engine` 新增 `current_group_round()` / `current_knockout_sub_round()`，
+  4 个投票路由 + `vote-stats` 接口统一使用。
+- **补测试**：`tests/test_changelog.py`（10 条），changelog 覆盖率 0% → 49%。
+
 ### 待办（按性价比排序）
 
-1. **拆 `app/public.py`**：保持 `public` 蓝图名与 endpoint 不变，抽出 `public_contest.py`（赛事公开路由）、
-   `public_board.py`（论坛路由），用共享蓝图对象避免 `url_for` 全站改名。目标：public.py < 800 行。
-2. **赛事阶段计算去重**：`contest_engine` 增加 `current_group_round()` / `current_knockout_sub_round()`，
-   替换 4 个投票路由 + `vote-stats` 接口里重复的 `calc_stage_times` 分支。
+1. **继续拆 `app/public.py`**：按同样方式抽 `public_contest.py`（赛事公开路由）、`public_board.py`（论坛路由），
+   目标是 public.py < 800 行（蓝图与 endpoint 已经共享，改名风险已消除）。
+2. ~~赛事阶段计算去重~~（v4.28.3 已完成）
 3. **补低覆盖模块测试**：`changelog`（纯函数，可 100%）、`bangumi`（mock HTTP）、`auth` 的验证码/重置密码分支。
 4. **评估 migrations 框架**：目前 `init.py` 只加列不删改；长期改表结构时 Alembic 更稳，但要权衡 Vercel 冷启动成本。
 5. **死代码确认**：`app/video_proxy.py` 相关系统当前未启用（`init.py` 里是幂等空操作），确认无用后连表一起下线。

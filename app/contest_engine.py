@@ -1280,3 +1280,42 @@ def prepare_group_round_data(contest, phase):
     overall_ranking_male = get_overall_ranking('male', groups_male)
 
     return group_round_results, overall_ranking_female, overall_ranking_male
+
+
+# ========== 当前轮次判定（投票页 / vote-stats 接口共用） ==========
+def _cn_now_naive():
+    from .utils import cn_now  # pylint: disable=import-outside-toplevel
+    return cn_now()
+
+
+def _naive_open_at(contest):
+    open_at = contest.open_at
+    if open_at is not None and getattr(open_at, 'tzinfo', None) is not None:
+        open_at = open_at.replace(tzinfo=None)
+    return open_at
+
+
+def current_group_round(contest):
+    """当前处于小组赛第 1/2/3 轮投票窗口则返回轮次，否则 None。"""
+    if not contest or not contest.open_at:
+        return None
+    times = calc_stage_times(_naive_open_at(contest))
+    now = _cn_now_naive()
+    for n in (1, 2, 3):
+        if now <= times[f'group_round_{n}_end']:
+            return n
+    return None
+
+
+def current_knockout_sub_round(contest):
+    """当前处于淘汰赛哪个子轮次（1=16强/2=8强/3=4强/4=决赛），不在窗口返回 None。"""
+    if not contest or not contest.open_at:
+        return None
+    times = calc_stage_times(_naive_open_at(contest))
+    now = _cn_now_naive()
+    for n, key in ((1, 'knockout_16_end'), (2, 'knockout_8_end'),
+                   (3, 'knockout_4_end'), (4, 'final_vote_end')):
+        end = times.get(key)
+        if end and now <= end:
+            return n
+    return None

@@ -47,8 +47,7 @@ from .contest_engine import (
     calc_stage_times, calc_phase, auto_activate_contest,
     run_qualifying_promotion, run_group_promotion,
     run_knockout_advance, run_final_ranking,
-    prepare_group_round_data
-)
+    prepare_group_round_data, current_group_round, current_knockout_sub_round)
 from .models import (db, User, Activity, Photo, Message, Reply, Contest,
                      Nomination, Candidate, ContestVote, Notification, Report)
 from .preferences import BADGE_POLL_CHOICES, NOTIFY_LABELS, NOTIFY_TYPES
@@ -70,7 +69,7 @@ def supabase_render_ctx():
         'supabase_anon_key': os.getenv('SUPABASE_ANON_KEY') or '',
     }
 
-public_bp = Blueprint('public', __name__)
+from .public_bp import public_bp
 # Bangumi 图片服务器需要的请求头
 HEADERS_FOR_IMAGE = {
     'User-Agent': 'Mozilla/5.0 (compatible; nanyi-anime-club/1.0)',
@@ -785,50 +784,6 @@ def api_anime_character_detail(char_id):
     return jsonify(d)
 
 
-@public_bp.route('/anime_news/rss.xml')
-def anime_news_rss():
-    """番剧新闻 RSS（公开页）：方便阅读器订阅，也给外部抓取一个规范入口。"""
-    from .anime_news import get_anime_news  # pylint: disable=import-outside-toplevel
-    from urllib.parse import quote  # pylint: disable=import-outside-toplevel
-    from xml.sax.saxutils import escape  # pylint: disable=import-outside-toplevel
-
-    try:
-        articles, _meta = get_anime_news(limit=30)
-    except Exception:  # 上游/翻译异常时给空 feed，不 500
-        articles = []
-
-    club = os.getenv('CLUB_NAME') or '动漫社'
-    base = request.url_root.rstrip('/')
-    items = []
-    for a in articles or []:
-        title = a.get('title_zh') or a.get('title') or '(无标题)'
-        link = a.get('link') or a.get('url') or ''
-        detail = f'{base}/anime_news/article?url={quote(link, safe="")}'
-        desc = a.get('excerpt_zh') or a.get('excerpt') or ''
-        source = a.get('source') or ''
-        items.append(
-            '<item>'
-            f'<title>{escape(title)}</title>'
-            f'<link>{escape(detail)}</link>'
-            f'<guid isPermaLink="false">{escape(detail)}</guid>'
-            f'<description>{escape(desc)}</description>'
-            f'<category>{escape(source)}</category>'
-            '</item>'
-        )
-
-    xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<rss version="2.0"><channel>'
-        f'<title>{escape(club)} · 番剧新闻</title>'
-        f'<link>{escape(base + "/anime_news")}</link>'
-        f'<description>{escape(club + " 聚合的番剧新闻")}</description>'
-        '<language>zh-cn</language>'
-        + ''.join(items) +
-        '</channel></rss>'
-    )
-    return Response(xml, mimetype='application/rss+xml')
-
-
 @public_bp.route('/anime_news')
 def anime_news():
     """番剧新闻动态"""
@@ -1023,80 +978,6 @@ def members():
 
 
 # ========== 萌战系统 · 前台 ==========
-
-@public_bp.route('/api/contest/<int:contest_id>/vote-stats')
-def api_contest_vote_stats(contest_id):
-    """投票页实时票数（轮询接口）：mode=group|knockout|qualifying, gender=female|male"""
-    contest = get_or_404(Contest, contest_id)
-    mode = request.args.get('mode', 'group')
-    gender = request.args.get('gender', 'female')
-    if mode not in ('group', 'knockout', 'qualifying') or gender not in ('female', 'male'):
-        return jsonify({'ok': False, 'error': 'bad params'}), 400
-
-    # 时区：库里 open_at 是 naive 东八区，和投票路由保持一致
-    if contest.open_at and contest.open_at.tzinfo is not None:
-        contest.open_at = contest.open_at.replace(tzinfo=None)
-    now = _cn_now()
-    times = calc_stage_times(contest.open_at) if contest.open_at else {}
-
-    base = ContestVote.query.filter_by(contest_id=contest.id, gender=gender)
-    round_number = None
-    sub_round = None
-
-    if mode == 'qualifying':
-        base = base.filter_by(round_number=0)
-    elif mode == 'group':
-        for n in (1, 2, 3):
-            end = times.get(f'group_round_{n}_end')
-            if end and now <= end:
-                round_number = n
-                break
-        if round_number is None:
-            # 投票窗口已过（公示期）：回退到最近有票的一轮
-            round_number = db.session.query(func.max(ContestVote.round_number)).filter(
-                ContestVote.contest_id == contest.id,
-                ContestVote.gender == gender,
-                ContestVote.round_number.in_((1, 2, 3)),
-            ).scalar()
-        if round_number:
-            base = base.filter_by(round_number=round_number)
-        else:
-            base = base.filter(ContestVote.id == -1)
-    else:
-        for n, key in ((1, 'knockout_16_end'), (2, 'knockout_8_end'),
-                       (3, 'knockout_4_end'), (4, 'final_vote_end')):
-            end = times.get(key)
-            if end and now <= end:
-                sub_round = n
-                break
-        if sub_round is None:
-            sub_round = db.session.query(func.max(ContestVote.sub_round)).filter(
-                ContestVote.contest_id == contest.id,
-                ContestVote.round_number == 4,
-                ContestVote.gender == gender,
-            ).scalar()
-        if sub_round:
-            round_number = 4
-            base = base.filter_by(round_number=4, sub_round=sub_round)
-        else:
-            base = base.filter(ContestVote.id == -1)
-
-    rows = (base.with_entities(ContestVote.candidate_id,
-                               func.sum(ContestVote.weight))
-            .group_by(ContestVote.candidate_id).all())
-    totals = {str(cid): int(votes or 0) for cid, votes in rows if cid is not None}
-
-    return jsonify({
-        'ok': True,
-        'mode': mode,
-        'gender': gender,
-        'round': round_number,
-        'sub_round': sub_round,
-        'total': sum(totals.values()),
-        'totals': totals,
-        'updated_at': datetime.now().strftime('%H:%M:%S'),
-    })
-
 
 @public_bp.route('/contest_center')
 def contest_center():
@@ -1782,13 +1663,7 @@ def group_vote_female(contest_id):
 
     # 计算当前阶段和轮次
     phase = _calc_current_phase(contest)
-    round_number = None
-    if now <= times['group_round_1_end']:
-        round_number = 1
-    elif now <= times['group_round_2_end']:
-        round_number = 2
-    elif now <= times['group_round_3_end']:
-        round_number = 3
+    round_number = current_group_round(contest)
 
     # 投票期数据
     voted_matches = []
@@ -1850,13 +1725,7 @@ def group_vote_male(contest_id):
     times = calc_stage_times(contest.open_at)
 
     phase = _calc_current_phase(contest)
-    round_number = None
-    if now <= times['group_round_1_end']:
-        round_number = 1
-    elif now <= times['group_round_2_end']:
-        round_number = 2
-    elif now <= times['group_round_3_end']:
-        round_number = 3
+    round_number = current_group_round(contest)
 
     voted_matches = []
     vote_totals = {}
@@ -2044,15 +1913,7 @@ def knockout_vote_female(contest_id):
     now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
-    sub_round = None
-    if now <= times['knockout_16_end']:
-        sub_round = 1
-    elif now <= times['knockout_8_end']:
-        sub_round = 2
-    elif now <= times['knockout_4_end']:
-        sub_round = 3
-    elif now <= times['final_vote_end']:
-        sub_round = 4
+    sub_round = current_knockout_sub_round(contest)
 
     # 用户已投的场次
     voted_matches = []
@@ -2136,15 +1997,7 @@ def knockout_vote_male(contest_id):
     now = _cn_now()
     times = calc_stage_times(contest.open_at)
 
-    sub_round = None
-    if now <= times['knockout_16_end']:
-        sub_round = 1
-    elif now <= times['knockout_8_end']:
-        sub_round = 2
-    elif now <= times['knockout_4_end']:
-        sub_round = 3
-    elif now <= times['final_vote_end']:
-        sub_round = 4
+    sub_round = current_knockout_sub_round(contest)
 
     voted_matches = []
     if session.get('user_id') and sub_round:
@@ -2472,12 +2325,6 @@ def robots():
     return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'static'), 'robots.txt')
 
 
-@public_bp.route('/offline')
-def offline():
-    """PWA 离线兜底页：断网时 service worker 返回它（访客可访问）。"""
-    return render_template('offline.html')
-
-
 @public_bp.route('/sw.js')
 def service_worker():
     """Service Worker 挂根路径，作用域覆盖全站。
@@ -2596,3 +2443,7 @@ def bad_request(_e):
 @public_bp.app_errorhandler(413)
 def request_entity_too_large(_e):
     return render_template('413.html'), 413
+
+
+# 子模块：路由注册在同一 public 蓝图上（必须放在本文件路由定义之后导入）
+from . import public_misc  # noqa: E402,F401  pylint: disable=wrong-import-position,unused-import
