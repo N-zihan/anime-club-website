@@ -1,6 +1,10 @@
 /* 投票页实时票数 + 对抗进度条
  * 轮询 /api/contest/<id>/vote-stats，不依赖 Supabase 配置；
  * Supabase Realtime（若已配置）仍然工作，两边只更新同一批数字，不会冲突。
+ *
+ * 头部「实时 · HH:MM:SS」是**每秒走一格的北京时间时钟**（不是数据快照时间）：
+ * - 数据快照时间放在悬停提示 title 里；
+ * - 拉取失败时显示「更新暂停」，但时钟继续走，方便判断页面是不是还活着。
  */
 (function () {
     'use strict';
@@ -14,11 +18,30 @@
     var stateEl = document.getElementById('voteLiveState');
     var POLL_MS = 10000;
     var timer = null;
+    var clockTimer = null;
+    var alive = true;
+    var lastSyncedAt = '';
 
-    function setState(text, ok) {
+    function beijingClock() {
+        try {
+            return new Date().toLocaleTimeString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch (e) {
+            // 极老浏览器不支持 timeZone 选项：退回本地时间，至少时钟还在走
+            return new Date().toTimeString().slice(0, 8);
+        }
+    }
+
+    function paintState() {
         if (!stateEl) return;
-        stateEl.textContent = text;
-        stateEl.classList.toggle('stale', !ok);
+        stateEl.textContent = (alive ? '实时' : '更新暂停') + ' · ' + beijingClock();
+        stateEl.classList.toggle('stale', !alive);
+        root.title = lastSyncedAt ? ('票数快照时间 ' + lastSyncedAt) : '';
     }
 
     function sharePercent(a, b) {
@@ -86,7 +109,9 @@
         } else {
             updateVsBars(totals);
         }
-        setState('实时 · ' + (data.updated_at || ''), true);
+        alive = true;
+        lastSyncedAt = data.updated_at || '';
+        paintState();
     }
 
     function refresh() {
@@ -101,19 +126,26 @@
                 if (data && data.ok) apply(data);
             })
             .catch(function () {
-                setState('更新暂停', false);
+                alive = false;
+                paintState();
             });
     }
 
-    // 首次稍等再拉，避免和页面首屏渲染抢资源
+    // 时钟每秒走一格；数据每 10 秒拉一次（页面不可见时暂停拉取）
+    paintState();
+    clockTimer = setInterval(paintState, 1000);
     setTimeout(refresh, 1200);
     timer = setInterval(function () {
         if (!document.hidden) refresh();
     }, POLL_MS);
     document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) refresh();
+        if (!document.hidden) {
+            refresh();
+            paintState();
+        }
     });
     window.addEventListener('beforeunload', function () {
         if (timer) clearInterval(timer);
+        if (clockTimer) clearInterval(clockTimer);
     });
 })();

@@ -1,7 +1,10 @@
 """投票页实时票数 + 对抗进度条：接口与页面标记测试。"""
+import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from app.models import Candidate, Contest, ContestVote
+from app.utils import cn_now
 
 
 def _make_contest(db_session, days_ago, status='open'):
@@ -129,3 +132,29 @@ class TestVotePages:
         assert 'vote-share-fill' in body
         assert 'data-mode="qualifying"' in body
         assert 'vote-live.js' in body
+
+
+class TestVoteLiveClock:
+    """「实时 · HH:MM:SS」必须是北京时间且每秒在走（曾经显示 UTC、且不刷新）。"""
+
+    def test_updated_at_is_beijing_time(self, logged_in_client, db_session, sample_user):
+        contest, _ = _make_contest(db_session, 15)
+        data = logged_in_client.get(
+            f'/api/contest/{contest.id}/vote-stats?mode=group&gender=female').get_json()
+        assert re.fullmatch(r'\d{2}:\d{2}:\d{2}', data['updated_at'])
+
+        got = datetime.strptime(data['updated_at'], '%H:%M:%S').time()
+        expected = cn_now().time()
+        delta = abs((datetime.combine(datetime.today(), got)
+                     - datetime.combine(datetime.today(), expected)).total_seconds())
+        delta = min(delta, 86400 - delta)   # 跨零点时取环形距离
+        assert delta < 120, f'updated_at 不是北京时间: {data["updated_at"]} vs 北京 {expected}'
+
+    def test_vote_live_js_has_ticking_beijing_clock(self):
+        js = (Path(__file__).resolve().parent.parent
+              / 'static' / 'js' / 'vote-live.js').read_text(encoding='utf-8')
+        assert 'Asia/Shanghai' in js
+        assert 'toLocaleTimeString' in js
+        assert 'setInterval(paintState, 1000)' in js
+        # 旧实现把服务端快照时间当钟表显示，且只在轮询时刷新
+        assert 'setState(' not in js

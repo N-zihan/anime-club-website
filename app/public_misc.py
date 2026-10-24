@@ -4,7 +4,6 @@
 endpoint 名保持不变（public.offline / public.anime_news_rss / public.api_contest_vote_stats）。
 """
 import os
-from datetime import datetime
 from urllib.parse import quote
 from xml.sax.saxutils import escape
 
@@ -129,7 +128,8 @@ def api_contest_vote_stats(contest_id):
         'sub_round': sub_round,
         'total': sum(totals.values()),
         'totals': totals,
-        'updated_at': datetime.now().strftime('%H:%M:%S'),
+        # 北京时间快照（Vercel 服务器是 UTC，直接 datetime.now() 会少 8 小时）
+        'updated_at': cn_now().strftime('%H:%M:%S'),
     })
 
 
