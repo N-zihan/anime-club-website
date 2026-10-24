@@ -615,7 +615,7 @@
     })();
 </script>
 
-<script src="{{ url_for('static', filename='js/share-poster.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/share-poster.js') }}?v={{ app_version }}" defer></script>
 
 <script>
     // 复制公开分享链接（/share/contest/<id>），微信/QQ 粘贴时能抓到封面

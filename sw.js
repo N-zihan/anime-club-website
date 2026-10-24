@@ -49,7 +49,8 @@ function offlineFallback() {
 
 // 拦截请求：
 // 1) 页面导航：网络优先，断网回落到离线兜底页
-// 2) 静态资源：缓存优先，网络成功后写回缓存
+// 2) 静态资源：**网络优先**，成功后写回缓存；断网才用缓存
+//    （旧版是缓存优先，导致部署后浏览器一直用旧 JS/CSS：投票页时钟不走的锅就是它）
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
@@ -75,15 +76,15 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        caches.match(request).then((cached) => {
+        fetch(request, { cache: 'no-cache' }).then((response) => {
+            if (response.ok) {
+                const clone = response.clone();
+                caches.open(CACHE_STATIC).then((cache) => cache.put(request, clone));
+            }
+            return response;
+        }).catch(() => caches.match(request).then((cached) => {
             if (cached) return cached;
-            return fetch(request).then((response) => {
-                if (response.ok) {
-                    const clone = response.clone();
-                    caches.open(CACHE_STATIC).then((cache) => cache.put(request, clone));
-                }
-                return response;
-            });
-        })
+            return new Response('', { status: 504, statusText: 'offline' });
+        }))
     );
 });

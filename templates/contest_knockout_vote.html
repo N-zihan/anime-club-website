@@ -372,5 +372,5 @@
 </script>
 {% endif %}
 
-<script src="{{ url_for('static', filename='js/vote-live.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/vote-live.js') }}?v={{ app_version }}" defer></script>
 {% endblock %}

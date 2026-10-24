@@ -177,7 +177,7 @@
 
 
 
-<script src="{{ url_for('static', filename='js/kanban.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/kanban.js') }}?v={{ app_version }}" defer></script>
 {% endif %}
 
 <main class="main-content" id="main-content" tabindex="-1">
@@ -731,7 +731,7 @@
 })();
 </script>
 
-<script src="{{ url_for('static', filename='js/upload-compress.js') }}"></script>
+<script src="{{ url_for('static', filename='js/upload-compress.js') }}?v={{ app_version }}"></script>
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </body>
 </html>

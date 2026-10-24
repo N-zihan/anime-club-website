@@ -308,5 +308,5 @@
 
 <p style="margin-top:20px;"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">返回赛事详情</a></p>
 
-<script src="{{ url_for('static', filename='js/vote-live.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/vote-live.js') }}?v={{ app_version }}" defer></script>
 {% endblock %}

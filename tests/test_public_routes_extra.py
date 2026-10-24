@@ -40,6 +40,12 @@ class TestPublicPages:
         assert 'https://club.example.org/' in alt
         assert 'http://localhost' not in alt
 
+    def test_static_assets_are_versioned(self, client):
+        # 静态 JS/CSS 必须带 ?v= 版本号，否则 Service Worker / 浏览器会一直用旧脚本
+        body = client.get('/login').get_data(as_text=True)
+        assert 'style.css?v=' in body
+        assert 'upload-compress.js?v=' in body
+
     def test_robots_and_manifest(self, client):
         robots = client.get('/robots.txt')
         assert robots.status_code == 200
