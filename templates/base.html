@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/static/images/icon-192.png">
-    <meta name="description" content="{{ club_name }}官网，集社团展示、互动交流、资源分享、线上赛事于一体">
+    <meta name="description" content="{{ og_description | default(club_name ~ '官网，集社团展示、互动交流、资源分享、线上赛事于一体') }}">
     <meta property="og:title" content="{{ og_title | default(club_name) }}">
     <meta property="og:description" content="{{ og_description | default(club_name ~ '官网，集社团展示、互动交流、资源分享、线上赛事于一体') }}">
     <meta property="og:type" content="website">
@@ -25,6 +25,8 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ club_name }} · 社团网站">
+    <link rel="image_src" href="{{ og_image | default(request.url_root ~ 'static/images/og-cover.png?v=' ~ app_version) }}">
+    <meta property="og:locale" content="zh_CN">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="{{ og_image | default(request.url_root ~ 'static/images/og-cover.png?v=' ~ app_version) }}">
     <meta name="twitter:title" content="{{ og_title | default(club_name) }}">
