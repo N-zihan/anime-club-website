@@ -2300,7 +2300,8 @@ html[data-news-lang="both"] .article-excerpt.news-lang-orig {
 }
 
 /* ===================== 19. 页面切换：卡片从下往上淡入 ===================== */
-/* 由 base.html 末尾的脚本（window.acRiseCards）给卡片补上 .card-rise 与 --card-i，
+/* 由 base.html 末尾的脚本（window.acRiseCards）给卡片补上 .card-rise，
+   错峰延迟由脚本写成元素的行内 animation-delay（不用自定义属性，避免 DevTools 报解析警告）。
    没有 JS 时不会加这个类，卡片照常显示，不会白屏。
    动画只动 opacity 与 translate，不碰 transform —— 卡片原有的 hover 位移不受影响；
    fill-mode 用 backwards：延迟期间保持「未出现」，播完立刻交还给正常样式。 */
@@ -2316,18 +2317,8 @@ html[data-news-lang="both"] .article-excerpt.news-lang-orig {
     }
 }
 
-/* 把 --card-i 注册成有类型的自定义属性：DevTools 的样式面板能正常解析
-   （否则新版 Chrome 会在 calc(var(--card-i, 0) * 42ms) 处提示自定义属性无法解析）。
-   不支持 @property 的旧浏览器会直接忽略这条规则，行为与原来完全一致。 */
-@property --card-i {
-    syntax: '<integer>';
-    inherits: false;
-    initial-value: 0;
-}
-
 .card-rise {
     animation: card-rise 0.52s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
-    animation-delay: calc(var(--card-i, 0) * 42ms);
 }
 
 /* 减少动效（设置页开关 / 系统偏好）时不播，卡片保持正常显示 */

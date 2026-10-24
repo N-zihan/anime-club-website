@@ -716,3 +716,20 @@ class TestBoardDelete:
         resp = client.post(f'/board/{msg.id}/delete')
         assert resp.status_code in (302, 400)
         assert db_session.get(Message, msg.id) is not None
+
+
+class TestCardRiseAnimation:
+    """卡片错峰淡入：延迟写在行内 animation-delay，不再用 --card-i 自定义属性
+    （回归：旧写法会让新版 Chrome 的样式面板提示「无法解析 '--card-i' 自定义属性」）"""
+
+    def test_no_custom_property_used(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        base = (root / 'templates' / 'base.html').read_text(encoding='utf-8')
+        css = (root / 'static' / 'css' / 'style.css').read_text(encoding='utf-8')
+
+        assert '--card-i' not in base
+        assert '--card-i' not in css
+        assert 'animationDelay' in base
+        assert '.card-rise' in css

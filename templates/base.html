@@ -715,7 +715,8 @@
             if (!parent) continue;
             var idx = counters.get(parent) || 0;
             counters.set(parent, idx + 1);
-            el.style.setProperty('--card-i', idx > MAX_INDEX ? MAX_INDEX : idx);
+            // 错峰延迟直接写行内 animation-delay：不引入自定义属性，DevTools 不会报解析警告
+            el.style.animationDelay = (idx > MAX_INDEX ? MAX_INDEX : idx) * 42 + 'ms';
             el.classList.add('card-rise');
         }
     }
