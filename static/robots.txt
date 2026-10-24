@@ -1,4 +1,44 @@
+# 公开页面与静态资源必须允许抓取：
+# 微信 / QQ 的分享卡片爬虫要能访问页面和 /static/images/og-cover.png 才能生成缩略图。
+# 之前写成 "Disallow: /" 会把分享图一起拦掉，导致微信/QQ 永远没有缩略图。
+
 User-agent: *
-Disallow: /
-Allow: /$
+Disallow: /admin
+Disallow: /api/
+Disallow: /notifications
+Disallow: /profile
+Disallow: /settings
+Disallow: /board
+Disallow: /reply
+Disallow: /contest
+Disallow: /digest
+
+# 社交平台抓取器显式放行（分享卡片）
+User-agent: MicroMessenger
+Disallow:
+
+User-agent: WeChat
+Disallow:
+
+User-agent: QQ
+Disallow:
+
+User-agent: QQBrowser
+Disallow:
+
+User-agent: MQQBrowser
+Disallow:
+
+User-agent: Twitterbot
+Disallow:
+
+User-agent: facebookexternalhit
+Disallow:
+
+User-agent: TelegramBot
+Disallow:
+
+User-agent: Discordbot
+Disallow:
+
 Sitemap: https://www.nanyi-anime-club.top/static/sitemap.xml

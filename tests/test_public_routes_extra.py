@@ -18,6 +18,13 @@ class TestPublicPages:
         assert resp.status_code == 404
         assert '页面未找到' in resp.text or '404' in resp.text
 
+    def test_robots_allows_static_images(self, client):
+        # 微信/QQ 分享缩略图依赖爬虫能抓 /static/images/og-cover.png
+        text = client.get('/robots.txt').get_data(as_text=True)
+        assert 'Disallow: /\n' not in text          # 不能再全站禁抓
+        assert 'Disallow: /admin' in text
+        assert 'MicroMessenger' in text and 'QQ' in text
+
     def test_robots_and_manifest(self, client):
         robots = client.get('/robots.txt')
         assert robots.status_code == 200

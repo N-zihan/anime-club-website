@@ -198,3 +198,6 @@
     - 站内页面需要登录，微信/QQ 爬虫会被 302 到登录页；**分享站内内容请用公开分享页**
       `/share` 或 `/share/contest/<赛事ID>`（赛事详情页有「🔗 复制分享链接」按钮）。
     - 微信会强缓存旧的分享卡片，换图后链接带 `?v=版本号` 可绕开旧缓存。
+    - **历史坑**：`static/robots.txt` 曾是 `Disallow: /` 全站禁抓，连 `/static/images/og-cover.png`
+      都拦了，微信/QQ 爬虫拿不到图 → 任何分享都无缩略图。v4.31.2 已改为只拦后台/私有路径，
+      并显式放行 MicroMessenger / QQ / Twitterbot 等分享爬虫。

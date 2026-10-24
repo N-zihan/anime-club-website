@@ -39,8 +39,8 @@ class TestSharePages:
     def test_splash_has_visible_image(self, client):
         # 封面页是 canvas 动画，微信不跑 JS 也不读 og；必须有一张真实 <img>
         body = client.get('/').get_data(as_text=True)
-        assert 'splash-cover.jpg' in body
         assert 'wechat-thumb' in body
+        assert 'images/og-cover.png' in body
         assert 'left:-9999px' in body   # 不可见、不占版面，只给微信爬虫抓首图
 
     def test_og_image_has_cache_version(self, client):
