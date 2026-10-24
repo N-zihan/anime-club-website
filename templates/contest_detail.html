@@ -617,14 +617,17 @@
 
 <script src="{{ url_for('static', filename='js/share-poster.js') }}" defer></script>
 
-document.getElementById('shareLinkBtn')?.addEventListener('click', async (e) => {
-    const url = e.currentTarget.dataset.url;
-    try {
-        await navigator.clipboard.writeText(url);
-        if (window.showToast) { showToast('已复制分享链接，去微信/QQ 粘贴即可显示封面～'); }
-        else { alert('已复制：' + url); }
-    } catch (err) {
-        prompt('复制这个分享链接（微信/QQ 可显示封面）：', url);
-    }
-});
+<script>
+    // 复制公开分享链接（/share/contest/<id>），微信/QQ 粘贴时能抓到封面
+    document.getElementById('shareLinkBtn')?.addEventListener('click', async (e) => {
+        const url = e.currentTarget.dataset.url;
+        try {
+            await navigator.clipboard.writeText(url);
+            if (window.showToast) { showToast('已复制分享链接，去微信/QQ 粘贴即可显示封面～'); }
+            else { alert('已复制：' + url); }
+        } catch (err) {
+            prompt('复制这个分享链接（微信/QQ 可显示封面）：', url);
+        }
+    });
+</script>
 {% endblock %}

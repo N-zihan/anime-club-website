@@ -56,3 +56,16 @@ class TestSharePages:
         body = logged_in_client.get(f'/contest/{sample_contest.id}').get_data(as_text=True)
         assert 'shareLinkBtn' in body
         assert f'share/contest/{sample_contest.id}' in body
+
+    def test_contest_detail_has_no_leaked_js_text(self, logged_in_client, sample_contest):
+        """回归：分享链接那段 JS 曾落在 <script> 外面，被浏览器当纯文本显示在页面上。"""
+        from bs4 import BeautifulSoup
+
+        body = logged_in_client.get(f'/contest/{sample_contest.id}').get_data(as_text=True)
+        soup = BeautifulSoup(body, 'html.parser')
+        for tag in soup.find_all(['script', 'style']):
+            tag.decompose()
+        visible = soup.get_text(' ', strip=True)
+        assert 'navigator.clipboard' not in visible
+        assert 'document.getElementById' not in visible
+        assert 'addEventListener' not in visible
