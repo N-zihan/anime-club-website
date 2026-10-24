@@ -62,6 +62,7 @@ https://<你的域名>        # 每个部署用自己的域名；本社团实例
 | `CLUB_NAME` | ✅ | 站点名（页脚 / 标题 / AI 人设都会用到） |
 | `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_ANON_KEY` | ✅ | 头像、照片、赛事图上传用（`SUPABASE_KEY` 是 service_role，仅后端；`ANON_KEY` 给前端） |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USE_SSL` / `MAIL_USERNAME` / `MAIL_PASSWORD` | ✅ **注册必需** | 注册邮箱验证码、找回密码链接、邮件通知。不配则验证码发不出去，**新社员无法注册** |
+| `CRON_SECRET` | 用周报时必填 | Vercel Cron 调用周报接口的鉴权密钥（随机长字符串） |
 | `SITE_URL` | 选填 | 通知里的绝对链接；不配则用 `request.url_root` |
 | `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `AI_MODEL` | 选填 | 萌战 AI 解说/预测（OpenAI 兼容接口，默认硅基流动） |
 | `AI_CHAT_ENABLED` / `AI_CHAT_MODELS` / `AI_CHAT_DAILY_LIMIT` | 选填 | AI 虚拟好友；**模型池只放免费模型**，失败回落 FAQ |

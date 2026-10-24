@@ -4078,3 +4078,116 @@ body.has-composer footer {
             padding: 4px 14px;
         }
     }
+
+/* ===================== 28. 萌战对阵图 ===================== */
+.bracket-scroll {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bracket-grid {
+    display: flex;
+    gap: 20px;
+    min-width: max-content;
+    align-items: flex-start;
+    padding: 6px 2px;
+}
+
+.bracket-col {
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.bracket-col-title {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.bracket-match {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bracket-match.is-done {
+    opacity: 0.92;
+}
+
+.bracket-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.bracket-side img {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--bg-code);
+}
+
+.bracket-side.is-winner {
+    border: 1.5px solid gold;
+    background: rgba(255, 215, 0, 0.07);
+    font-weight: 600;
+}
+
+.bracket-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bracket-votes {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.bracket-vs {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.bracket-tip {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+
+/* ===================== 29. 无障碍 / 性能收尾 ===================== */
+/* 窄屏下管理后台表格允许横向滚动，避免整页被撑破 */
+@media (max-width: 800px) {
+    .admin-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+}
+
+/* 阶段提示条：替换模板里重复的 inline style */
+.phase-banner {
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid #2196f3;
+    background: var(--bg-card);
+}

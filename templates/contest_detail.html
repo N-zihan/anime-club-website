@@ -4,92 +4,92 @@
 
 <!-- ========== 阶段提示横幅 ========== -->
 {% if phase == 'nomination' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>提名期</strong>，截止 {{ nomination_end.strftime('%Y年%m月%d日 %H:%M') if nomination_end else '未设置'
     }}
 </div>
 {% elif phase == 'review' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>审核期</strong>，管理员正在审核提名，截止 {{ review_end.strftime('%Y年%m月%d日 %H:%M') if review_end else '未设置' }}
 </div>
 {% elif phase == 'qualifying' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>海选投票</strong>，截止 {{ qualifying_vote_end.strftime('%Y年%m月%d日 %H:%M') if qualifying_vote_end
     else '未设置' }}
 </div>
 {% elif phase == 'qualifying_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>海选结果公示</strong>，晋级名单已生成，公示期结束后进入小组赛
 </div>
 {% elif phase == 'group_round_1' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第1轮投票</strong>，截止 {{ group_round_1_end.strftime('%Y年%m月%d日 %H:%M') if
     group_round_1_end else '未设置' }}
 </div>
 {% elif phase == 'group_round_1_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第1轮公示</strong>，本轮结果已生成
 </div>
 {% elif phase == 'group_round_2' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第2轮投票</strong>，截止 {{ group_round_2_end.strftime('%Y年%m月%d日 %H:%M') if
     group_round_2_end else '未设置' }}
 </div>
 {% elif phase == 'group_round_2_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第2轮公示</strong>，本轮结果已生成
 </div>
 {% elif phase == 'group_round_3' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第3轮投票</strong>，截止 {{ group_round_3_end.strftime('%Y年%m月%d日 %H:%M') if
     group_round_3_end else '未设置' }}
 </div>
 {% elif phase == 'group_round_3_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>小组赛第3轮公示</strong>，晋级名单已生成
 </div>
 {% elif phase == 'knockout_16' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>淘汰赛16强投票</strong>，截止 {{ knockout_16_end.strftime('%Y年%m月%d日 %H:%M') if knockout_16_end
     else '未设置' }}
 </div>
 {% elif phase == 'knockout_16_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>16强公示</strong>，8强对阵已生成
 </div>
 {% elif phase == 'knockout_8' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>淘汰赛8强投票</strong>，截止 {{ knockout_8_end.strftime('%Y年%m月%d日 %H:%M') if knockout_8_end else
     '未设置' }}
 </div>
 {% elif phase == 'knockout_8_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>8强公示</strong>，4强对阵已生成
 </div>
 {% elif phase == 'knockout_4' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>淘汰赛4强投票</strong>，截止 {{ knockout_4_end.strftime('%Y年%m月%d日 %H:%M') if knockout_4_end else
     '未设置' }}
 </div>
 {% elif phase == 'knockout_4_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>4强公示</strong>，决赛对阵已生成
 </div>
 {% elif phase == 'final_vote' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>决赛投票</strong>，截止 {{ final_vote_end.strftime('%Y年%m月%d日 %H:%M') if final_vote_end else '未设置'
     }}
 </div>
 {% elif phase == 'final_result' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     当前为 <strong>最终结果公示</strong>，冠军已产生
 </div>
 {% elif phase == 'closed' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     赛事已结束
 </div>
 {% elif phase == 'not_started' %}
-<div style="padding:10px 16px; border-radius:8px; margin-bottom:16px; border-left:4px solid #2196f3; background: var(--bg-card);">
+<div class="phase-banner">
     赛事尚未开始（{{ contest.open_at.strftime('%Y年%m月%d日 %H:%M') if contest.open_at else '未设置' }} 开放）
 </div>
 {% endif %}
@@ -98,6 +98,8 @@
 
 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 4px;">
     <button type="button" class="poster-btn" id="posterBtn">📸 生成分享海报</button>
+
+    <a class="poster-btn" href="{{ url_for('public.contest_bracket', contest_id=contest.id) }}">🗺️ 对阵图</a>
     <span style="font-size:0.78rem; color: var(--text-muted);">一键生成 1200×630 战报图，发群/发空间都好看</span>
 </div>
 <script id="posterData" type="application/json">{{ poster_data | tojson }}</script>

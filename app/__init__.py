@@ -196,6 +196,7 @@ def create_app():
             'public.anime_news_article',
             'public.anime_news_rss',
             'public.offline',
+            'public.weekly_digest_cron',
             # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用
             'public.settings',
         ]

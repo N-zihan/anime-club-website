@@ -108,9 +108,6 @@ INIT_DB=1 python run.py
 | `reports` | 举报记录 | `reporter_id`、`target_type`(thread/reply/photo)、`target_id`、`reason`、`status`、`handled_by` |
 | `ai_personas` | AI 好友角色人设 | `user_id`、`name`、`personality`、`speech_style`、`is_public`、`status` |
 | `ai_chat_messages` | AI 好友聊天记录 | `user_id`、`persona_id`、`role`、`content`、`model`、`is_fallback` |
-| `video_cache` | 视频解析缓存 | `cache_key`、`data`(JSON)、`expires_at` |
-| `video_hosts` | 视频源白名单 | 域名、启用状态 |
-| `video_proxy_logs` | 视频代理审计 | `url`、`method`、`status`、`ip_address` |
 | `admin_logs` | 管理员操作留痕 | `user_id`、`username`、`action`、`target`、`detail`、`ip`、`created_at` |
 | `rate_limits` | 跨实例限流计数 | `key`(主键)、`count`、`window_start` |
 

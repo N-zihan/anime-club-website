@@ -102,6 +102,18 @@ mkdocs build            # 输出到 site/
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
 
+### 第六批已还（v4.29.0）
+
+- **萌战对阵图**：`/contest/<id>/bracket`，按 16强→8强→4强→决赛 分列，晋级方金色描边；
+  新增 5 条测试。
+- **邮件周报**：`app/digest.py` + cron 接口 `/api/cron/weekly-digest`（CRON_SECRET 鉴权、
+  非周一跳过、`?force=1` 补发）+ `vercel.json` crons；新增 11 条测试。
+- **路由级测试**：`tests/test_public_routes_extra.py` 17 条（基础页/404/规则页/提名校验/投票拦截/AI 接口）。
+- **无障碍/性能收尾**：窄屏后台表格横向滚动、相册图片 `decoding=async`、
+  contest_detail 20 处阶段横幅内联样式改为 `.phase-banner`。
+- **video_* 死代码下线**：生产库三张空表已 DROP，models 同步移除。
+- 全量 pytest **675 passed**。
+
 ### 第五批已还（v4.28.7）
 
 - **补测试**：`tests/test_utils_extra.py` 30 条 + `tests/test_auth_helpers.py` 18 条；

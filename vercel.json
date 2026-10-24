@@ -19,5 +19,11 @@
       "src": "/(.*)",
       "dest": "run.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "0 1 * * 1"
+    }
   ]
 }

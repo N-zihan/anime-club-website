@@ -185,7 +185,7 @@ if os.getenv('TESTING') == '1':
 
 
 # ====== 生产环境可选：显式开关式表结构同步（默认关闭）======
-# app/models.py 新增的 video_hosts / video_cache / video_proxy_logs 三张表，
+# app/models.py 里的表（video_* 已于 v4.29.0 移除，表已在生产库 drop），
 # 线上库不会自动出现（旧逻辑只在 TESTING=1 时建表），相关功能会直接 500。
 # 这里提供一个"只在显式设置时才跑"的开关，默认绝不执行任何 DDL。
 #

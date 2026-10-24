@@ -95,7 +95,17 @@ git ls-remote origin refs/heads/main refs/tags/v4.24.0
       数据库不可用时自动回退进程内计数，不会把用户锁死。
     - 后台写操作写入 `admin_logs`，可在 `/admin/logs` 查看（分页，最近在前）。
 
-## 8. 常见"历史坑"提醒
+## 8. 定时任务（邮件周报）
+
+每周一 09:00（北京时间）由 Vercel Cron 调用 `GET /api/cron/weekly-digest`：
+
+- 请求头需带 `Authorization: Bearer $CRON_SECRET`（Vercel 配了 `CRON_SECRET` 环境变量会自动带上）
+- 内容：近 5 条番剧新闻 + 进行中赛事列表，发给「有邮箱且未关闭邮件通知」的社员
+- 手动补发：`curl -H "X-Cron-Secret: ***" "https://<你的域名>/api/cron/weekly-digest?force=1"`
+- 返回 `{"ok":true,"recipients":N,"sent":M}`；非周一自动跳过（`skipped: not-monday`）
+- 配置见 `vercel.json` 的 `crons` 字段；未配置 `CRON_SECRET` 时接口返回 503（防止裸奔）
+
+## 9. 常见"历史坑"提醒
 
 - Vercel 部署有时 10 分钟才生效，**不要**因为页面没变就反复改代码。
 - 改 `VERSION` 时务必用 UTF-8 **无 BOM** 写入；带 BOM 会让版本号解析出不可见字符（页脚和 `style.css?v=` 会坏）。

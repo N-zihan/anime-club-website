@@ -133,3 +133,26 @@ def api_contest_vote_stats(contest_id):
     })
 
 
+@public_bp.route('/api/cron/weekly-digest', methods=['GET', 'POST'])
+def weekly_digest_cron():
+    """每周邮件周报（Vercel Cron 每周一 01:00 UTC 调用；用 CRON_SECRET 保护）。"""
+    import hmac  # pylint: disable=import-outside-toplevel
+
+    secret = os.getenv('CRON_SECRET')
+    if not secret:
+        return jsonify({'ok': False, 'error': 'CRON_SECRET 未配置'}), 503
+
+    auth = request.headers.get('Authorization', '')
+    token = auth[7:] if auth.startswith('Bearer ') else request.headers.get('X-Cron-Secret', '')
+    if not hmac.compare_digest(token, secret):
+        return jsonify({'ok': False, 'error': 'forbidden'}), 403
+
+    now = cn_now()
+    force = request.args.get('force') == '1'
+    if now.weekday() != 0 and not force:
+        return jsonify({'ok': True, 'skipped': 'not-monday',
+                        'today': now.strftime('%Y-%m-%d'), 'hint': '用 ?force=1 可强制发送'})
+
+    from .digest import send_weekly_digest  # pylint: disable=import-outside-toplevel
+    result = send_weekly_digest()
+    return jsonify({'ok': True, **result})

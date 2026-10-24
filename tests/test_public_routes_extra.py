@@ -1,0 +1,116 @@
+"""public / public_contest 路由补充测试（覆盖率 55%~56% → 提升）。"""
+from datetime import datetime, timedelta
+
+from app.models import Candidate, Contest
+
+
+class TestPublicPages:
+    def test_settings_page(self, logged_in_client):
+        resp = logged_in_client.get('/settings')
+        assert resp.status_code == 200
+
+    def test_about_history_activities_members(self, logged_in_client):
+        for path in ('/about', '/about/history', '/activities', '/members', '/gallery'):
+            assert logged_in_client.get(path).status_code == 200, path
+
+    def test_404_custom_page(self, logged_in_client):
+        resp = logged_in_client.get('/definitely-not-a-page')
+        assert resp.status_code == 404
+        assert '页面未找到' in resp.text or '404' in resp.text
+
+    def test_robots_and_manifest(self, client):
+        robots = client.get('/robots.txt')
+        assert robots.status_code == 200
+        manifest = client.get('/manifest.json')
+        assert manifest.status_code == 200 and manifest.is_json
+        sw = client.get('/sw.js')
+        assert sw.status_code == 200 and 'CACHE_VERSION' in sw.get_data(as_text=True)
+
+
+class TestContestRules:
+    def test_rules_page(self, logged_in_client, sample_contest):
+        resp = logged_in_client.get(f'/contest/{sample_contest.id}/rules')
+        assert resp.status_code == 200
+        assert sample_contest.title in resp.text
+
+    def test_rules_requires_login(self, client, sample_contest):
+        assert client.get(f'/contest/{sample_contest.id}/rules').status_code == 302
+
+    def test_missing_contest_404(self, logged_in_client):
+        assert logged_in_client.get('/contest/999999/rules').status_code == 404
+
+
+class TestNominationValidation:
+    def test_nomination_requires_login(self, client, sample_contest):
+        resp = client.post(f'/contest/{sample_contest.id}/nominate', data={})
+        assert resp.status_code == 302
+
+    def test_nomination_missing_contest(self, logged_in_client):
+        resp = logged_in_client.post('/contest/999999/nominate', data={
+            'name': 'x', 'source': 'y', 'gender': 'female'})
+        assert resp.status_code == 404
+
+    def test_nomination_empty_fields_rejected(self, logged_in_client, sample_contest):
+        resp = logged_in_client.post(f'/contest/{sample_contest.id}/nominate',
+                                     data={'name': '', 'source': '', 'gender': 'female'},
+                                     follow_redirects=True)
+        assert resp.status_code == 200  # 回到详情页并 flash 错误
+
+
+class TestVoteGuards:
+    def test_group_submit_outside_window_redirects(self, logged_in_client, db_session):
+        now = datetime.now()
+        contest = Contest(title='窗口外', description='x', type='saimoe',
+                          gender_mode='separate', status='open',
+                          open_at=now + timedelta(days=60), close_at=now + timedelta(days=90),
+                          config={})
+        db_session.add(contest)
+        db_session.commit()
+        resp = logged_in_client.post(f'/contest/{contest.id}/group/submit',
+                                     data={'gender': 'female'})
+        # 窗口外：拦截（302 回详情 / 200 提示）但不能 500
+        assert resp.status_code in (200, 302)
+
+    def test_knockout_submit_bad_contest(self, logged_in_client):
+        resp = logged_in_client.post('/contest/999999/knockout/submit',
+                                     data={'gender': 'female'})
+        assert resp.status_code == 404
+
+    def test_qualifying_submit_requires_login(self, client, sample_contest):
+        resp = client.post(f'/contest/{sample_contest.id}/qualifying/submit',
+                           data={'gender': 'female'})
+        assert resp.status_code == 302
+
+
+class TestAiEndpoints:
+    def test_commentary_allowed_for_guest(self, client, sample_contest):
+        # AI 解说接口在白名单里（匿名可看解说），不应被登录拦截
+        resp = client.get(f'/contest/{sample_contest.id}/commentary')
+        assert resp.status_code == 200 and resp.is_json
+
+    def test_commentary_returns_json(self, logged_in_client, sample_contest):
+        resp = logged_in_client.get(f'/contest/{sample_contest.id}/commentary?phase=nomination')
+        assert resp.status_code == 200
+        assert resp.is_json
+
+    def test_predict_returns_json(self, logged_in_client, sample_contest):
+        resp = logged_in_client.get(f'/contest/{sample_contest.id}/predict')
+        # 同一赛事/IP 有冷却时间，全量跑时可能返回 429（也是 JSON）
+        assert resp.status_code in (200, 429)
+        assert resp.is_json
+
+
+class TestVotesApi:
+    def test_candidate_votes(self, logged_in_client, db_session, sample_contest):
+        db_session.refresh(sample_contest)
+        cand = sample_contest.candidates.first()
+        if cand is None:
+            candidate = Candidate(contest_id=sample_contest.id, name='投票角色',
+                                  source='作品', gender='female', stage='pending')
+            db_session.add(candidate)
+            db_session.commit()
+            cand = candidate
+        resp = logged_in_client.get(f'/api/votes/{cand.id}')
+        assert resp.status_code in (200, 404)
+        if resp.status_code == 200:
+            assert resp.is_json

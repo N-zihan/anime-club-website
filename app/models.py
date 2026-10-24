@@ -224,48 +224,6 @@ class Notification(db.Model):
     )
 
 
-# ========== 视频代理系统 ==========
-
-class VideoHost(db.Model):
-    __tablename__ = 'video_hosts'
-    id = db.Column(db.Integer, primary_key=True)
-    host = db.Column(db.String(200), nullable=False, unique=True)
-    is_trusted = db.Column(db.Boolean, default=False)
-    description = db.Column(db.Text, nullable=True)
-    added_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    request_count = db.Column(db.Integer, default=0)
-    success_count = db.Column(db.Integer, default=0)
-
-
-class VideoCache(db.Model):
-    __tablename__ = 'video_cache'
-    id = db.Column(db.Integer, primary_key=True)
-    cache_key = db.Column(db.String(64), nullable=False, unique=True)
-    data = db.Column(db.JSON, nullable=False)
-    expires_at = db.Column(db.DateTime, nullable=False)
-    platform = db.Column(db.String(50), nullable=True)
-    video_id = db.Column(db.String(100), nullable=True)
-    access_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-
-class VideoProxy(db.Model):
-    __tablename__ = 'video_proxy_logs'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    url = db.Column(db.String(500), nullable=False)
-    method = db.Column(db.String(10), nullable=False)
-    status = db.Column(db.String(20), nullable=False)  # pending/processing/completed/failed
-    error_message = db.Column(db.Text, nullable=True)
-    proxy_time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    ip_address = db.Column(db.String(50), nullable=True)
-    user_agent = db.Column(db.Text, nullable=True)
-    content_type = db.Column(db.String(100), nullable=True)
-    size = db.Column(db.Integer, nullable=True)
-
-    user = db.relationship('User', backref='video_proxy_logs')
-
-
 # ========== AI 虚拟好友 ==========
 class AIPersona(db.Model):
     """用户自定义的 AI 角色人格。

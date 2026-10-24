@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}对阵图 - {{ contest.title }}{% endblock %}
+{% block content %}
+<div class="bracket-page">
+    <nav class="thread-crumb">
+        <a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">← 返回赛事</a>
+    </nav>
+
+    <h2>🗺️ 对阵图</h2>
+    <p class="page-sub">
+        {{ contest.title }} · {{ '女组' if gender == 'female' else '男组' }}
+        · <a href="{{ url_for('public.contest_bracket', contest_id=contest.id,
+                              gender='male' if gender == 'female' else 'female') }}">
+        切换到{{ '男组' if gender == 'female' else '女组' }}</a>
+    </p>
+
+    {% if has_data %}
+    <div class="bracket-scroll">
+        <div class="bracket-grid">
+            {% for column in columns %}
+            <div class="bracket-col">
+                <h3 class="bracket-col-title">{{ column.label }}</h3>
+                {% for m in column.matches %}
+                <div class="bracket-match {% if m.winner %}is-done{% endif %}">
+                    <div class="bracket-side {% if m.winner and m.winner == m.c1.id %}is-winner{% endif %}">
+                        {% if m.c1.image %}<img src="{{ m.c1.image }}" alt="" loading="lazy">{% endif %}
+                        <span class="bracket-name">{{ m.c1.name }}</span>
+                        <span class="bracket-votes">{{ m.c1.votes }}</span>
+                    </div>
+                    <div class="bracket-vs">VS</div>
+                    <div class="bracket-side {% if m.winner and m.winner == m.c2.id %}is-winner{% endif %}">
+                        {% if m.c2.image %}<img src="{{ m.c2.image }}" alt="" loading="lazy">{% endif %}
+                        <span class="bracket-name">{{ m.c2.name }}</span>
+                        <span class="bracket-votes">{{ m.c2.votes }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <p class="bracket-tip">金色描边为晋级方；票数为该轮最终得票（进行中会随投票更新）。</p>
+    {% else %}
+    <p class="empty-hint">
+        对阵图还没生成～ 进入淘汰赛后，每轮的对阵会自动出现在这里。
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1320,3 +1320,59 @@ def ai_predict(contest_id):
         return jsonify({'success': False, 'error': error}), 500
 
 
+# ========== 对阵图 ==========
+BRACKET_ROUNDS = ('16强', '8强', '4强', '决赛')
+
+
+@public_bp.route('/contest/<int:contest_id>/bracket')
+def contest_bracket(contest_id):
+    """萌战对阵图：把各轮淘汰赛 match 按轮次排成树状列，冠军高亮。"""
+    contest = get_or_404(Contest, contest_id)
+    gender = request.args.get('gender', 'female')
+    if gender not in ('female', 'male'):
+        gender = 'female'
+
+    config = contest.config or {}
+    candidates = {c.id: c for c in contest.candidates.all()}
+
+    def _name(cid):
+        cand = candidates.get(cid)
+        if cand is not None:
+            return cand.name
+        return '轮空' if cid is None else '已移除'
+
+    def _image(cid):
+        cand = candidates.get(cid)
+        return cand.image_url if cand and cand.image_url else ''
+
+    def _normalize(match, default_round):
+        c1, c2 = match.get('candidate1'), match.get('candidate2')
+        return {
+            'round_name': match.get('round_name') or default_round,
+            'status': match.get('status') or 'pending',
+            'c1': {'id': c1, 'name': _name(c1), 'image': _image(c1),
+                   'votes': match.get('votes1', 0) or 0},
+            'c2': {'id': c2, 'name': _name(c2), 'image': _image(c2),
+                   'votes': match.get('votes2', 0) or 0},
+            'winner': match.get('winner'),
+        }
+
+    # 历史轮次（公示后由引擎写入 config） + 当前轮次
+    buckets = {label: [] for label in BRACKET_ROUNDS}
+    for key, label in (('round16', '16强'), ('round8', '8强'),
+                       ('round4', '4强'), ('final', '决赛')):
+        for m in config.get(f'knockout_matches_{gender}_{key}') or []:
+            buckets[label].append(_normalize(m, label))
+
+    for m in config.get(f'knockout_matches_{gender}') or []:
+        label = m.get('round_name') or ('决赛' if m.get('round') == 'final' else '淘汰赛')
+        if label not in buckets:
+            buckets[label] = []
+        buckets[label].append(_normalize(m, label))
+
+    columns = [{'label': label, 'matches': buckets.get(label, [])}
+               for label in list(BRACKET_ROUNDS) + [k for k in buckets if k not in BRACKET_ROUNDS]]
+    columns = [c for c in columns if c['matches']]
+
+    return render_template('contest_bracket.html', contest=contest, gender=gender,
+                           columns=columns, has_data=bool(columns))
