@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{{ club_name }}</title>
+    <meta name="description" content="以热爱为名 · 共创二次元家园">
+    <!-- 社交分享信息：QQ / QQ 空间 / Twitter 等读 og:image；微信不读，靠页面里的真实 <img> -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ club_name }}">
+    <meta property="og:title" content="{{ club_name }}">
+    <meta property="og:description" content="以热爱为名 · 共创二次元家园">
+    <meta property="og:url" content="{{ request.url_root }}">
+    <meta property="og:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ club_name }}分享封面">
+    <meta property="og:locale" content="zh_CN">
+    <link rel="image_src" href="{{ request.url_root }}static/images/og-cover.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <meta name="twitter:title" content="{{ club_name }}">
+    <meta name="twitter:description" content="以热爱为名 · 共创二次元家园">
     <link href="{{ url_for('static', filename='favicon.ico') }}" rel="icon" type="image/x-icon">
     <!-- 本地偏好初始化：与全站共用 anime_club_theme / _font / _motion，尽早执行避免闪烁 -->
     <script>

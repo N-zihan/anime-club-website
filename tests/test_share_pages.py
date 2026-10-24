@@ -44,6 +44,9 @@ class TestSharePages:
         assert 'images/og-cover.png' in body
         assert 'left:-9999px' in body   # 不可见、不占版面，只给微信爬虫抓首图
         assert 'width="1200" height="630"' in body  # 微信要求首图尺寸 >= 300x300
+        # QQ / QQ 空间读 og:image，封面页也得有
+        assert 'property="og:image"' in body
+        assert 'static/images/og-cover.png' in body
 
     def test_og_image_has_cache_version(self, client):
         body = client.get('/share').get_data(as_text=True)
