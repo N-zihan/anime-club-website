@@ -4286,23 +4286,4 @@ body.has-composer footer {
 }
 
 
-/* ===================== 31. 封面页静态首图（微信/QQ 缩略图来源） ===================== */
-.splash-cover {
-    width: 180px;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 22px;
-    margin: 18px auto 6px;
-    display: block;
-    box-shadow: 0 10px 30px rgba(30, 42, 58, 0.18);
-    border: 1px solid rgba(148, 163, 184, 0.35);
-}
 
-@media (max-width: 480px) {
-    .splash-cover {
-        width: 140px;
-        height: 140px;
-        border-radius: 18px;
-        margin-top: 14px;
-    }
-}
