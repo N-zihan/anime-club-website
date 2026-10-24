@@ -154,5 +154,25 @@ def weekly_digest_cron():
                         'today': now.strftime('%Y-%m-%d'), 'hint': '用 ?force=1 可强制发送'})
 
     from .digest import send_weekly_digest  # pylint: disable=import-outside-toplevel
-    result = send_weekly_digest()
+    result = send_weekly_digest(base_url=request.url_root)
     return jsonify({'ok': True, **result})
+
+
+@public_bp.route('/digest/unsubscribe/<token>', methods=['GET', 'POST'])
+def digest_unsubscribe(token):
+    """周报一键退订：签名 token 校验通过后关闭该用户的邮件通知（无需登录）。"""
+    from .digest import parse_unsubscribe_token  # pylint: disable=import-outside-toplevel
+    from .models import User as _User  # pylint: disable=import-outside-toplevel
+    from .preferences import get_preferences, save_preferences  # pylint: disable=import-outside-toplevel
+
+    uid = parse_unsubscribe_token(token)
+    user = db.session.get(_User, uid) if uid else None
+    if user is None:
+        return render_template('digest_unsubscribed.html', ok=False), 400
+
+    prefs = get_preferences(user)
+    prefs.setdefault('notify', {})['email_enabled'] = False
+    save_preferences(user, prefs)
+    db.session.commit()
+    return render_template('digest_unsubscribed.html', ok=True,
+                           username=user.username)

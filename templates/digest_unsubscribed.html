@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}退订周报{% endblock %}
+{% block content %}
+<div class="offline-wrap" style="margin-top:14vh;">
+    {% if ok %}
+    <h2 class="offline-title">已退订周报 🐳</h2>
+    <p class="offline-desc">
+        好的，<strong>{{ username }}</strong>，以后不再给你发每周邮件啦。<br>
+        站内通知不受影响；想重新订阅，去「设置 → 通知」把「邮件通知」打开就好。
+    </p>
+    <div class="offline-actions">
+        <a class="btn btn-primary" href="{{ url_for('public.settings') }}#notify-section">去设置</a>
+        <a class="btn btn-ghost" href="{{ url_for('public.splash') }}">回首页</a>
+    </div>
+    {% else %}
+    <h2 class="offline-title">退订链接无效或已过期</h2>
+    <p class="offline-desc">
+        这个退订链接可能已经过期（30 天有效）或格式不对。<br>
+        你也可以登录后在「设置 → 通知」里手动关闭邮件通知。
+    </p>
+    <div class="offline-actions">
+        <a class="btn btn-primary" href="{{ url_for('auth.login') }}">去登录</a>
+        <a class="btn btn-ghost" href="{{ url_for('public.splash') }}">回首页</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

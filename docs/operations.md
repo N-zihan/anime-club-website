@@ -100,10 +100,12 @@ git ls-remote origin refs/heads/main refs/tags/v4.24.0
 每周一 09:00（北京时间）由 Vercel Cron 调用 `GET /api/cron/weekly-digest`：
 
 - 请求头需带 `Authorization: Bearer $CRON_SECRET`（Vercel 配了 `CRON_SECRET` 环境变量会自动带上）
-- 内容：近 5 条番剧新闻 + 进行中赛事列表，发给「有邮箱且未关闭邮件通知」的社员
+- 内容：近 5 条番剧新闻（含一句摘要 + 封面小图）+ 进行中赛事的「当前阶段 / 下一个截止时间」
+- 每封信带**专属一键退订链接**（签名 token，30 天有效）：点一下即关闭邮件通知，无需登录
 - 手动补发：`curl -H "X-Cron-Secret: ***" "https://<你的域名>/api/cron/weekly-digest?force=1"`
 - 返回 `{"ok":true,"recipients":N,"sent":M}`；非周一自动跳过（`skipped: not-monday`）
 - 配置见 `vercel.json` 的 `crons` 字段；未配置 `CRON_SECRET` 时接口返回 503（防止裸奔）
+- 退订页：`/digest/unsubscribe/<token>`（公开页；token 无效/过期返回 400 并提示去设置页手动关闭）
 
 ## 9. 常见"历史坑"提醒
 
