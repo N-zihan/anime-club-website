@@ -92,8 +92,8 @@ mkdocs build            # 输出到 site/
 | `app/public.py` | **595 行**（原约 2000） | 已拆出 `public_contest.py`（1051）、`public_board.py`（351）、`public_misc.py`（112）、`public_bp.py` |
 | `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
 | `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
-| 测试覆盖率 | 66% → 约 70% | `python -m pytest --cov=app --cov-report=term-missing` |
-| 低覆盖模块 | `bangumi` **90%**（原 9%）、`changelog` 49%（原 0%）、`auth` 52%、`utils` 58%、`public` 60%、`admin` 61% | 下一步补 auth/utils |
+| 测试覆盖率 | **71%**（原 66%） | `python -m pytest --cov=app --cov-report=term-missing` |
+| 低覆盖模块 | `changelog` 49%、`public_contest` 55%、`public` 56%、`admin` 61%、`throttle` 67% | 高覆盖：`utils` 82%、`bangumi` 90%、`models` 93% |
 
 ### 已还的债
 
@@ -101,6 +101,16 @@ mkdocs build            # 输出到 site/
   `datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=8)`；时区错一次就是整站时间错 8 小时。
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
+
+### 第五批已还（v4.28.7）
+
+- **补测试**：`tests/test_utils_extra.py` 30 条 + `tests/test_auth_helpers.py` 18 条；
+  覆盖率 utils **58%→82%**、auth **52%→68%**，全量 pytest **642**、总覆盖率 **66%→71%**。
+- **修掉一个潜在 Bug**：`_validate_file_content` 原依赖 `python-magic` + `imghdr`，
+  但 imghdr 在 Python 3.13 已移除、magic 不在依赖里 → 生产环境该函数必抛异常，
+  `validate_file_upload` 永远判失败。改用项目已有的 Pillow 真实解码校验，并补了测试。
+- **死代码下线**：删除 `app/video_proxy.py` 及 `app/__init__.py` / `init.py` 的可选导入与注册逻辑
+  （video_* 三张表保留，避免动生产数据；后续确认无数据再考虑删表）。
 
 ### 第四批已还（v4.28.5）
 

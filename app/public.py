@@ -27,12 +27,7 @@ from .anime_news import (
     get_anime_news, get_article_content, find_article_meta, search_news,
     _safe_media_url, _is_allowed_embed_url, _extract_videos,
 )
-# 注意：此处曾顶层导入 app.video_proxy 的 7 个函数，但 public.py 内从未使用它们
-# （已逐名 grep 确认零引用）。而 video_proxy.py 顶层 `import aiohttp`，aiohttp 不在
-# requirements.txt 中（Vercel 走 pip install -r requirements.txt），该导入会让整站
-# 在缺 aiohttp 的环境直接 ModuleNotFoundError（app/__init__.py:29 → 本行 → 崩溃）。
-# 因零使用，直接删除导入；视频代理路由由 app/__init__.py 的可选导入注册。
-# 如将来确需在此使用，请改用 try/except 可选导入，勿再写成顶层硬导入。
+# 视频代理相关死代码已下线（tab 保留数据表，仅停止注册路由）。
 import re
 from .ai import generate_commentary, generate_prediction
 from .config import (

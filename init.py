@@ -16,7 +16,6 @@ from sqlalchemy import inspect, text
 
 from app import create_app, db
 from app.utils import get_supabase
-from app.video_proxy import init_video_proxy
 
 # Windows 控制台默认 GBK：log() 里的 ✓/✗ 会让 print 抛 UnicodeEncodeError，
 # 异常又被上层 except 捕到，于是真正的操作结果被一行 traceback 吞掉（曾据此误判建表失败）。
@@ -203,14 +202,6 @@ def main():
     added_indexes = ensure_indexes()
     created_buckets = ensure_buckets()
     
-    # 视频代理系统（当前按设计未启用，init_video_proxy 为幂等空操作）
-    try:
-        with app.app_context():
-            init_video_proxy()
-        log('✓ 视频代理系统检查完成（当前未启用）')
-    except Exception as e:
-        log(f'✗ 视频代理系统初始化失败: {e}')
-
     try:
         report_orphans()
     except Exception as e:

@@ -375,51 +375,28 @@ def _secure_filename(filename):
 
 
 def _validate_file_content(file_data, filename):
-    """验证文件内容和类型的完整验证"""
-    import magic
-    import imghdr
-    
-    # 获取文件头信息
-    file_header = file_data[:1024]  # 读取前1KB作为文件头
-    
-    # 使用python-magic检查MIME类型
-    try:
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_buffer(file_header)
-    except:
-        # 如果magic不可用，回退到图片头检查
-        mime_type = imghdr.what(None, h=file_header) or 'unknown'
-    
-    # 扩展名与MIME类型验证
+    """校验图片内容与扩展名是否匹配。
+
+    历史实现依赖 python-magic + imghdr，但：
+    - imghdr 在 Python 3.13 起已从标准库移除；
+    - python-magic 不在 requirements.txt 里（Vercel 上没有）。
+    结果是在生产环境这个函数永远抛异常，validate_file_upload 永远判失败。
+    这里改用项目本来就有的 Pillow 做真实解码校验，不引入新依赖。
+    """
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    
-    # 图片类型验证
-    image_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
-    image_exts = ['jpg', 'jpeg', 'png', 'gif']
-    
-    if mime_type in image_mimes or ext in image_exts:
-        # 图片类型验证
-        if mime_type not in image_mimes:
-            raise ValueError(f"文件类型不匹配：扩展名 .{ext} 与MIME类型 {mime_type} 不符")
-        
-        # 图片内容验证
-        if mime_type == 'image/jpeg':
-            if not file_header.startswith(b'\xff\xd8\xff'):
-                raise ValueError("JPEG文件头验证失败")
-        elif mime_type == 'image/png':
-            if not file_header.startswith(b'\x89PNG\r\n\x1a\n'):
-                raise ValueError("PNG文件头验证失败")
-        elif mime_type == 'image/gif':
-            if not (file_header.startswith(b'GIF87a') or file_header.startswith(b'GIF89a')):
-                raise ValueError("GIF文件头验证失败")
-                
-    elif mime_type == 'application/octet-stream':
-        # 无法识别的二进制文件，检查扩展名
-        if ext not in image_exts:
-            raise ValueError(f"不允许的扩展名 .{ext}")
-    else:
-        raise ValueError(f"不支持的文件类型：{mime_type}")
-    
+    image_exts = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG', 'gif': 'GIF'}
+    if ext not in image_exts:
+        raise ValueError(f'不允许的扩展名 .{ext}')
+
+    try:
+        img = Image.open(io.BytesIO(file_data))
+        img.verify()
+        fmt = (img.format or '').upper()
+    except Exception as exc:  # 解码失败 = 不是有效图片
+        raise ValueError(f'图片内容无法解析：{exc}') from exc
+
+    if fmt != image_exts[ext]:
+        raise ValueError(f'文件类型不匹配：扩展名 .{ext} 实际是 {fmt or "未知"}')
     return True
 
 
