@@ -2316,6 +2316,15 @@ html[data-news-lang="both"] .article-excerpt.news-lang-orig {
     }
 }
 
+/* 把 --card-i 注册成有类型的自定义属性：DevTools 的样式面板能正常解析
+   （否则新版 Chrome 会在 calc(var(--card-i, 0) * 42ms) 处提示自定义属性无法解析）。
+   不支持 @property 的旧浏览器会直接忽略这条规则，行为与原来完全一致。 */
+@property --card-i {
+    syntax: '<integer>';
+    inherits: false;
+    initial-value: 0;
+}
+
 .card-rise {
     animation: card-rise 0.52s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
     animation-delay: calc(var(--card-i, 0) * 42ms);

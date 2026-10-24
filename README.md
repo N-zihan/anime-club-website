@@ -161,7 +161,7 @@ Vercel 导入仓库即可（仓库自带 `vercel.json`），环境变量照着 `
 | ORM / 数据库 | SQLAlchemy 2.0 / PostgreSQL（Supabase；测试用 SQLite 内存库） |
 | 文件存储 | Supabase Storage（头像 / 照片 / 赛事图） |
 | 前端 | Jinja2 + 原生 JS + 单文件 `style.css`（深浅色主题、无前端框架） |
-| 测试 | pytest（500+ 用例）+ Playwright（端到端） |
+| 测试 | pytest（680+ 用例）+ Playwright（端到端） |
 | 部署 | Vercel（Python Serverless，香港区） |
 | 认证 / 安全 | Session + Werkzeug 密码哈希 / CSRFProtect、SSRF 防护、上传体积限制 |
 | 外部数据 | Bangumi API（番剧百科）、AniNewsAPI（新闻）、阿里云机器翻译、SiliconFlow（AI 解说 + 免费模型） |
@@ -170,7 +170,7 @@ Vercel 导入仓库即可（仓库自带 `vercel.json`），环境变量照着 `
 ## 项目状态
 
 - 已部署生产环境（站点仅社员可访问）
-- 后端测试 **566 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
+- 后端测试 **687 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
 - CI 全绿：pytest + flake8、Playwright、Pylint、CodeQL、Docs（文档站自动部署）
 - 文档站：<https://n-zihan.github.io/anime-club-website/>
 

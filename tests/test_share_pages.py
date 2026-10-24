@@ -36,12 +36,14 @@ class TestSharePages:
         body = client.get(f'/share/contest/{contest.id}').get_data(as_text=True)
         assert '位参赛角色' in body
 
-    def test_splash_has_visible_image(self, client):
-        # 封面页是 canvas 动画，微信不跑 JS 也不读 og；必须有一张真实 <img>
+    def test_splash_has_hidden_crawlable_image(self, client):
+        # 封面页是 canvas 动画，微信不跑 JS 也不读 og；必须有一张真实 <img> 给爬虫抓，
+        # 但视觉上要藏出屏幕（用户要求「要藏，但要能被爬虫抓到」）
         body = client.get('/').get_data(as_text=True)
         assert 'wechat-thumb' in body
         assert 'images/og-cover.png' in body
         assert 'left:-9999px' in body   # 不可见、不占版面，只给微信爬虫抓首图
+        assert 'width="1200" height="630"' in body  # 微信要求首图尺寸 >= 300x300
 
     def test_og_image_has_cache_version(self, client):
         body = client.get('/share').get_data(as_text=True)

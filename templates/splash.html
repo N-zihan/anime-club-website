@@ -215,9 +215,11 @@
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<img class="wechat-thumb" src="{{ url_for('static', filename='images/og-cover.png') }}?v={{ app_version }}"
-     alt="{{ club_name }}封面缩略图" width="300" height="158" aria-hidden="true"
-     style="position:absolute; left:-9999px; top:0; width:300px; height:158px; opacity:0.01; pointer-events:none;">
+<!-- 分享缩略图：给微信/QQ 爬虫抓首图用的真实 <img>（它们不跑 JS、也不读 og:image），
+     但视觉上完全藏到屏幕外，不影响封面排版。尺寸必须够大（微信要求 >=300x300） -->
+<img class="wechat-thumb" src="{{ url_for('static', filename='images/og-cover.png') }}"
+     alt="{{ club_name }}分享封面" width="1200" height="630" aria-hidden="true" decoding="async"
+     style="position:absolute; left:-9999px; top:0; width:1200px; height:630px; opacity:0.01; pointer-events:none;">
 
 <button type="button" class="splash-theme-toggle" id="splash-theme-toggle" aria-label="切换昼夜模式" title="切换昼夜模式">🌙</button>
 <div class="splash-content">
