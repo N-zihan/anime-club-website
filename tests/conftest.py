@@ -9,6 +9,8 @@ os.environ['TESTING'] = '1'
 os.environ['SECRET_KEY'] = 'test-secret-key-for-ci'
 os.environ['SUPABASE_URL'] = 'https://fake.supabase.co'
 os.environ['SUPABASE_KEY'] = 'fake-key'
+# 单元测试没有请求上下文：给新闻上游一个固定假地址，避免真实外网
+os.environ.setdefault('ANI_NEWS_API', 'https://news.test.local')
 # =====================================================
 
 # 获取项目根目录

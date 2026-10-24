@@ -19,10 +19,28 @@ from urllib.parse import parse_qs, quote, urljoin, urlsplit
 
 import requests
 from bs4 import BeautifulSoup
+from flask import has_request_context, request
 
 from .utils import safe_get
 
-ANI_NEWS_API = 'https://news.nanyi-anime-club.top/'
+# AniNewsAPI 上游地址：优先 ANI_NEWS_API 环境变量；未配置时按当前请求域名推导 news.<域名>。
+# 不在代码里写死线上域名：换域名 / 多域名部署 / Vercel 预览域名都能自动适配。
+def news_api_base():
+    """返回 AniNewsAPI 上游地址（不带末尾斜杠）。
+
+    优先级：ANI_NEWS_API 环境变量 → 当前请求域名推导的 news.<域名> → 空字符串。
+    空字符串表示「没有可用的新闻服务」，调用方按不可用处理（页面会优雅降级）。
+    """
+    configured = (os.getenv('ANI_NEWS_API') or '').strip().rstrip('/')
+    if configured:
+        return configured
+    if has_request_context():
+        host = (request.host or '').split(':')[0].strip()
+        if host.startswith('www.'):
+            host = host[4:]
+        if host and '.' in host and host not in ('127.0.0.1',):
+            return f'https://news.{host}'
+    return ''
 
 # ============================================================
 # 进程内缓存：容量上限 + 锁
@@ -109,7 +127,7 @@ def _cache_items(cache):
     with _cache_lock:
         return list(cache.items())
 
-_UA = 'Mozilla/5.0 (compatible; nanyi-anime-club/1.0)'
+_UA = 'Mozilla/5.0 (compatible; anime-club-website/1.0)'
 # 抓取原文页用的真实浏览器 UA：部分站点对 "compatible; bot" 一律 403/断连
 _UA_BROWSER = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36')
@@ -307,7 +325,7 @@ _CORPUS_KEY = 'corpus_search'
 _CORPUS_STALE_KEY = 'corpus_search_lastgood'
 _CORPUS_BACKOFF_KEY = 'corpus_search_backoff'
 _CORPUS_TTL = 21600
-# 上游（news.nanyi-anime-club.top）实测极不稳定：读超时 / ConnectionReset(10054)
+# 上游 AniNewsAPI 实测极不稳定：读超时 / ConnectionReset(10054)
 # 频发。失败后退避重试，避免每个请求都去撞一次 12 秒超时。
 _CORPUS_RETRY_BASE = 60
 _CORPUS_RETRY_MAX = 600
@@ -416,8 +434,11 @@ def _get_search_corpus():
             return stale
         return _CORPUS_UNAVAILABLE
 
+    base = news_api_base()
+    if not base:
+        return _corpus_fail(now, '未配置 ANI_NEWS_API，且无法从请求域名推导新闻服务地址')
     try:
-        res = requests.get(f'{ANI_NEWS_API}/api/news', params={'limit': 100}, timeout=12)
+        res = requests.get(f'{base}/api/news', params={'limit': 100}, timeout=12)
         data = res.json()
     except Exception as e:
         # 网络异常 / JSON 解析失败
@@ -560,7 +581,10 @@ def get_anime_news(limit=20, tag=None, cursor=None):
     if cursor:
         params['cursor'] = cursor
 
-    url = f'{ANI_NEWS_API}/api/news'
+    base = news_api_base()
+    if not base:
+        return [], {}
+    url = f'{base}/api/news'
     print(f'>>> 请求 AniNews: {url} params={params}')
 
     try:

@@ -55,6 +55,8 @@ https://<你的域名>        # 每个部署用自己的域名
 - `maxDuration: 60` 是函数执行上限（AI 调用、新闻抓取都靠它兜住；超时会 504）。
 - `regions: hkg1` 选香港区，国内访问比美区快。
 - `crons`：每周一 01:00 UTC（北京时间 09:00）调用周报接口，见下文 `CRON_SECRET`。
+- **`robots.txt` 与 `sitemap.xml` 由后端动态生成**（`app/public.py`）：所有 URL 按当前请求域名拼接，
+  仓库里没有这两个静态文件。换域名、多域名部署、Vercel 预览域名都会自动适配，不需要改代码或重新上传。
 
 ## 2. 环境变量清单
 
@@ -75,6 +77,7 @@ https://<你的域名>        # 每个部署用自己的域名
 | `AI_CACHE_ENABLED` / `AI_CACHE_TTL` / `AI_CACHE_MAX_ENTRIES` / `AI_TIMEOUT` | 选填 | AI 结果缓存与超时 |
 | `AI_CHAT_ENABLED` / `AI_CHAT_MODELS` / `AI_CHAT_TIMEOUT` / `AI_CHAT_MAX_TRIES` / `AI_CHAT_COOLDOWN_429` / `AI_CHAT_COOLDOWN_ERROR` / `AI_CHAT_DAILY_LIMIT` | 选填 | AI 虚拟好友；模型池只放免费模型，全失败时回落站内 FAQ |
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | 选填 | 新闻正文机器翻译；不配则显示原文 |
+| `ANI_NEWS_API` | 选填 | AniNewsAPI 上游地址（如 `https://news.your-site.example.com`）；不配则自动按当前请求域名推导 `news.<域名>`，没有该服务时新闻页优雅降级 |
 | `MAX_CONTENT_LENGTH` | 选填 | 上传体积上限（字节），默认 `4194304`（4 MB） |
 | `SESSION_COOKIE_SECURE` | 选填 | 会话 Cookie 的 Secure 标志；跟随部署平台（Vercel 为开，本地为关），可显式覆盖 |
 | `SESSION_TIMEOUT_MINUTES` | 选填 | 登录会话有效分钟数 |
@@ -144,6 +147,10 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$SITE/board"
 # 5) 分享缩略图能否被抓取（微信/QQ 靠它出图）
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' "$SITE/static/images/og-cover.png"
 curl -s "$SITE/" | grep -o 'property="og:image" content="[^"]*"' | head -1
+
+# 6) robots / sitemap 是否按当前域名动态生成（应输出你自己的域名）
+curl -s "$SITE/robots.txt" | grep -i '^Sitemap:'
+curl -s "$SITE/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | head -3
 ```
 
 !!! warning "Vercel 部署有延迟"

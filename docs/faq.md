@@ -113,7 +113,7 @@
 
 ??? question "测试怎么跑？有多少用例？"
     ```bash
-    python -m pytest -q          # 单元/集成，690+ 用例（当前 697）
+    python -m pytest -q          # 单元/集成，690+ 用例（当前 699）
     npx playwright test          # 端到端（会自己起服务，需 5000 端口空闲）
     ```
 
@@ -199,6 +199,7 @@
     - 站内页面需要登录，微信/QQ 爬虫会被 302 到登录页；**分享站内内容请用公开分享页**
       `/share` 或 `/share/contest/<赛事ID>`（赛事详情页有「🔗 复制分享链接」按钮）。
     - 微信会强缓存旧的分享卡片，换图后可以把链接加个 `?r=随机数` 再发一次，绕开旧缓存。
-    - **历史坑**：`static/robots.txt` 曾是 `Disallow: /` 全站禁抓，连 `/static/images/og-cover.png`
+    - **历史坑**：`robots.txt` 早期是 `Disallow: /` 全站禁抓，连 `/static/images/og-cover.png`
       都拦了，微信/QQ 爬虫拿不到图 → 任何分享都无缩略图。v4.31.2 已改为只拦后台/私有路径，
-      并显式放行 MicroMessenger / QQ / Twitterbot 等分享爬虫。
+      并显式放行 MicroMessenger / QQ / Twitterbot 等分享爬虫；v4.32.0 起 `robots.txt` 与
+      `sitemap.xml` 都由后端按**当前请求域名**动态生成，换域名不用改代码、也不会写死线上域名。

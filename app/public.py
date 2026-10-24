@@ -14,7 +14,7 @@ import uuid
 from datetime import timedelta, datetime, timezone
 from urllib.parse import urlparse
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, Response, abort
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, Response, abort
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
@@ -602,9 +602,77 @@ def manifest():
     })
 
 
+_ROBOTS_RULES = """# 公开页面与静态资源必须允许抓取：微信 / QQ 的分享卡片爬虫要能访问页面和分享图，
+# 才能生成缩略图。注意不要改成 "Disallow: /"，否则分享图会被一起拦掉。
+
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Disallow: /notifications
+Disallow: /profile
+Disallow: /settings
+Disallow: /board
+Disallow: /reply
+Disallow: /contest
+Disallow: /digest
+
+# 社交平台抓取器显式放行（分享卡片）
+User-agent: MicroMessenger
+Disallow:
+
+User-agent: WeChat
+Disallow:
+
+User-agent: QQ
+Disallow:
+
+User-agent: QQBrowser
+Disallow:
+
+User-agent: MQQBrowser
+Disallow:
+
+User-agent: Twitterbot
+Disallow:
+
+User-agent: facebookexternalhit
+Disallow:
+
+User-agent: TelegramBot
+Disallow:
+
+User-agent: Discordbot
+Disallow:
+"""
+
+
 @public_bp.route('/robots.txt')
 def robots():
-    return send_from_directory(os.path.join(os.path.dirname(__file__), '..', 'static'), 'robots.txt')
+    """动态生成 robots.txt：Sitemap 用当前请求域名拼接，不写死任何线上域名。"""
+    body = _ROBOTS_RULES + f'\nSitemap: {request.url_root}sitemap.xml\n'
+    return Response(body, mimetype='text/plain')
+
+
+@public_bp.route('/sitemap.xml')
+def sitemap():
+    """动态生成 sitemap.xml：loc 全部按当前请求域名拼接，换域名 / 多域名部署都能自动适配。"""
+    from xml.sax.saxutils import escape
+
+    base = request.url_root
+    paths = ['', 'login', 'anime_news', 'settings', 'share']
+    urls = [f'{base}{path}' for path in paths]
+    try:
+        contests = Contest.query.filter(
+            Contest.status.in_(['open', 'group_stage', 'knockout'])).all()
+    except Exception:  # pragma: no cover - 数据库异常时至少返回基础公开页，sitemap 不能 500
+        contests = []
+    urls.extend(f'{base}share/contest/{contest.id}' for contest in contests)
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    lines.extend(f'  <url><loc>{escape(url)}</loc></url>' for url in urls)
+    lines.append('</urlset>')
+    return Response('\n'.join(lines) + '\n', mimetype='application/xml')
 
 
 @public_bp.route('/sw.js')

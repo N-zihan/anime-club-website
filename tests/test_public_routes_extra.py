@@ -24,6 +24,21 @@ class TestPublicPages:
         assert 'Disallow: /\n' not in text          # 不能再全站禁抓
         assert 'Disallow: /admin' in text
         assert 'MicroMessenger' in text and 'QQ' in text
+        # Sitemap 必须按请求域名动态拼接，不能写死线上域名
+        assert 'Sitemap: http://localhost/sitemap.xml' in text
+
+    def test_sitemap_is_generated_for_current_host(self, client):
+        resp = client.get('/sitemap.xml')
+        assert resp.status_code == 200
+        assert 'xml' in resp.headers['Content-Type']
+        text = resp.get_data(as_text=True)
+        assert '<loc>http://localhost/</loc>' in text
+        assert 'http://localhost/share' in text
+
+        # 换一个 host 访问（模拟绑定自己的域名），loc 必须跟着变
+        alt = client.get('/sitemap.xml', base_url='https://club.example.org').get_data(as_text=True)
+        assert 'https://club.example.org/' in alt
+        assert 'http://localhost' not in alt
 
     def test_robots_and_manifest(self, client):
         robots = client.get('/robots.txt')

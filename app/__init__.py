@@ -186,6 +186,7 @@ def create_app():
             'public.ai_predict',
             'public.manifest',
             'public.robots',
+            'public.sitemap',
             'public.service_worker',
             # 新闻相关API（允许匿名访问）
             'public.api_anime_news',

@@ -6,7 +6,8 @@
 import requests
 
 HEADERS = {
-    'User-Agent': 'nanyi-anime-club/1.0 (https://www.nanyi-anime-club.top)',
+    # 不写死站点域名：自部署换域名不用改代码；Bangumi 只要求 UA 可识别
+    'User-Agent': 'anime-club-website/1.0 (+self-hosted Flask site)',
 }
 
 PAGE_SIZE = 25
