@@ -3,7 +3,7 @@
 ## 1. 提交前必须过
 
 ```bash
-python -m pytest -q          # 单元/集成（500+ 用例）
+python -m pytest -q          # 单元/集成（690+ 用例）
 npx playwright test          # 端到端（改到 UI 时必跑）
 ```
 
@@ -98,6 +98,11 @@ mkdocs build            # 输出到 site/
 ```
 
 - 新增页面记得在 `mkdocs.yml` 的 `nav` 里挂上，否则侧边栏看不到。
+- **文档里不写真实线上域名**：一律用占位符 `your-site.example.com` / `<你的域名>`，
+  `tests/test_docs_guard.py` 会卡这条。
+- **部署文档必须和仓库一致**：`vercel.json`、`.env.example` 改了要同步更新 [平台部署](deployment.md)，
+  不允许写仓库里不存在的配置项、流程或数字。
+- 文档里的测试数、命令、文件路径要和仓库现状一致；历史数字只放在「技术债 / 批次回顾」里并标注版本。
 
 ## 6. 技术债与重构路线
 

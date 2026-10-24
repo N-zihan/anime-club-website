@@ -1,6 +1,6 @@
 # 南平一中动漫社 · 项目文档
 
-这里是[南平一中动漫社官网](https://www.nanyi-anime-club.top)的完整文档：从本地跑起来、数据库结构、Vercel 部署，到站内每个功能模块的细节与运维流程。
+这里是南平一中动漫社官网的完整文档：从本地跑起来、数据库结构、Vercel 部署，到站内每个功能模块的细节与运维流程。
 
 > **站点性质**：社团内部站点，**仅社员登录访问、不对外开放注册**。因此文档里的所有截图都来自本地 `TESTING` 模式的演示数据（演示账号 / 演示帖子 / 演示活动），不含真实社员信息。
 
@@ -12,7 +12,7 @@
 | 数据库 | PostgreSQL（生产用 Supabase），本地测试用 SQLite 内存库 |
 | 前端 | Jinja2 模板 + 原生 JS + 单份 `style.css`（深浅色主题、无前端框架） |
 | 部署 | Vercel（Python Serverless），香港区 `hkg1` |
-| 测试 | pytest（500+ 用例）+ Playwright（端到端） |
+| 测试 | pytest（690+ 用例）+ Playwright（端到端） |
 | AI | 萌战解说 / 预测 + AI 虚拟好友（全部免费模型池，不产生付费调用） |
 
 ## 文档地图
@@ -49,6 +49,5 @@
 
 ## 相关链接
 
-- 本社团线上实例：<https://www.nanyi-anime-club.top>（**仅本社团使用、仅社员可登录**；自建部署请用你自己的域名）
 - 代码仓库：<https://github.com/N-zihan/anime-club-website>
 - README / 功能导览：仓库根目录 [`README.md`](https://github.com/N-zihan/anime-club-website#readme)
