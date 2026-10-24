@@ -220,6 +220,8 @@
     <h1>{{ club_name }}</h1>
     <p class="subtitle">以热爱为名 · 共创二次元家园</p>
     <a class="btn-enter" href="/home">进入社团</a>
+    <img class="splash-cover" src="{{ url_for('static', filename='images/splash-cover.jpg') }}?v={{ app_version }}"
+         alt="{{ club_name }} 封面" width="420" height="420">
     <div class="footer-note">欢迎来到我们的二次元世界</div>
 </div>
 

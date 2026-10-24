@@ -760,4 +760,4 @@ PHASE_CN = {
 }
 
 
-from . import public_board, public_contest, public_misc  # noqa: E402,F401  pylint: disable=wrong-import-position,unused-import
+from . import public_board, public_contest, public_misc, public_share  # noqa: E402,F401  pylint: disable=wrong-import-position,unused-import

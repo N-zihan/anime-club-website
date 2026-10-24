@@ -4191,3 +4191,118 @@ body.has-composer footer {
     border-left: 4px solid #2196f3;
     background: var(--bg-card);
 }
+
+
+/* ===================== 30. 公开分享落地页 ===================== */
+.share-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 0 48px;
+    text-align: center;
+}
+
+.share-hero {
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    display: block;
+}
+
+.share-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.share-badge {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.share-title {
+    margin: 12px 0 6px;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.share-sub {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0 0 14px;
+    line-height: 1.7;
+}
+
+.share-cands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 10px;
+}
+
+.share-group {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-right: 2px;
+}
+
+.share-cand {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--bg-code);
+    color: var(--text-secondary);
+}
+
+.share-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 18px 0 10px;
+}
+
+.share-actions .btn-primary,
+.share-actions .btn-ghost {
+    text-decoration: none;
+    padding: 10px 26px;
+    border-radius: 40px;
+}
+
+.share-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-top: 10px;
+}
+
+
+/* ===================== 31. 封面页静态首图（微信/QQ 缩略图来源） ===================== */
+.splash-cover {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 22px;
+    margin: 18px auto 6px;
+    display: block;
+    box-shadow: 0 10px 30px rgba(30, 42, 58, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+@media (max-width: 480px) {
+    .splash-cover {
+        width: 140px;
+        height: 140px;
+        border-radius: 18px;
+        margin-top: 14px;
+    }
+}

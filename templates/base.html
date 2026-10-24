@@ -19,12 +19,16 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url_root }}">
     <meta property="og:site_name" content="{{ club_name }}">
-    <meta property="og:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <meta property="og:image" content="{{ og_image | default(request.url_root ~ 'static/images/og-cover.png?v=' ~ app_version) }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:secure_url" content="{{ og_image | default(request.url_root ~ 'static/images/og-cover.png?v=' ~ app_version) }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ club_name }} · 社团网站">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="{{ request.url_root }}static/images/og-cover.png">
+    <meta name="twitter:image" content="{{ og_image | default(request.url_root ~ 'static/images/og-cover.png?v=' ~ app_version) }}">
+    <meta name="twitter:title" content="{{ og_title | default(club_name) }}">
+    <meta name="twitter:description" content="{{ og_description | default(club_name ~ '官网，集社团展示、互动交流、资源分享、线上赛事于一体') }}">
     <link rel="alternate" type="application/rss+xml"
           title="{{ club_name }} · 番剧新闻" href="{{ url_for('public.anime_news_rss') }}">
 

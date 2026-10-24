@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}分享 · {{ club_name }}{% endblock %}
+{% block content %}
+<div class="share-page">
+    <img class="share-hero" src="{{ url_for('static', filename='images/og-cover.png') }}?v={{ app_version }}"
+         alt="{{ club_name }}官网封面" width="1200" height="630">
+
+    <h1 class="share-title">{{ club_name }}</h1>
+    <p class="share-sub">社团展示 · 社员论坛 · 番剧资源 · 萌战赛事</p>
+
+    <div class="share-actions">
+        <a class="btn-primary" href="{{ url_for('auth.login') }}">登录 / 注册</a>
+        <a class="btn-ghost" href="{{ url_for('public.splash') }}">回首页</a>
+    </div>
+
+    <p class="share-note">
+        微信/QQ 里分享这个链接，就能显示封面卡片啦～<br>
+        站内页面需要登录，所以分享时请用本页链接。
+    </p>
+</div>
+{% endblock %}

@@ -198,6 +198,8 @@ def create_app():
             'public.offline',
             'public.weekly_digest_cron',
             'public.digest_unsubscribe',
+            'public.share_home',
+            'public.share_contest',
             # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用
             'public.settings',
         ]

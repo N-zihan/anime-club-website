@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ contest.title }} · 萌战分享{% endblock %}
+{% block content %}
+<div class="share-page">
+    <img class="share-hero" src="{{ url_for('static', filename='images/og-cover.png') }}?v={{ app_version }}"
+         alt="{{ contest.title }} 封面" width="1200" height="630">
+
+    <div class="share-badges">
+        <span class="share-badge">🏆 {{ phase or '赛事进行中' }}</span>
+        <span class="share-badge">👥 {{ total }} 位参赛角色</span>
+    </div>
+
+    <h1 class="share-title">{{ contest.title }}</h1>
+    {% if contest.description %}<p class="share-sub">{{ contest.description }}</p>{% endif %}
+
+    {% for group, cands in (('女组', female), ('男组', male)) %}
+    {% if cands %}
+    <div class="share-cands">
+        <span class="share-group">{{ group }}</span>
+        {% for c in cands %}<span class="share-cand">{{ c.name }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="share-actions">
+        <a class="btn-primary" href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">登录查看完整赛事</a>
+        <a class="btn-ghost" href="{{ url_for('public.share_home') }}">站内还有更多</a>
+    </div>
+
+    <p class="share-note">
+        本页是公开分享卡片；微信/QQ 里显示的就是上面这张封面图。<br>
+        投票、对阵图和结果在登录后才能查看～
+    </p>
+</div>
+{% endblock %}

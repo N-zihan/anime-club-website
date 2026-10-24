@@ -1,0 +1,52 @@
+"""公开分享落地页测试：微信/QQ 爬虫能拿到标题与首图。"""
+from datetime import datetime, timedelta
+
+from app.models import Contest
+
+
+class TestSharePages:
+    def test_share_home_public(self, client):
+        resp = client.get('/share')
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert 'og:image' in body
+        assert 'og:image:type' in body
+        assert 'share-hero' in body  # 可见首图（微信缩略图来源）
+
+    def test_share_contest_public(self, client, sample_contest):
+        resp = client.get(f'/share/contest/{sample_contest.id}')
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert sample_contest.title in body
+        assert 'og:title' in body and sample_contest.title in body
+        assert 'share-hero' in body
+        assert '登录查看完整赛事' in body
+
+    def test_share_contest_missing_404(self, client, db_session):
+        assert client.get('/share/contest/999999').status_code == 404
+
+    def test_share_contest_shows_phase_and_counts(self, client, db_session):
+        now = datetime.now()
+        contest = Contest(title='分享测试赛', description='说明文字', type='saimoe',
+                          gender_mode='separate', status='open',
+                          open_at=now - timedelta(days=1), close_at=now + timedelta(days=30),
+                          config={})
+        db_session.add(contest)
+        db_session.commit()
+        body = client.get(f'/share/contest/{contest.id}').get_data(as_text=True)
+        assert '位参赛角色' in body
+
+    def test_splash_has_visible_image(self, client):
+        # 封面页是 canvas 动画，微信不跑 JS 也不读 og；必须有一张真实 <img>
+        body = client.get('/').get_data(as_text=True)
+        assert 'splash-cover.jpg' in body
+        assert '<img' in body
+
+    def test_og_image_has_cache_version(self, client):
+        body = client.get('/share').get_data(as_text=True)
+        assert 'og-cover.png?v=' in body
+
+    def test_contest_detail_has_share_button(self, logged_in_client, sample_contest):
+        body = logged_in_client.get(f'/contest/{sample_contest.id}').get_data(as_text=True)
+        assert 'shareLinkBtn' in body
+        assert f'share/contest/{sample_contest.id}' in body

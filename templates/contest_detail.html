@@ -100,6 +100,8 @@
     <button type="button" class="poster-btn" id="posterBtn">📸 生成分享海报</button>
 
     <a class="poster-btn" href="{{ url_for('public.contest_bracket', contest_id=contest.id) }}">🗺️ 对阵图</a>
+    <button type="button" class="poster-btn" id="shareLinkBtn"
+            data-url="{{ request.url_root }}share/contest/{{ contest.id }}">🔗 复制分享链接</button>
     <span style="font-size:0.78rem; color: var(--text-muted);">一键生成 1200×630 战报图，发群/发空间都好看</span>
 </div>
 <script id="posterData" type="application/json">{{ poster_data | tojson }}</script>
@@ -614,4 +616,15 @@
 </script>
 
 <script src="{{ url_for('static', filename='js/share-poster.js') }}" defer></script>
+
+document.getElementById('shareLinkBtn')?.addEventListener('click', async (e) => {
+    const url = e.currentTarget.dataset.url;
+    try {
+        await navigator.clipboard.writeText(url);
+        if (window.showToast) { showToast('已复制分享链接，去微信/QQ 粘贴即可显示封面～'); }
+        else { alert('已复制：' + url); }
+    } catch (err) {
+        prompt('复制这个分享链接（微信/QQ 可显示封面）：', url);
+    }
+});
 {% endblock %}
