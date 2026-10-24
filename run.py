@@ -14,7 +14,8 @@
 
 注意：
 - 数据库表结构、存储桶、头像迁移等一次性运维操作，请跑 init.py
-- 本文件只在 TESTING=1 时执行测试数据初始化
+- 测试数据初始化只在「TESTING=1 + 非 Vercel + SQLite 库」三条同时满足时执行，
+  生产库（Postgres）一律拒绝，避免演示数据写进线上
 """
 
 import os
@@ -40,7 +41,24 @@ def _demo_image(char: str, color: str) -> str:
     return 'data:image/svg+xml;charset=utf-8,' + quote(svg)
 
 
-if os.getenv('TESTING') == '1':
+def _demo_seed_allowed() -> bool:
+    """演示数据只在本地 / CI 的 SQLite 库执行；生产库（Postgres）一律拒绝。
+
+    背景：run.py 里这套「测试赛事 / 演示成员 / 演示活动」本来是给本地截图和
+    Playwright e2e 用的。曾经踩过的坑：本地 .env 的 DATABASE_URL 指向 Supabase
+    生产库时，`TESTING=1 python run.py` 会把这些数据直接写进线上（测试赛事
+    自己上线，还多出一个 password123 的 owner 账号）。这里把口子焊死。
+    """
+    from app.utils import demo_seed_allowed
+
+    return demo_seed_allowed(
+        app.config.get('SQLALCHEMY_DATABASE_URI', ''),
+        os.getenv('TESTING') == '1',
+        bool(os.getenv('VERCEL')),
+    )
+
+
+if _demo_seed_allowed():
     with app.app_context():
         print("测试模式：正在初始化测试数据...")
 
@@ -181,6 +199,8 @@ if os.getenv('TESTING') == '1':
 
         db.session.commit()
         print("测试数据初始化完成")
+elif os.getenv('TESTING') == '1':
+    print("检测到 TESTING=1，但当前数据库不是 SQLite，已拒绝写入演示数据（保护生产库）")
 # ====================================
 
 

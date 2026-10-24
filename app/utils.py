@@ -453,3 +453,22 @@ def validate_file_upload(file_data, filename, max_size_mb=5):
         'errors': errors,
         'secure_filename': secure_filename if not errors else None
     }
+
+
+def demo_seed_allowed(database_url, testing, on_vercel=False):
+    """演示数据只允许灌进本地 / CI 的 SQLite 库，绝不允许碰生产库。
+
+    run.py 里的「测试赛事 / 演示成员 / 演示活动」是给本地截图和 e2e 用的。
+    曾经踩过的坑：本地 .env 的 DATABASE_URL 指向 Supabase 生产库时，
+    `TESTING=1 python run.py` 会把这些演示数据直接写进线上 —— 测试赛事自己
+    「上线」、还多出一个密码是 password123 的 owner 账号。这里统一把口子焊死：
+
+    - 必须显式设置 TESTING=1；
+    - 不允许在 Vercel（VERCEL=1）上执行；
+    - 数据库必须是 SQLite（本地文件库或 CI 的内存库）。
+    """
+    if not testing:
+        return False
+    if on_vercel:
+        return False
+    return (database_url or '').startswith('sqlite')

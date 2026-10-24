@@ -177,3 +177,31 @@ class TestValidateFileUpload:
     def test_wrong_type_content(self):
         result = utils.validate_file_upload(b'hello world', 'a.exe')
         assert result['is_valid'] is False
+
+
+class TestDemoSeedGuard:
+    """演示数据种子只允许在本地 / CI 的 SQLite 库上执行（生产库保护）。
+
+    回归背景：本地 .env 的 DATABASE_URL 指向生产库时，TESTING=1 起 run.py
+    会把「测试赛事 / 演示成员」灌进线上，测试赛事会自己出现在首页。
+    """
+
+    def test_sqlite_with_testing_allowed(self):
+        assert utils.demo_seed_allowed('sqlite:///:memory:', True) is True
+        assert utils.demo_seed_allowed('sqlite:///site.db', True) is True
+
+    def test_postgres_with_testing_blocked(self):
+        assert utils.demo_seed_allowed(
+            'postgresql://user:pass@aws-1-ap-south-1.pooler.supabase.com:6543/postgres',
+            True,
+        ) is False
+
+    def test_vercel_always_blocked(self):
+        assert utils.demo_seed_allowed('sqlite:///:memory:', True, on_vercel=True) is False
+
+    def test_testing_off_blocked(self):
+        assert utils.demo_seed_allowed('sqlite:///:memory:', False) is False
+
+    def test_empty_uri_blocked(self):
+        assert utils.demo_seed_allowed(None, True) is False
+        assert utils.demo_seed_allowed('', True) is False

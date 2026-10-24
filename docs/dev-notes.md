@@ -63,6 +63,22 @@ fixture 已显式 `db.engine.dispose()`，`pytest.ini` 也只静音这一类警�
 - Vercel 部署有延迟，验证请用 `/settings` 里的**版本号**，不要用"页面看起来没变"。
 - 数据库迁移顺序：**先 `init.py` 后推代码**，反了必 500。
 
+### 3.6 本地 `.env` 指向生产库时，`TESTING=1` 会把演示数据灌进线上
+
+- 事故（v4.31.8 修复）：本地 `.env` 的 `DATABASE_URL` 指向 Supabase 生产库，
+  而 `run.py` 里"测试数据初始化"（测试赛事 / 演示成员 / 演示活动 / 演示 AI 人设）
+  是**模块级**执行的。只要用 `TESTING=1 python run.py` 起服务，这些演示数据就会
+  直接写进生产库 —— 表现就是「测试赛事自己上线了」，而且还会多出一个密码是
+  `password123` 的 **owner 账号**（`testuser`），属于安全漏洞。
+- 现在的规则：`app/utils.py` 的 `demo_seed_allowed()` 强制要求
+  **TESTING=1 + 非 Vercel + SQLite 库**，三条缺一不可；否则只打印拒绝提示，不写库。
+- 本地要跑演示环境，**显式覆盖数据库**，别复用 `.env` 里的生产连接：
+  ```powershell
+  $env:TESTING='1'; $env:DATABASE_URL='sqlite:///:memory:'; py run.py
+  ```
+- 排查线上脏数据可以直接用 `.env` 的 `DATABASE_URL` 连库查（只读），
+  但删除前先确认不是真实社员数据。
+
 ## 4. 截图规范（文档/README 用）
 
 - 来源：本地 `TESTING=1` 演示环境，**不出现真实社员信息**。

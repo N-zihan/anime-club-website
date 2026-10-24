@@ -132,6 +132,8 @@ TESTING=1 DATABASE_URL=sqlite:///:memory: python run.py
 
 打开 <http://localhost:5000>，用演示账号 `testuser` / `password123` 登录（含管理后台权限），数据随进程销毁。
 
+> ⚠️ 演示账号与演示数据只在 **SQLite 库**上生成（v4.31.8 起强制校验：`TESTING=1` + 非 Vercel + SQLite 三条缺一不可）。本地 `.env` 的 `DATABASE_URL` 若指向线上库，起服务时务必显式覆盖成 `DATABASE_URL=sqlite:///:memory:`，否则演示数据会被拒绝写入（保护生产库）。
+
 **测试**：
 
 ```bash
@@ -170,7 +172,7 @@ Vercel 导入仓库即可（仓库自带 `vercel.json`），环境变量照着 `
 ## 项目状态
 
 - 已部署生产环境（站点仅社员可访问）
-- 后端测试 **688 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
+- 后端测试 **693 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
 - CI 全绿：pytest + flake8、Playwright、Pylint、CodeQL、Docs（文档站自动部署）
 - 文档站：<https://n-zihan.github.io/anime-club-website/>
 
