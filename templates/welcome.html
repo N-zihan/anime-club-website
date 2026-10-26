@@ -2,31 +2,28 @@
 {% block title %}设置头像{% endblock %}
 {% block content %}
 
-<div style="max-width:440px; margin:0 auto; padding:40px 0; text-align:center;">
+<div class="u-00a283f6">
 
-    <div style="background: var(--bg-card); padding:32px 28px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid var(--border-color);">
+    <div class="u-ea57f62b">
 
-        <h2 style="margin-top:0; margin-bottom:8px; color: var(--text-primary);">欢迎，{{ user.username }}</h2>
-        <p style="color: var(--text-secondary); margin-bottom:24px; font-size:14px;">给头像上传一张图片吧</p>
+        <h2 class="u-8edc1dc1">欢迎，{{ user.username }}</h2>
+        <p class="u-5dfb6328">给头像上传一张图片吧</p>
 
         <form method="POST" enctype="multipart/form-data">
-            <div style="margin-bottom:16px;">
-                <input type="file" name="avatar" accept="image/*" required data-compress-upload
-                       style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; box-sizing:border-box; font-size:14px; background: var(--bg-input); color: var(--text-primary);">
+            <div class="u-79a1c5a5">
+                <input type="file" name="avatar" accept="image/*" required data-compress-upload class="u-8705ee94">
                 <small class="compress-hint" style="display:none; color: var(--text-muted); display:block; margin-top:6px;"></small>
             </div>
-            <button type="submit" class="btn-primary"
-                    style="width:100%; padding:12px; font-size:16px; border:none; border-radius:8px; cursor:pointer;">
+            <button type="submit" class="btn-primary u-6313cb4c">
                 上传头像
             </button>
         </form>
 
         <small style="color: var(--text-muted); display:block; margin-top:10px;">支持 png / jpg / gif</small>
 
-        <form method="POST" style="margin-top:20px;">
+        <form method="POST" class="u-9eb125f5">
             <input type="hidden" name="action" value="skip">
-            <button type="submit"
-                    style="background:none; border:none; color: var(--text-muted); font-size:0.9rem; cursor:pointer; text-decoration:underline;">
+            <button type="submit" class="u-34623e39">
                 稍后再说
             </button>
         </form>

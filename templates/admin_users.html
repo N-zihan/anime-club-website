@@ -4,7 +4,7 @@
 <div class="admin-header">
     <h2>用户管理</h2>
     <span class="member-count">共 {{ users|length }} 位社员</span>
-    <a class="btn-add" href="{{ url_for('admin.export_users_excel') }}" style="margin-left: 15px;">
+    <a class="btn-add u-0db2942d" href="{{ url_for('admin.export_users_excel') }}">
         导出 Excel
     </a>
 </div>
@@ -19,9 +19,9 @@
         <th>邮箱</th>
         <th>邮箱操作</th>
         <th>注册时间</th>
-        <th style="text-align:center;">运营</th>
-        <th style="text-align:center;">站长</th>
-        <th style="text-align:center;">操作</th>
+        <th class="u-dac4fe6c">运营</th>
+        <th class="u-dac4fe6c">站长</th>
+        <th class="u-dac4fe6c">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -29,8 +29,7 @@
     <tr>
         <td>{{ user.id }}</td>
         <td>
-            <img alt="{{ user.username }}" src="{{ avatar_url(user) }}"
-                 style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+            <img alt="{{ user.username }}" src="{{ avatar_url(user) }}" class="u-a8c4d54e">
         </td>
         <td><strong>{{ user.username }}</strong></td>
         <td>{{ user.qq }}</td>
@@ -43,23 +42,22 @@
                 </form>
                 {% else %}
                 <form method="POST" action="{{ url_for('admin.admin_bind_email', user_id=user.id) }}" style="display:inline;">
-                    <input type="email" name="email" placeholder="输入邮箱代绑" required
-                           style="width:140px; padding:4px 8px; border:1px solid var(--border-color); border-radius:6px; font-size:0.8rem;">
+                    <input type="email" name="email" placeholder="输入邮箱代绑" required class="u-61349c72">
                     <button type="submit" class="btn-edit">代绑</button>
                 </form>
                 {% endif %}
             {% else %}
-                <span style="color:#aaa; font-size:0.85rem;">—</span>
+                <span class="u-dc0c45bd">—</span>
             {% endif %}
         </td>
         <td>{{ user.registered_at.strftime('%Y-%m-%d') }}</td>
-        <td style="text-align:center;">
+        <td class="u-dac4fe6c">
             {% if user.is_staff %}✅{% else %}—{% endif %}
         </td>
-        <td style="text-align:center;">
+        <td class="u-dac4fe6c">
             {% if user.is_owner %}👑{% else %}—{% endif %}
         </td>
-        <td style="text-align:center;">
+        <td class="u-dac4fe6c">
             <form method="POST" action="{{ url_for('admin.admin_toggle_staff', user_id=user.id) }}"
                   style="display:inline;">
                 <button type="submit" class="btn-edit">{{ '取消运营' if user.is_staff else '设为运营' }}</button>
@@ -81,14 +79,14 @@
                 <button type="submit" class="btn-delete">删除</button>
             </form>
             {% else %}
-            <span style="color:#aaa; font-size:0.85rem;">（自己）</span>
+            <span class="u-dc0c45bd">（自己）</span>
             {% endif %}
         </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
-<p style="margin-top:20px;"><a href="{{ url_for('admin.dashboard') }}">← 返回后台首页</a></p>
+<p class="u-9eb125f5"><a href="{{ url_for('admin.dashboard') }}">← 返回后台首页</a></p>
 
 <script>
     // 用 data-* + 事件监听代替 onsubmit 里拼字符串。

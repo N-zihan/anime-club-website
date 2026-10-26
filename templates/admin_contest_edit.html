@@ -7,7 +7,7 @@
 </div>
 
 <!-- 基本信息 -->
-<div class="card-form" style="max-width:100%;">
+<div class="card-form u-0697eccf">
     <h3>基本信息</h3>
     <form method="POST">
         <div class="form-group">
@@ -44,9 +44,8 @@
         <div class="form-group">
             <label>结束时间（自动计算）</label>
             <input disabled
-                   readonly
-                   style="background:#f5f5f5; color:#555;" type="text"
-                   value="{{ contest.close_at.strftime('%Y-%m-%d %H:%M') if contest.close_at else '未设置' }}">
+                   readonly type="text"
+                   value="{{ contest.close_at.strftime('%Y-%m-%d %H:%M') if contest.close_at else '未设置' }}" class="u-53a56101">
             <small style="color:#94a3b8; display:block; margin-top:4px;">结束时间 = 开始时间 + {{ total_days }} 天（不可手动修改</small>
         </div>
         <button class="btn-primary" type="submit">保存修改</button>
@@ -56,18 +55,18 @@
 <hr>
 
 <!-- 待审核提名 -->
-<div class="card-form" style="max-width:100%;">
+<div class="card-form u-0697eccf">
     <h3>待审核提名</h3>
     {% if nominations %}
         <table class="admin-table">
             <thead>
             <tr>
-                <th style="width:80px;">图片</th>
+                <th class="u-1a91ef9e">图片</th>
                 <th>角色名</th>
                 <th>作品名</th>
                 <th>性别</th>
                 <th>提名者</th>
-                <th style="text-align:center;">操作</th>
+                <th class="u-dac4fe6c">操作</th>
             </tr>
             </thead>
             <tbody>
@@ -76,17 +75,16 @@
                 <td>
                     {% if n.image_url %}
                     <img src="{{ n.image_url }}" alt="{{ n.name }}" loading="lazy"
-                         onclick="window.open(this.src, '_blank')"
-                         style="width:60px; height:60px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--border-color);">
+                         onclick="window.open(this.src, '_blank')" class="u-2e6223a7">
                     {% else %}
-                    <span style="color:#94a3b8; font-size:0.8rem;">无图</span>
+                    <span class="u-a6aa17b2">无图</span>
                     {% endif %}
                 </td>
                 <td>{{ n.name }}</td>
                 <td>{{ n.source }}</td>
                 <td>{{ n.gender }}</td>
                 <td>{{ n.user.username }}</td>
-                <td style="text-align:center;">
+                <td class="u-dac4fe6c">
                     <form method="POST" action="{{ url_for('admin.admin_nomination_approve', nomination_id=n.id) }}" style="display:inline;">
                         <button type="submit" class="btn-edit">通过</button>
                     </form>
@@ -99,14 +97,14 @@
             </tbody>
         </table>
     {% else %}
-    <p style="color:#94a3b8;">暂无待审核提名</p>
+    <p class="u-aa3ee35a">暂无待审核提名</p>
     {% endif %}
 </div>
 
 <hr>
 
 <!-- 候选池 -->
-<div class="card-form" style="max-width:100%;">
+<div class="card-form u-0697eccf">
     <h3>候选池</h3>
     {% if candidates %}
     <table class="admin-table">
@@ -123,7 +121,7 @@
         <tr>
             <td>
                 {{ c.name }}
-                {% if c.banned %}<span style="color:#e11d48; font-weight:bold; margin-left:6px;">[禁赛]</span>{% endif %}
+                {% if c.banned %}<span class="u-d161b4e1">[禁赛]</span>{% endif %}
             </td>
             <td>{{ c.source }}</td>
             <td>{{ c.gender }}</td>
@@ -132,7 +130,7 @@
                 <form method="POST" action="{{ url_for('admin.admin_candidate_unban', candidate_id=c.id) }}"
                       style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn-edit" style="color:green;">恢复</button>
+                    <button type="submit" class="btn-edit u-5bac8467">恢复</button>
                 </form>
                 {% else %}
                 <form method="POST" action="{{ url_for('admin.admin_candidate_ban', candidate_id=c.id) }}"
@@ -154,7 +152,7 @@
         </tbody>
     </table>
     {% else %}
-    <p style="color:#94a3b8;">暂无候选人</p>
+    <p class="u-aa3ee35a">暂无候选人</p>
     {% endif %}
 </div>
 {% endblock %}

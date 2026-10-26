@@ -3,7 +3,7 @@
 {% block content %}
 
 <h2>番剧新闻</h2>
-<p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:8px;">
+<p class="u-23f88ff0">
     数据来源：ANN / MAL / Crunchyroll / Comic Book 等多家媒体
 </p>
 <div class="news-toolbar">
@@ -14,37 +14,27 @@
 <!-- 搜索框（搜索历史面板锚点由下方 task-9 脚本按需插入，避免与并行改动冲突） -->
 <div id="newsSearchRow" style="display:flex; gap:8px; margin-bottom:16px;">
     <input type="text" id="newsSearchInput" placeholder="搜索新闻（支持中文，如：药屋、海贼王）"
-           autocomplete="off"
-           style="flex:1; padding:10px 16px; border:1px solid var(--border-color); border-radius:24px; font-size:0.95rem; background: var(--bg-input); color: var(--text-primary);">
-    <button type="button" id="newsSearchBtn"
-            style="padding:10px 20px; background:#1e2a3a; color:#fff; border:none; border-radius:24px; cursor:pointer; font-size:0.9rem;">搜索</button>
+           autocomplete="off" class="u-4056dca2">
+    <button type="button" id="newsSearchBtn" class="u-6f5de2ed">搜索</button>
     <button type="button" id="newsClearBtn"
             style="display:none; padding:10px 20px; background: var(--bg-code); color: var(--text-primary); border:1px solid var(--border-color); border-radius:24px; cursor:pointer; font-size:0.9rem;">返回</button>
 </div>
 
 <!-- 标签筛选 -->
 <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-    <button class="filter-btn" data-tag=""
-            style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:#1e2a3a; color:white; cursor:pointer; font-size:0.85rem;">全部</button>
-    <button class="filter-btn" data-tag="anime"
-            style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.85rem;">动画</button>
-    <button class="filter-btn" data-tag="manga"
-            style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.85rem;">漫画</button>
-    <button class="filter-btn" data-tag="industry"
-            style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.85rem;">业界</button>
-    <button class="filter-btn" data-tag="official"
-            style="padding:6px 16px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.85rem;">官方</button>
+    <button class="filter-btn u-b92653f6" data-tag="">全部</button>
+    <button class="filter-btn u-f49506ec" data-tag="anime">动画</button>
+    <button class="filter-btn u-f49506ec" data-tag="manga">漫画</button>
+    <button class="filter-btn u-f49506ec" data-tag="industry">业界</button>
+    <button class="filter-btn u-f49506ec" data-tag="official">官方</button>
 </div>
 
 <!-- 显示语言（与「设置 → 语言与翻译」共用本地偏好，无需登录） -->
 <div id="newsLangRow" style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-    <span style="font-size:0.82rem; color: var(--text-muted);">显示：</span>
-    <button type="button" class="news-lang-btn" data-lang="zh"
-            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">译文优先</button>
-    <button type="button" class="news-lang-btn" data-lang="original"
-            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">仅原文</button>
-    <button type="button" class="news-lang-btn" data-lang="both"
-            style="padding:6px 14px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-code); color:var(--text-primary); cursor:pointer; font-size:0.82rem;">双语对照</button>
+    <span class="u-aa8abda0">显示：</span>
+    <button type="button" class="news-lang-btn u-a5389bbe" data-lang="zh">译文优先</button>
+    <button type="button" class="news-lang-btn u-a5389bbe" data-lang="original">仅原文</button>
+    <button type="button" class="news-lang-btn u-a5389bbe" data-lang="both">双语对照</button>
 </div>
 
 <div id="newsStatus" style="text-align:center; color: var(--text-muted); padding:40px 0; display:none;"></div>

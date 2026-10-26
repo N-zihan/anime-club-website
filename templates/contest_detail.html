@@ -102,7 +102,7 @@
     <a class="poster-btn" href="{{ url_for('public.contest_bracket', contest_id=contest.id) }}">🗺️ 对阵图</a>
     <button type="button" class="poster-btn" id="shareLinkBtn"
             data-url="{{ request.url_root }}share/contest/{{ contest.id }}">🔗 复制分享链接</button>
-    <span style="font-size:0.78rem; color: var(--text-muted);">一键生成 1200×630 战报图，发群/发空间都好看</span>
+    <span class="u-48f6d646">一键生成 1200×630 战报图，发群/发空间都好看</span>
 </div>
 <script id="posterData" type="application/json">{{ poster_data | tojson }}</script>
 <p>{{ contest.description }}</p>
@@ -119,34 +119,33 @@
 <!-- ============================================================ -->
 {% if phase == 'nomination' %}
 <h3>提名角色</h3>
-<p style="color: var(--text-secondary); font-size:0.9rem; margin:8px 0;">
+<p class="u-716f42b8">
     女组已提名 <strong>{{ user_female_count }}</strong> / 5，男组已提名 <strong>{{ user_male_count }}</strong> / 5
 </p>
 {% if session.user_id %}
 {% if user_female_count >= 5 and user_male_count >= 5 %}
-<p style="color:#e74c3c;">你在男女组都达到了提名上限（各 5 个角色）</p>
+<p class="u-701cad12">你在男女组都达到了提名上限（各 5 个角色）</p>
 {% else %}
 <form action="{{ url_for('public.submit_nomination', contest_id=contest.id) }}" enctype="multipart/form-data"
       method="POST" id="nominationForm">
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; max-width:500px;">
-        <div><input name="name" placeholder="角色名" required style="width:100%; padding:8px;" type="text"></div>
-        <div><input name="source" placeholder="作品名" required style="width:100%; padding:8px;" type="text"></div>
+        <div><input name="name" placeholder="角色名" required type="text" class="u-bf362881"></div>
+        <div><input name="source" placeholder="作品名" required type="text" class="u-bf362881"></div>
         <div>
-            <select name="gender" required style="width:100%; padding:8px;">
+            <select name="gender" required class="u-bf362881">
                 <option value="female">女（已提 {{ user_female_count }}/5）</option>
                 <option value="male">男（已提 {{ user_male_count }}/5）</option>
             </select>
         </div>
         <div>
-            <input accept="image/*" name="image" required style="width:100%; padding:8px;" type="file">
+            <input accept="image/*" name="image" required type="file" class="u-bf362881">
             <small style="color:#94a3b8; display:block; margin-top:4px;">请上传角色图片（必填）</small>
         </div>
     </div>
-    <div style="margin-top:10px;">
-        <textarea name="description" placeholder="角色简介（选填）" rows="2"
-                  style="width:100%; max-width:500px; padding:8px;"></textarea>
+    <div class="u-d8a81eac">
+        <textarea name="description" placeholder="角色简介（选填）" rows="2" class="u-6bc9e3c4"></textarea>
     </div>
-    <button class="btn-primary" id="nominateBtn" style="margin-top:10px;" type="submit">提交提名</button>
+    <button class="btn-primary u-d8a81eac" id="nominateBtn" type="submit">提交提名</button>
 </form>
 <script>
     document.getElementById('nominationForm').addEventListener('submit', function() {
@@ -164,25 +163,24 @@
 <!-- ============================================================ -->
 <!-- 候选角色展示 -->
 <!-- ============================================================ -->
-<h3 style="margin-top:30px;">候选角色</h3>
+<h3 class="u-d5800fe5">候选角色</h3>
 {% if candidates %}
 <!-- ===== 女组 ===== -->
-<h4 style="margin-top:20px; color: #e91e63;">女组</h4>
+<h4 class="u-fa701d86">女组</h4>
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for c in candidates if c.gender == 'female' %}
-    <div style="background: var(--bg-card); border-radius:8px; padding:12px; text-align:center;" data-candidate-id="{{ c.id }}">
-        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}"
-                                 style="max-width:80px; max-height:80px; width:auto; height:auto; border-radius:8px;">{% endif %}
+    <div data-candidate-id="{{ c.id }}" class="u-b83c2eac">
+        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6">{% endif %}
         <div><strong>{{ c.name }}</strong></div>
-        <div style="font-size:0.85rem; color: var(--text-secondary);">{{ c.source }}</div>
-        <div style="font-size:0.8rem; color: var(--text-muted);">女</div>
+        <div class="u-b46173c3">{{ c.source }}</div>
+        <div class="u-ced41b42">女</div>
         {% if c.description %}
         <div style="font-size:0.78rem; color: var(--text-secondary); margin-top:6px; line-height:1.5;
                     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
             {{ c.description }}
         </div>
         {% endif %}
-        <div style="font-size:0.7rem; color: var(--text-muted); margin-top:4px;">
+        <div class="u-3710da68">
             状态：
             {% if c.stage == 'champion' %}
             🏆 冠军
@@ -214,27 +212,26 @@
         </div>
     </div>
     {% else %}
-    <p style="color: var(--text-muted);">暂无女组候选</p>
+    <p class="u-bf4b6787">暂无女组候选</p>
     {% endfor %}
 </div>
 
 <!-- ===== 男组 ===== -->
-<h4 style="margin-top:20px; color: #2196f3;">男组</h4>
+<h4 class="u-1c3d260e">男组</h4>
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for c in candidates if c.gender == 'male' %}
-    <div style="background: var(--bg-card); border-radius:8px; padding:12px; text-align:center;" data-candidate-id="{{ c.id }}">
-        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}"
-                                 style="max-width:80px; max-height:80px; width:auto; height:auto; border-radius:8px;">{% endif %}
+    <div data-candidate-id="{{ c.id }}" class="u-b83c2eac">
+        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6">{% endif %}
         <div><strong>{{ c.name }}</strong></div>
-        <div style="font-size:0.85rem; color: var(--text-secondary);">{{ c.source }}</div>
-        <div style="font-size:0.8rem; color: var(--text-muted);">男</div>
+        <div class="u-b46173c3">{{ c.source }}</div>
+        <div class="u-ced41b42">男</div>
         {% if c.description %}
         <div style="font-size:0.78rem; color: var(--text-secondary); margin-top:6px; line-height:1.5;
                     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
             {{ c.description }}
         </div>
         {% endif %}
-                <div style="font-size:0.7rem; color: var(--text-muted); margin-top:4px;">
+                <div class="u-3710da68">
             状态：
             {% if c.stage == 'champion' %}
             🏆 冠军
@@ -266,66 +263,54 @@
         </div>
     </div>
     {% else %}
-    <p style="color: var(--text-muted);">暂无男组候选</p>
+    <p class="u-bf4b6787">暂无男组候选</p>
     {% endfor %}
 </div>
 {% else %}
-<p style="color:#94a3b8;">暂无候选人</p>
+<p class="u-aa3ee35a">暂无候选人</p>
 {% endif %}
 
 <!-- ============================================================ -->
 <!-- 阶段入口导航 -->
 <!-- ============================================================ -->
-<div style="margin:30px 0; padding:20px; background: var(--bg-card); border-radius:12px; border:1px solid var(--border-color);">
-    <h3 style="margin-top:0;">赛事入口</h3>
+<div class="u-628e0de8">
+    <h3 class="u-291b7bbb">赛事入口</h3>
         <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
 
         {% if phase == 'qualifying' %}
-        <a class="btn-primary" href="{{ url_for('public.qualifying_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">女组海选投票</a>
-        <a class="btn-primary" href="{{ url_for('public.qualifying_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">男组海选投票</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.qualifying_vote_female', contest_id=contest.id) }}">女组海选投票</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.qualifying_vote_male', contest_id=contest.id) }}">男组海选投票</a>
 
         {% elif phase == 'qualifying_result' %}
-        <a class="btn-primary" href="{{ url_for('public.qualifying_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">查看女组结果</a>
-        <a class="btn-primary" href="{{ url_for('public.qualifying_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">查看男组结果</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.qualifying_vote_female', contest_id=contest.id) }}">查看女组结果</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.qualifying_vote_male', contest_id=contest.id) }}">查看男组结果</a>
 
         {% elif phase in ['group_round_1', 'group_round_2', 'group_round_3'] %}
-        <a class="btn-primary" href="{{ url_for('public.group_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">女组小组赛投票</a>
-        <a class="btn-primary" href="{{ url_for('public.group_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">男组小组赛投票</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.group_vote_female', contest_id=contest.id) }}">女组小组赛投票</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.group_vote_male', contest_id=contest.id) }}">男组小组赛投票</a>
 
         {% elif phase in ['group_round_1_result', 'group_round_2_result', 'group_round_3_result'] %}
-        <a class="btn-primary" href="{{ url_for('public.group_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">查看女组本轮结果</a>
-        <a class="btn-primary" href="{{ url_for('public.group_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">查看男组本轮结果</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.group_vote_female', contest_id=contest.id) }}">查看女组本轮结果</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.group_vote_male', contest_id=contest.id) }}">查看男组本轮结果</a>
 
         {% elif phase in ['knockout_16', 'knockout_8', 'knockout_4', 'final_vote'] %}
-        <a class="btn-primary" href="{{ url_for('public.knockout_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">女组淘汰赛投票</a>
-        <a class="btn-primary" href="{{ url_for('public.knockout_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">男组淘汰赛投票</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.knockout_vote_female', contest_id=contest.id) }}">女组淘汰赛投票</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.knockout_vote_male', contest_id=contest.id) }}">男组淘汰赛投票</a>
 
         {% elif phase in ['knockout_16_result', 'knockout_8_result', 'knockout_4_result', 'final_result'] %}
-        <a class="btn-primary" href="{{ url_for('public.knockout_vote_female', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#e91e63; color:white; border-radius:40px;">查看女组本轮结果</a>
-        <a class="btn-primary" href="{{ url_for('public.knockout_vote_male', contest_id=contest.id) }}"
-           style="text-decoration:none; padding:8px 24px; background:#2196f3; color:white; border-radius:40px;">查看男组本轮结果</a>
+        <a class="btn-primary u-1946c04b" href="{{ url_for('public.knockout_vote_female', contest_id=contest.id) }}">查看女组本轮结果</a>
+        <a class="btn-primary u-6e73dde0" href="{{ url_for('public.knockout_vote_male', contest_id=contest.id) }}">查看男组本轮结果</a>
 
         {% elif phase == 'not_started' %}
-        <span style="color:#64748b; padding:8px 0;">
+        <span class="u-2171b88c">
             赛事尚未开始（{{ contest.open_at.strftime('%Y年%m月%d日 %H:%M') if contest.open_at else '开放时间未设置' }} 开放）
         </span>
 
         {% elif phase == 'closed' %}
-        <span style="color:#64748b; padding:8px 0;">赛事已结束，查看下方最终排名</span>
+        <span class="u-2171b88c">赛事已结束，查看下方最终排名</span>
 
         {% else %}
-        <span style="color:#94a3b8; padding:8px 0;">当前阶段暂无可操作入口</span>
+        <span class="u-317cccce">当前阶段暂无可操作入口</span>
         {% endif %}
     </div>
 </div>
@@ -335,16 +320,16 @@
 <!-- ============================================================ -->
 {% if phase == 'final_result' or phase == 'closed' %}
 {% if contest.config and contest.config.female_ranking %}
-<h3 style="margin-top:30px;">最终排名</h3>
+<h3 class="u-d5800fe5">最终排名</h3>
 <h4>女组</h4>
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for item in contest.config.female_ranking[:8] %}
     <div style="background: var(--bg-card); border-radius:10px; padding:10px; text-align:center; border:1px solid var(--border-color); {% if loop.index == 1 %}border-color:gold; border-width:2px;{% endif %}">
-        <div style="font-weight:700;">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{%
+        <div class="u-758a8873">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{%
             endif %} {{ loop.index }}. {{ item.name }}
         </div>
-        <div style="font-size:0.85rem; color:#64748b;">{{ item.source }}</div>
-        <div style="font-size:0.8rem; color:#4caf50;">票数：{{ item.votes }}</div>
+        <div class="u-272e04d0">{{ item.source }}</div>
+        <div class="u-95c861fa">票数：{{ item.votes }}</div>
     </div>
     {% endfor %}
 </div>
@@ -355,11 +340,11 @@
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for item in contest.config.male_ranking[:8] %}
     <div style="background:#f8fafc; border-radius:10px; padding:10px; text-align:center; border:1px solid #e2e8f0; {% if loop.index == 1 %}border-color:gold; border-width:2px;{% endif %}">
-        <div style="font-weight:700;">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{%
+        <div class="u-758a8873">{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{%
             endif %} {{ loop.index }}. {{ item.name }}
         </div>
-        <div style="font-size:0.85rem; color:#64748b;">{{ item.source }}</div>
-        <div style="font-size:0.8rem; color:#4caf50;">票数：{{ item.votes }}</div>
+        <div class="u-272e04d0">{{ item.source }}</div>
+        <div class="u-95c861fa">票数：{{ item.votes }}</div>
     </div>
     {% endfor %}
 </div>
@@ -369,37 +354,37 @@
 <!-- ============================================================ -->
 <!-- AI 解说与预测 -->
 <!-- ============================================================ -->
-<div style="margin:30px 0; padding:20px; background: var(--bg-code); border-radius:12px; border:1px solid var(--border-color);">
+<div class="u-fdfc172a">
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-        <h3 style="margin:0; color: var(--text-primary);">AI 赛事中心</h3>
-        <span style="color: var(--text-muted); font-size:0.7rem; background: var(--bg-card); padding:2px 10px; border-radius:20px; border:1px solid var(--border-color);">Powered by AI</span>
+        <h3 class="u-be04bbbd">AI 赛事中心</h3>
+        <span class="u-265d0d3b">Powered by AI</span>
     </div>
 
     <!-- 实时战报 -->
-    <div id="ai-commentary" style="background: var(--bg-card); border-radius:10px; padding:16px; margin-bottom:12px; border-left:3px solid #4a90d9; min-height:60px;">
+    <div id="ai-commentary" class="u-8c5a1174">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span style="font-weight:600; color: var(--text-primary); font-size:0.9rem;">实时战报</span>
-            <span id="commentary-time" style="color: var(--text-muted); font-size:0.7rem;"></span>
+            <span class="u-25f7ee22">实时战报</span>
+            <span id="commentary-time" class="u-64800aad"></span>
         </div>
-        <div id="commentary-content" style="color: var(--text-secondary); line-height:1.8; font-size:0.95rem; white-space: pre-wrap;">
-            <span style="color: var(--text-muted);">加载中...</span>
+        <div id="commentary-content" class="u-b5763f6d">
+            <span class="u-bf4b6787">加载中...</span>
         </div>
     </div>
 
     <!-- 预测区域 -->
     <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-        <button id="predict-btn" style="padding:8px 20px; background:#1e2a3a; color:white; border:none; border-radius:40px; cursor:pointer; font-size:0.9rem;">
+        <button id="predict-btn" class="u-bde3085e">
             AI 预测
         </button>
-        <button id="refresh-commentary-btn" style="background:transparent; border:1px solid var(--border-color); padding:6px 16px; border-radius:40px; cursor:pointer; color: var(--text-secondary); font-size:0.8rem;">
+        <button id="refresh-commentary-btn" class="u-f69f3c2f">
             刷新战报
         </button>
-        <span id="predict-status" style="color: var(--text-muted); font-size:0.8rem;"></span>
+        <span id="predict-status" class="u-52033f04"></span>
     </div>
 
     <div id="prediction-result" style="margin-top:12px; display:none; background: var(--bg-card); border-radius:10px; padding:16px; border:1px solid var(--border-color);">
-        <div style="font-weight:600; color: var(--text-primary); font-size:0.9rem; margin-bottom:6px;">AI 预测结果</div>
-        <div id="prediction-content" style="color: var(--text-secondary); line-height:1.8; font-size:0.9rem; white-space:pre-wrap;"></div>
+        <div class="u-3a2b9521">AI 预测结果</div>
+        <div id="prediction-content" class="u-4231ea6c"></div>
     </div>
 </div>
 
@@ -485,10 +470,10 @@
 <!-- 底部时间提示 -->
 <!-- ============================================================ -->
 {% if phase not in ['closed', 'not_started'] %}
-<div style="margin-top:40px; padding:12px 16px; background: var(--bg-card); border-radius:8px; text-align:center; border:1px solid var(--border-color);">
-        <span style="color: var(--text-secondary);">
+<div class="u-8f30b62e">
+        <span class="u-0f6b1ef9">
             当前阶段截止时间：
-            <strong style="color: var(--text-primary);">
+            <strong class="u-29dc4caf">
                 {% if phase == 'nomination' %}
                     {{ nomination_end.strftime('%Y年%m月%d日 %H:%M') if nomination_end else '未设置' }}
                 {% elif phase == 'review' %}
@@ -531,7 +516,7 @@
 </div>
 {% endif %}
 
-<p style="margin-top:20px;"><a href="{{ url_for('public.contest_center') }}">← 返回赛事中心</a></p>
+<p class="u-9eb125f5"><a href="{{ url_for('public.contest_center') }}">← 返回赛事中心</a></p>
 
 <script>
     function updateCurrentTime() {

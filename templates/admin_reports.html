@@ -18,14 +18,14 @@
 <table class="admin-table">
     <thead>
     <tr>
-        <th style="width:60px;">ID</th>
-        <th style="width:110px;">时间</th>
-        <th style="width:90px;">类型</th>
+        <th class="u-2b12d862">ID</th>
+        <th class="u-80ffd295">时间</th>
+        <th class="u-9bec53c9">类型</th>
         <th>被举报内容</th>
-        <th style="width:120px;">原因</th>
-        <th style="width:100px;">举报人</th>
-        <th style="width:90px;">状态</th>
-        <th style="width:210px;">操作</th>
+        <th class="u-9fe45cd8">原因</th>
+        <th class="u-af1d1644">举报人</th>
+        <th class="u-9bec53c9">状态</th>
+        <th class="u-95c952a4">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -61,7 +61,7 @@
 </table>
 
 {% if total_pages > 1 %}
-<nav class="forum-pager" style="margin-top:16px;">
+<nav class="forum-pager u-8a359a76">
     {% if page > 1 %}
     <a class="btn btn-ghost" href="{{ url_for('admin.admin_reports', status=status, page=page - 1) }}">← 上一页</a>
     {% endif %}

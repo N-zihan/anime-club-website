@@ -110,11 +110,12 @@ mkdocs build            # 输出到 site/
 
 | 指标 | 数值 | 备注 |
 |---|---|---|
-| `app/public.py` | **595 行**（原约 2000） | 已拆出 `public_contest.py`（1051）、`public_board.py`（351）、`public_misc.py`（112）、`public_bp.py` |
+| `app/public.py` | **595 行**（原约 2000） | 已拆出 `public_contest.py`（1051）、`public_board.py`（351）、`public_misc.py`（约 180）、`public_bp.py` |
 | `templates/base.html` | 约 730 行（原 1127） | 已把看板娘 JS、内联样式外置 |
-| `static/css/style.css` | 约 3500 行 | 单文件，按注释分节；暂不做构建流程，够用 |
-| 测试覆盖率 | **71%**（原 66%） | `python -m pytest --cov=app --cov-report=term-missing` |
-| 低覆盖模块 | `changelog` 49%、`public_contest` 55%、`public` 56%、`admin` 61%、`throttle` 67% | 高覆盖：`utils` 82%、`bangumi` 90%、`models` 93% |
+| 模板内联样式 | **817 → 198 处**（v4.33.1） | 620 处静态样式提取成 `style.css` 的 `.u-*` 工具类；剩下 122 处含 `display`（JS 要读初始值，故意保留）、16 处是动态 Jinja 值 |
+| `static/css/style.css` | 约 4600 行（含 310 个自动提取的 `.u-*` 工具类） | 单文件，按注释分节；暂不做构建流程，够用 |
+| 测试覆盖率 | **71%**（原 66%），CI 门槛 **70%** | `python -m pytest --cov=app --cov-report=term-missing` |
+| 低覆盖模块 | `changelog` 49%、`public_contest` 55%、`public` 56%、`admin` 61%、`throttle` 68%、`user` 69% | 高覆盖：`utils` 82%、`bangumi` 90%、`models` 93% |
 
 ### 已还的债
 
@@ -142,6 +143,28 @@ mkdocs build            # 输出到 site/
   2. 生产改动前先备份（Supabase Dashboard 导出或 `pg_dump`）；
   3. 只加不删；确需删列/改类型时，手写 SQL 并记录到 [运维手册](operations.md)；
   4. 先在生产库跑 `init.py`，再推代码（反了必 500）。
+
+### 第七批已还（v4.33.0 / v4.33.1）
+
+- **周报只发了一部分人（真 Bug 修复）**：旧实现给每个收件人单独新建 SMTP 连接，100+ 人会在
+  Vercel 函数 60 秒上限内被截断。现在所有邮件共用一条 SMTP 连接（`auth.send_html_batch`），
+  单次最多 200 封 / 45 秒；发送结果记进新表 `digest_sends`（user_id + 当周周一），
+  同一周只发一次；`vercel.json` 增加 01:30 UTC 的 `/api/cron/weekly-digest-resume` 自动续发。
+- **安全响应头**：`X-Content-Type-Options` / `X-Frame-Options` / `Referrer-Policy` /
+  `Permissions-Policy` 统一在 `after_request` 注入（CSP 仍由模板 meta 提供）。
+- **PWA 图标修复**：`icon-192.png` / `icon-512.png` 实际是 **JPEG 改名**、且都是 926×926；
+  重新生成真正的 PNG 192/512 + `icon-512-maskable.png`，manifest 按 `any` / `maskable` 分开声明。
+- **健康检查 + 每周巡检**：`/api/health`（版本 + 数据库连通性）+ `patrol.yml`
+  （每周一检查 health、公开页、robots、sitemap、分享图；域名走仓库变量 `SITE_URL`，不写进仓库）。
+- **覆盖率门槛**：CI 的 pytest 加 `--cov-fail-under=70`（当前 71%）。
+- **数据库迁移评估**：结论「暂不引入 Alembic」，见上一节，含改表时的 4 条约定。
+- **内联样式清理**：817 → 198；620 处静态样式自动提取为 `style.css` 的 `.u-*` 工具类
+  （选择器重复 4 次保持接近内联的优先级，不写 `!important`，JS 行内样式仍可覆盖）。
+  清理后做了**computed style 前后对比**：22 个页面 / 3068 个元素，只有 7 个元素差异，
+  且都是异步内容加载（AI 战报文字长度）或动画（实时红点 box-shadow）导致的假差异。
+  剩下 122 处含 `display` 的内联样式是**故意保留**的：多处 JS 用 `el.style.display === 'none'`
+  判断初始状态，挪进 class 会破坏折叠逻辑；16 处是 `{{ ... }}` 动态值。
+- 全量 pytest **711 passed**。
 
 ### 第六批已还（v4.29.0）
 

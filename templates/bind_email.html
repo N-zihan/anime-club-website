@@ -2,40 +2,36 @@
 {% block title %}绑定邮箱{% endblock %}
 {% block content %}
 
-<div style="max-width:480px; margin:0 auto; padding:20px 0;">
+<div class="u-b743492a">
 
-    <div style="background: var(--bg-card); padding:32px 28px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid var(--border-color);">
-        <h2 style="margin-top:0; margin-bottom:8px; text-align:center; color: var(--text-primary);">绑定邮箱</h2>
+    <div class="u-ea57f62b">
+        <h2 class="u-83413b95">绑定邮箱</h2>
 
         {% if user.email %}
-        <div style="background: var(--bg-code); padding:12px 16px; border-radius:8px; margin-bottom:20px;">
-            <p style="margin:0; font-size:0.85rem; color: var(--text-secondary);">当前已绑定</p>
-            <p style="margin:4px 0 0 0; color: var(--text-primary); font-weight:600;">{{ user.email }}</p>
+        <div class="u-4f23706f">
+            <p class="u-8918ff64">当前已绑定</p>
+            <p class="u-66d24fe1">{{ user.email }}</p>
         </div>
         {% endif %}
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
-            <input type="email" id="bindEmailInput" placeholder="请输入你的邮箱" required
-                   style="flex:1; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:15px; min-width:200px; box-sizing:border-box; background: var(--bg-input); color: var(--text-primary);">
-            <button type="button" id="sendEmailCodeBtn"
-                    style="padding:12px 18px; background:#1e2a3a; color:white; border:none; border-radius:8px; cursor:pointer; font-size:14px; white-space:nowrap;">
+            <input type="email" id="bindEmailInput" placeholder="请输入你的邮箱" required class="u-03f06e8c">
+            <button type="button" id="sendEmailCodeBtn" class="u-ee81c54f">
                 发送验证码
             </button>
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
-            <input type="text" id="bindEmailCode" placeholder="6位验证码" required
-                   style="flex:1; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:15px; min-width:120px; box-sizing:border-box; background: var(--bg-input); color: var(--text-primary);">
-            <button type="button" id="verifyEmailCodeBtn"
-                    style="padding:12px 18px; background:#f39c12; color:white; border:none; border-radius:8px; cursor:pointer; font-size:14px; white-space:nowrap;">
+            <input type="text" id="bindEmailCode" placeholder="6位验证码" required class="u-1d93019d">
+            <button type="button" id="verifyEmailCodeBtn" class="u-84e214c9">
                 确认绑定
             </button>
         </div>
 
-        <div id="emailBindMessage" style="font-size:0.9rem; min-height:20px;"></div>
+        <div id="emailBindMessage" class="u-41d59dc9"></div>
 
-        <p style="margin-top:16px; text-align:center; font-size:14px;">
-            <a href="{{ url_for('user.profile') }}" style="color: var(--text-muted);">← 返回个人设置</a>
+        <p class="u-efbce96b">
+            <a href="{{ url_for('user.profile') }}" class="u-bf4b6787">← 返回个人设置</a>
         </p>
     </div>
 

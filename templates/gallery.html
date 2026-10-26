@@ -65,7 +65,7 @@
 {% for activity in activities %}
 {% if activity.photos %}
 <div class="gallery-group">
-    <h2>{{ activity.title }} <span style="font-size:0.9rem; color: var(--text-muted);">（{{ activity.date }}）</span></h2>
+    <h2>{{ activity.title }} <span class="u-ed38d3dd">（{{ activity.date }}）</span></h2>
     <div class="gallery-grid">
         {% for photo in activity.photos %}
         <div class="gallery-item">

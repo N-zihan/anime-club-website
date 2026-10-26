@@ -46,6 +46,7 @@
 | 新闻相关 API | 来源列表、搜索、图片代理等 |
 | `public.settings` | 站点设置（主题/语言是本机偏好，未登录也能调） |
 | `public.manifest` / `robots` / `sitemap` / `service_worker` | PWA / 抓取入口（robots、sitemap 按请求域名动态生成） |
+| `public.health` | 健康检查 `/api/health`（版本 + 数据库连通性，给监控/巡检用，不含敏感信息） |
 
 其余（`/home`、`/board`、`/members`、`/about`、`/contest_center`、`/admin/*`…）全部要求登录。
 

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}访问被拒绝{% endblock %}
 {% block content %}
-<div style="text-align: center; padding: 80px 20px;">
-    <h1 style="font-size: 6rem; margin: 0; color: #f39c12;">403</h1>
-    <h2 style="color: var(--text-secondary); margin-top: 0;">你没有权限访问此页面</h2>
-    <p style="color: var(--text-muted); max-width: 500px; margin: 20px auto;">
+<div class="u-33941f5b">
+    <h1 class="u-4cf95926">403</h1>
+    <h2 class="u-44795db5">你没有权限访问此页面</h2>
+    <p class="u-4975d318">
         你需要登录或拥有相应权限才能查看该内容。
     </p>
     <a class="btn-primary" href="{{ url_for('public.index') }}"

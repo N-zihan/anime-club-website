@@ -10,12 +10,12 @@
 <table class="admin-table">
     <thead>
     <tr>
-        <th style="width:50px;">ID</th>
+        <th class="u-bd5d2bd0">ID</th>
         <th>帖子内容</th>
-        <th style="width:100px;">作者</th>
-        <th style="width:160px;">时间</th>
-        <th style="width:80px; text-align:center;">回复数</th>
-        <th style="width:150px; text-align:center;">操作</th>
+        <th class="u-af1d1644">作者</th>
+        <th class="u-7cbe5ecf">时间</th>
+        <th class="u-5706c5f2">回复数</th>
+        <th class="u-6ec123bd">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -25,10 +25,9 @@
         <td>{{ msg.content[:50] }}{% if msg.content|length > 50 %}...{% endif %}</td>
         <td>{{ msg.user.username if msg.user else msg.nickname }}</td>
         <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td style="text-align:center;">{{ msg.replies.count() }}</td>
-        <td style="text-align:center;">
-            <button class="toggle-reply-btn" data-msg-id="{{ msg.id }}"
-                    style="background:none; border:none; cursor:pointer; color:#4a90d9; font-size:0.85rem;">
+        <td class="u-dac4fe6c">{{ msg.replies.count() }}</td>
+        <td class="u-dac4fe6c">
+            <button class="toggle-reply-btn u-37b80a3a" data-msg-id="{{ msg.id }}">
                 查看回复
             </button>
             <form method="POST" action="{{ url_for('admin.admin_delete_message', message_id=msg.id) }}"
@@ -40,25 +39,24 @@
     </tr>
     <!-- 回复行（默认隐藏） -->
     <tr class="reply-row" data-msg-id="{{ msg.id }}" style="display:none; background:#f9fafb;">
-        <td colspan="6" style="padding:0;">
-            <div style="padding:12px 20px;">
+        <td colspan="6" class="u-a2e94d72">
+            <div class="u-52615a52">
                 {% if msg.replies.count() %}
                 {% for reply in msg.replies %}
                 <div style="display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #edf2f7; font-size:0.9rem;">
-                    <span style="color:#94a3b8; font-size:0.75rem; min-width:30px;">#{{ reply.id }}</span>
-                    <span style="font-weight:600; min-width:80px;">{{ reply.user.username if reply.user else reply.nickname }}</span>
-                    <span style="color:#94a3b8; font-size:0.75rem; min-width:140px;">{{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                    <span style="flex:1; color:#334155;">{{ reply.content }}</span>
+                    <span class="u-c2e64951">#{{ reply.id }}</span>
+                    <span class="u-856bd833">{{ reply.user.username if reply.user else reply.nickname }}</span>
+                    <span class="u-d359ed0a">{{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span class="u-b8ab7306">{{ reply.content }}</span>
                     <form method="POST" action="{{ url_for('admin.admin_delete_reply', reply_id=reply.id) }}"
                           style="display:inline;"
                           onsubmit="return confirm('确定删除该回复吗？')">
-                        <button type="submit" class="btn-delete"
-                                style="font-size:0.8rem; white-space:nowrap;">删除</button>
+                        <button type="submit" class="btn-delete u-5e1aa2ee">删除</button>
                     </form>
                 </div>
                 {% endfor %}
                 {% else %}
-                <p style="color:#94a3b8; font-size:0.85rem; margin:0;">暂无回复</p>
+                <p class="u-1b405bbf">暂无回复</p>
                 {% endif %}
             </div>
         </td>
@@ -67,7 +65,7 @@
     </tbody>
 </table>
 {% else %}
-<p style="text-align:center; color:#94a3b8; padding:40px 0;">暂无留言</p>
+<p class="u-e1978eed">暂无留言</p>
 {% endif %}
 
 <script>

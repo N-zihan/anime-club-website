@@ -12,7 +12,7 @@
                      style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}var(--border-color){% endif %};">
             </div>
             <div class="member-info">
-                <h3 style="color: var(--text-primary);">
+                <h3 class="u-29dc4caf">
                     {{ user.username }}
                     {% if user.is_owner %}<span class="member-badge owner">站长</span>
                     {% elif user.is_staff %}<span class="member-badge staff">运营</span>{% endif %}

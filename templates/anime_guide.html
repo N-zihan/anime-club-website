@@ -3,25 +3,22 @@
 {% block content %}
 
 <h2>番剧百科</h2>
-<p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">
+<p class="u-3e1f07e8">
     数据来源：Bangumi 番组计划
 </p>
 
 <!-- 搜索栏 + 排序 -->
 <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; align-items:center;">
     <input type="text" id="searchInput" placeholder="搜索番剧..."
-           autocomplete="off"
-           style="flex:1; min-width:220px; padding:10px 16px; border:1px solid var(--border-color); border-radius:24px; font-size:0.95rem; background: var(--bg-input); color: var(--text-primary);">
-    <button type="button" id="searchBtn"
-            style="padding:10px 20px; background:#1e2a3a; color:#fff; border:none; border-radius:24px; cursor:pointer; font-size:0.9rem;">
+           autocomplete="off" class="u-94d47cc4">
+    <button type="button" id="searchBtn" class="u-6f5de2ed">
         搜索
     </button>
     <button type="button" id="clearBtn"
             style="display:none; padding:10px 20px; background: var(--bg-code); color: var(--text-primary); border:1px solid var(--border-color); border-radius:24px; cursor:pointer; font-size:0.9rem;">
         返回
     </button>
-    <select id="sortSelect"
-            style="padding:10px 14px; border:1px solid var(--border-color); border-radius:24px; background: var(--bg-input); color: var(--text-primary); font-size:0.9rem; cursor:pointer;">
+    <select id="sortSelect" class="u-646d1d38">
         <option value="rank">按排名</option>
         <option value="heat">按热度</option>
         <option value="score">按评分</option>
@@ -49,9 +46,8 @@
 <div id="animeModal"
      style="display:none; position:fixed; inset:0; background:rgba(8,16,30,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:24px 16px; overflow:hidden;"
      onclick="if(event.target===this) closeAnimeModal()">
-    <div style="background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border:1px solid var(--glass-border); border-radius:18px; max-width:680px; width:100%; max-height:85vh; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.35); color: var(--text-primary);">
-        <button onclick="closeAnimeModal()"
-                style="position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.6rem; color: var(--text-muted); cursor:pointer; line-height:1; z-index:1;">×</button>
+    <div class="u-96f9f86a">
+        <button onclick="closeAnimeModal()" class="u-60e748b7">×</button>
         <div id="modalContent"></div>
     </div>
 </div>
@@ -59,9 +55,8 @@
 <div id="characterModal"
      style="display:none; position:fixed; inset:0; background:rgba(8,16,30,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:100000; align-items:center; justify-content:center; padding:24px 16px; overflow:hidden;"
      onclick="if(event.target===this) closeCharacterModal()">
-    <div style="background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border:1px solid var(--glass-border); border-radius:18px; max-width:520px; width:100%; max-height:80vh; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.4); color: var(--text-primary);">
-        <button onclick="closeCharacterModal()"
-                style="position:absolute; top:14px; right:18px; background:none; border:none; font-size:1.6rem; color: var(--text-muted); cursor:pointer; line-height:1; z-index:1;">×</button>
+    <div class="u-399e3c8b">
+        <button onclick="closeCharacterModal()" class="u-60e748b7">×</button>
         <div id="characterModalContent"></div>
     </div>
 </div>

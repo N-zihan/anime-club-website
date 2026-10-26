@@ -172,7 +172,7 @@ Vercel 导入仓库即可（仓库自带 `vercel.json`），环境变量照着 `
 ## 项目状态
 
 - 已部署生产环境（站点仅社员可访问）
-- 后端测试 **710 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
+- 后端测试 **711 passed**；端到端 Playwright **71 passed / 4 skipped**（75 条用例，按环境跳过 4 条）
 - CI 全绿：pytest + flake8、Playwright、Pylint、CodeQL、Docs（文档站自动部署）
 - 文档站：<https://n-zihan.github.io/anime-club-website/>
 

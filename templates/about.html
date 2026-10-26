@@ -24,7 +24,7 @@
 </div>
 
 <!-- ===== 我们在做什么 ===== -->
-<h2 style="margin-top:40px;">我们在做什么</h2>
+<h2 class="u-9f7cb1fb">我们在做什么</h2>
 <div class="about-highlights">
     <div class="about-highlight">
         <div class="about-highlight-icon">📺</div>
@@ -44,17 +44,15 @@
 </div>
 
 <!-- ===== 站长 ===== -->
-<h2 style="margin-top:50px;">站长</h2>
+<h2 class="u-a20f42a9">站长</h2>
 <div style="display: flex; justify-content: center; margin-bottom: 30px;">
     {% if owner %}
-    <div class="member-card"
-         style="border: 2px solid gold; box-shadow: 0 0 20px rgba(255,215,0,0.2); max-width: 250px; width: 100%;">
+    <div class="member-card u-2ba4dc00">
         <div class="member-avatar">
-            <img alt="{{ owner.username }}" src="{{ avatar_url(owner) }}"
-                 style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid gold;">
+            <img alt="{{ owner.username }}" src="{{ avatar_url(owner) }}" class="u-efc48030">
         </div>
         <div class="member-info">
-            <h3 style="color: var(--text-primary);">{{ owner.username }}</h3>
+            <h3 class="u-29dc4caf">{{ owner.username }}</h3>
             <p class="member-time">加入时间：{{ owner.registered_at.strftime('%Y-%m-%d') }}</p>
         </div>
     </div>
@@ -64,7 +62,7 @@
 </div>
 
 <!-- ===== 运营团队（包含站长，带特殊标记） ===== -->
-<h2 style="margin-top:40px;">运营团队</h2>
+<h2 class="u-9f7cb1fb">运营团队</h2>
 <div class="members-grid">
     {% for member in staff %}
     <div class="member-card {% if member.is_owner %}owner-card{% endif %}">
@@ -73,7 +71,7 @@
                  style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if member.is_owner %}gold{% else %}#e2e8f0{% endif %};">
         </div>
         <div class="member-info">
-            <h3 style="color: var(--text-primary);">
+            <h3 class="u-29dc4caf">
                 {{ member.username }}
                 {% if member.is_owner %}{% endif %}
             </h3>
@@ -86,27 +84,27 @@
 </div>
 
 <!-- ===== 关于本站 ===== -->
-<h2 style="margin-top:50px;">关于本站</h2>
-<div style="border-radius:16px; padding:24px;">
+<h2 class="u-a20f42a9">关于本站</h2>
+<div class="u-642db70b">
     <p>
         <strong>{{ club_name }}官网</strong> 由 <strong>{{ owner.username if owner else '管理员' }}</strong> 独立开发并维护。
     </p>
-    <p style="margin-top:12px; color:#4a6a7a; font-size:0.95rem; line-height:1.8;">
+    <p class="u-e1baa796">
         <strong>技术栈</strong>：Python + Flask + SQLAlchemy + Supabase (PostgreSQL) + Vercel<br>
         <strong>功能模块</strong>：用户注册/登录 · 头像上传 · 社员论坛 · 番剧资源推荐 · 照片墙 · 社员名单 · 赛事中心 · 管理后台 · 萌战系统<br>
         <strong>特色玩法</strong>：萌王大赛<br>
         <strong>设计理念</strong>：简洁 · 二次元 · 轻量化
     </p>
-    <p style="margin-top:12px; color:#7f8c8d; font-size:0.9rem;">
+    <p class="u-d06ba311">
         网站始建于 2026 年 · 持续迭代中<br>
         如果你发现 Bug 或有功能建议，欢迎联系站长反馈！<br>
         联系方式：QQ：9625615
     </p>
 </div>
 <!-- ===== 网站发展史入口 ===== -->
-<h2 style="margin-top:50px;">网站发展史</h2>
-<div style="border-radius:16px; padding:24px; background: var(--bg-card); border:1px solid var(--border-color);">
-    <p style="margin:0 0 16px 0; color: var(--text-secondary); line-height:1.7;">
+<h2 class="u-a20f42a9">网站发展史</h2>
+<div class="u-fc6560a2">
+    <p class="u-b4763e22">
         这个网站从第一行代码到现在的每一次改动，都被完整记录了下来
     </p>
     <a href="{{ url_for('public.history') }}"

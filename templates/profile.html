@@ -2,21 +2,21 @@
 {% block title %}个人设置{% endblock %}
 {% block content %}
 
-<div style="max-width:600px; margin:0 auto; padding:20px 0;">
+<div class="u-9c60a8e8">
 
-    <h2 style="text-align:center; margin-bottom:24px; color: var(--text-primary);">个人设置</h2>
+    <h2 class="u-e3025f86">个人设置</h2>
 
     <div style="display:grid; gap:16px;">
 
         <!-- 头像 -->
-        <div style="background: var(--bg-card); padding:20px 24px; border-radius:12px; border:1px solid var(--border-color);">
-            <h4 style="margin-top:0; margin-bottom:12px; color: var(--text-primary);">头像</h4>
+        <div class="u-2b26f514">
+            <h4 class="u-b69b1dd1">头像</h4>
             <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-                <img src="{{ avatar_url(user) }}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--border-color);">
+                <img src="{{ avatar_url(user) }}" class="u-fbc8d650">
                 <form method="POST" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <input type="hidden" name="action" value="change_avatar">
-                    <input type="file" name="avatar" accept="image/*" required data-compress-upload style="font-size:14px; background: var(--bg-input); color: var(--text-primary); border:1px solid var(--border-color); border-radius:4px; padding:4px;">
-                    <button type="submit" style="padding:6px 16px; background:#1e2a3a; color:white; border:none; border-radius:6px; cursor:pointer;">上传</button>
+                    <input type="file" name="avatar" accept="image/*" required data-compress-upload class="u-2a0dff0c">
+                    <button type="submit" class="u-fd2e032c">上传</button>
                 </form>
                 <small class="compress-hint" style="display:none; color: var(--text-muted); margin-top:6px;"></small>
             </div>
@@ -24,49 +24,49 @@
         </div>
 
         <!-- 用户名 -->
-        <div style="background: var(--bg-card); padding:20px 24px; border-radius:12px; border:1px solid var(--border-color);">
-            <h4 style="margin-top:0; margin-bottom:8px; color: var(--text-primary);">用户名</h4>
-            <p style="margin:0 0 10px 0; color: var(--text-secondary);">当前：<strong style="color: var(--text-primary);">{{ user.username }}</strong></p>
+        <div class="u-2b26f514">
+            <h4 class="u-8edc1dc1">用户名</h4>
+            <p class="u-c2543868">当前：<strong class="u-29dc4caf">{{ user.username }}</strong></p>
             <form method="POST" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <input type="hidden" name="action" value="change_username">
-                <input type="text" name="new_username" placeholder="新用户名" required style="padding:10px; border:1px solid var(--border-color); border-radius:6px; font-size:14px; background: var(--bg-input); color: var(--text-primary);">
-                <button type="submit" style="padding:8px 18px; background:#1e2a3a; color:white; border:none; border-radius:6px; cursor:pointer;">修改</button>
+                <input type="text" name="new_username" placeholder="新用户名" required class="u-64873a55">
+                <button type="submit" class="u-5e1dbbe7">修改</button>
             </form>
         </div>
 
         <!-- 修改密码 -->
-        <div style="background: var(--bg-card); padding:20px 24px; border-radius:12px; border:1px solid var(--border-color);">
-            <h4 style="margin-top:0; margin-bottom:8px; color: var(--text-primary);">修改密码</h4>
+        <div class="u-2b26f514">
+            <h4 class="u-8edc1dc1">修改密码</h4>
             <a href="{{ url_for('user.change_password') }}"
                 style="display:inline-block; padding:8px 18px; background:#1e2a3a; color:white; border-radius:6px; text-decoration:none; font-size:0.9rem;">前往修改 →</a>
         </div>
 
         <!-- 绑定邮箱 -->
-        <div style="background: var(--bg-card); padding:20px 24px; border-radius:12px; border:1px solid var(--border-color);">
-            <h4 style="margin-top:0; margin-bottom:8px; color: var(--text-primary);">绑定邮箱</h4>
+        <div class="u-2b26f514">
+            <h4 class="u-8edc1dc1">绑定邮箱</h4>
             {% if user.email %}
-            <p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:14px;">
-                当前已绑定：<strong style="color: var(--text-primary);">{{ user.email }}</strong>
+            <p class="u-d2e8cdde">
+                当前已绑定：<strong class="u-29dc4caf">{{ user.email }}</strong>
             </p>
             <a href="{{ url_for('user.bind_email') }}"
                style="display:inline-block; padding:8px 18px; background:#1e2a3a; color:white; border-radius:6px; text-decoration:none; font-size:0.9rem;">更换邮箱 →</a>
             {% else %}
-            <p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:14px;">尚未绑定邮箱</p>
+            <p class="u-d2e8cdde">尚未绑定邮箱</p>
             <a href="{{ url_for('user.bind_email') }}"
                style="display:inline-block; padding:8px 18px; background:#f39c12; color:white; border-radius:6px; text-decoration:none; font-size:0.9rem;">前往绑定 →</a>
             {% endif %}
         </div>
 
         <!-- 退出登录 / 注销账号 -->
-        <div style="background: var(--alert-bg-danger); padding:20px 24px; border-radius:12px; border:1px solid var(--alert-border-danger);">
-            <h4 style="color: var(--alert-text-danger); margin-top:0; margin-bottom:12px;">账号操作</h4>
+        <div class="u-d4b170e9">
+            <h4 class="u-e17c0bfd">账号操作</h4>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                 <!-- logout 只接受 POST：GET 链接会被 405，同时防止被外站 <img src="/logout"> 踢下线 -->
                 <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline;">
-                    <button type="submit" style="padding:10px 24px; background:#64748b; color:white; border:none; border-radius:40px; cursor:pointer; font-weight:600;">退出登录</button>
+                    <button type="submit" class="u-88d78383">退出登录</button>
                 </form>
                 <form method="POST" action="{{ url_for('auth.delete_account') }}" style="display:inline;" onsubmit="return confirm('确定要注销账号吗？此操作不可恢复！');">
-                    <button type="submit" style="padding:10px 24px; background:#dc2626; color:white; border:none; border-radius:40px; cursor:pointer; font-weight:600;">注销账号</button>
+                    <button type="submit" class="u-509b5cb8">注销账号</button>
                 </form>
             </div>
         </div>

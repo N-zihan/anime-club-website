@@ -9,30 +9,28 @@
      data-gender="{{ gender }}" data-mode="qualifying" data-poll-ms="{{ vote_poll_seconds * 1000 }}">
     <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
 </div>
-<p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
-<p style="color: var(--text-secondary);">
+<p class="u-0f6b1ef9">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
+<p class="u-0f6b1ef9">
     每组 <strong>15票</strong>，最多投给 <strong>5个</strong> 角色，每个角色最多 <strong>3票</strong>
 </p>
-<p style="color: #94a3b8; font-size:0.85rem;">可以分多次投，每次提交都会累加保存。</p>
+<p class="u-f295e3eb">可以分多次投，每次提交都会累加保存。</p>
 
 <form id="voteForm" method="POST" action="{{ url_for('public.qualifying_vote_submit', contest_id=contest.id) }}">
     <input name="gender" type="hidden" value="{{ gender }}">
     <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:16px; margin:20px 0;">
         {% for c in candidates %}
-        <div class="candidate-card" data-candidate-id="{{ c.id }}"
-            style="background: var(--bg-card); border-radius:12px; padding:16px; text-align:center; border:1px solid var(--border-color);">
+        <div class="candidate-card u-bbdbe114" data-candidate-id="{{ c.id }}">
             {% if c.image_url %}
-            <img alt="{{ c.name }}" src="{{ c.image_url }}"
-                 style="max-width:80px; max-height:80px; width:auto; height:auto; border-radius:8px; margin-bottom:8px;">
+            <img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-7de478cc">
             {% endif %}
             <div>
-                <strong style="color: var(--text-primary);">{{ c.name }}</strong>
-                {% if c.banned %}<span style="color:#e11d48;font-weight:bold;margin-left:6px;">禁赛</span>{% endif %}
+                <strong class="u-29dc4caf">{{ c.name }}</strong>
+                {% if c.banned %}<span class="u-93680cdc">禁赛</span>{% endif %}
             </div>
-            <div style="font-size:0.85rem; color: var(--text-secondary);">{{ c.source }}</div>
+            <div class="u-b46173c3">{{ c.source }}</div>
 
             <!-- 总票数 -->
-            <div style="font-size:0.8rem; color:#4caf50; margin-top:6px; font-weight:600;">
+            <div class="u-7f6bb7f2">
                 总票数：<span class="total-votes" data-candidate-id="{{ c.id }}">{{ vote_totals.get(c.id, 0) }}</span>
             </div>
             {% set total_all = vote_totals.values() | sum %}
@@ -43,16 +41,14 @@
             <div class="vote-share-pct" data-candidate-id="{{ c.id }}">{{ pct }}%</div>
 
             {% if c.banned %}
-            <div style="font-size:0.78rem; color:#e11d48; margin-top:10px; font-weight:600;">🚫 已禁赛，无法投票</div>
+            <div class="u-df185211">🚫 已禁赛，无法投票</div>
             {% else %}
             <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px;">
-                <button class="vote-btn" data-action="decrease"
-                        style="background: var(--bg-code); border:1px solid var(--border-color); width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:1.2rem; color: var(--text-primary);" type="button">−</button>
-                <span class="vote-count" style="font-size:1.2rem; font-weight:600; width:30px; text-align:center; color: var(--text-primary);">0</span>
-                <button class="vote-btn" data-action="increase"
-                        style="background:#1e2a3a; color:white; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:1.2rem;" type="button">+</button>
+                <button class="vote-btn u-8e9fcfa8" data-action="decrease" type="button">−</button>
+                <span class="vote-count u-77f68d0c">0</span>
+                <button class="vote-btn u-ccdcee10" data-action="increase" type="button">+</button>
             </div>
-            <div style="font-size:0.7rem; color: var(--text-muted); margin-top:4px;">本次投几票（最多3）</div>
+            <div class="u-3710da68">本次投几票（最多3）</div>
             <input class="vote-input" name="vote_{{ c.id }}" type="hidden" value="0">
             {% endif %}
         </div>
@@ -60,15 +56,14 @@
     </div>
 
     <div style="display:flex; gap:24px; flex-wrap:wrap; background: var(--bg-card); padding:16px 20px; border-radius:12px; margin-top:10px; border:1px solid var(--border-color);">
-        <span style="color: var(--text-primary);">本次：<strong id="usedCandidates">0</strong> 个角色 / <strong id="usedVotes">0</strong> 票</span>
-        <span style="color: var(--text-muted);">|</span>
-        <span style="color: var(--text-secondary); font-size:0.9rem;">历史已投 {{ existing_votes.values()|sum }} 票</span>
+        <span class="u-29dc4caf">本次：<strong id="usedCandidates">0</strong> 个角色 / <strong id="usedVotes">0</strong> 票</span>
+        <span class="u-bf4b6787">|</span>
+        <span class="u-a2a2c865">历史已投 {{ existing_votes.values()|sum }} 票</span>
     </div>
 
     <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
-        <button class="btn-primary" id="submitBtn" style="padding:12px 40px;" type="submit">确认投票</button>
-        <a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}"
-           style="padding:12px 24px; background: var(--bg-code); border-radius:40px; text-decoration:none; color: var(--text-primary);">取消</a>
+        <button class="btn-primary u-338c761c" id="submitBtn" type="submit">确认投票</button>
+        <a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}" class="u-849202cc">取消</a>
     </div>
 </form>
 
@@ -237,8 +232,8 @@
 
 {% elif phase == 'qualifying_result' %}
 <h3>海选结果公示</h3>
-<p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
-<p style="color: var(--text-secondary);">以下为海选阶段票数前32名的角色（标有禁赛的角色不参与晋级），公示期结束后将进入小组赛。</p>
+<p class="u-0f6b1ef9">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
+<p class="u-0f6b1ef9">以下为海选阶段票数前32名的角色（标有禁赛的角色不参与晋级），公示期结束后将进入小组赛。</p>
 
 {% if gender == 'female' %}
 {% set results = contest.config.female_result if contest.config else [] %}
@@ -249,28 +244,28 @@
 {% if results %}
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:14px; margin-bottom:20px;">
     {% for item in results %}
-    <div style="background: var(--bg-card); border-radius:10px; padding:12px; text-align:center; border:1px solid var(--border-color);">
-        <div style="font-weight:700; font-size:1.1rem; color: var(--text-primary);">
+    <div class="u-e7ef3a77">
+        <div class="u-66d01494">
             {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
             {{ loop.index }}. {{ item.name }}
         </div>
         {% set rc = candidates|selectattr('id', 'equalto', item.id)|first %}
         {% if rc and rc.banned %}
-        <div style="font-size:0.78rem; color:#e11d48; font-weight:700; margin-top:2px;">🚫 已禁赛，不参与晋级</div>
+        <div class="u-32072d70">🚫 已禁赛，不参与晋级</div>
         {% endif %}
         {% if item.image_url %}
-        <img src="{{ item.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:8px; margin:6px 0;">
+        <img src="{{ item.image_url }}" class="u-b16d8a60">
         {% endif %}
-        <div style="font-size:0.85rem; color: var(--text-secondary);">{{ item.source }}</div>
-        <div style="font-size:0.9rem; color:#4caf50; font-weight:600;">票数：{{ item.votes }}</div>
+        <div class="u-b46173c3">{{ item.source }}</div>
+        <div class="u-d240238f">票数：{{ item.votes }}</div>
     </div>
     {% endfor %}
 </div>
 {% else %}
-<p style="color: var(--text-muted);">暂无结果数据</p>
+<p class="u-bf4b6787">暂无结果数据</p>
 {% endif %}
 
-<hr style="border-color: var(--border-color); margin:30px 0;">
+<hr class="u-25c3c983">
 
 <h3>小组赛分组（已生成）</h3>
 {% if gender == 'female' %}
@@ -282,14 +277,14 @@
 {% if groups %}
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:14px;">
     {% for group in groups %}
-    <div style="background: var(--bg-card); border-radius:10px; padding:12px; border:1px solid var(--border-color);">
-        <strong style="color: var(--text-primary);">{{ ['A','B','C','D','E','F','G','H'][loop.index0] }}组</strong>
-        <ul style="margin:6px 0 0 0; padding-left:0; list-style:none;">
+    <div class="u-ab7f0f71">
+        <strong class="u-29dc4caf">{{ ['A','B','C','D','E','F','G','H'][loop.index0] }}组</strong>
+        <ul class="u-70bb45b0">
             {% for cid in group %}
             {% set c = candidates|selectattr('id', 'equalto', cid)|first %}
             <li style="padding:2px 0; display:flex; align-items:center; gap:6px; color: var(--text-primary);">
                 {% if c and c.image_url %}
-                <img src="{{ c.image_url }}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+                <img src="{{ c.image_url }}" class="u-8864b7d2">
                 {% endif %}
                 <span>{{ '轮空' if cid is none else (c.name if c else '已移除') }}</span>
             </li>
@@ -299,14 +294,14 @@
     {% endfor %}
 </div>
 {% else %}
-<p style="color: var(--text-muted);">分组尚未生成</p>
+<p class="u-bf4b6787">分组尚未生成</p>
 {% endif %}
 
 {% else %}
-<p style="color: #e74c3c;">当前不可投票</p>
+<p class="u-984655ef">当前不可投票</p>
 {% endif %}
 
-<p style="margin-top:20px;"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">返回赛事详情</a></p>
+<p class="u-9eb125f5"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">返回赛事详情</a></p>
 
 <script src="{{ url_for('static', filename='js/vote-live.js') }}?v={{ app_version }}" defer></script>
 {% endblock %}

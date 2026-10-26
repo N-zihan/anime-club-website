@@ -12,12 +12,12 @@
 <table class="admin-table">
     <thead>
     <tr>
-        <th style="width:150px;">时间</th>
-        <th style="width:130px;">操作者</th>
-        <th style="width:150px;">动作</th>
-        <th style="width:170px;">目标</th>
+        <th class="u-821e4857">时间</th>
+        <th class="u-29dbf95c">操作者</th>
+        <th class="u-821e4857">动作</th>
+        <th class="u-6c70970b">目标</th>
         <th>详情 / 路径</th>
-        <th style="width:120px;">IP</th>
+        <th class="u-9fe45cd8">IP</th>
     </tr>
     </thead>
     <tbody>
@@ -35,7 +35,7 @@
 </table>
 
 {% if total_pages > 1 %}
-<nav class="forum-pager" style="margin-top:16px;">
+<nav class="forum-pager u-8a359a76">
     {% if page > 1 %}
     <a class="btn btn-ghost" href="{{ url_for('admin.admin_logs', page=page - 1) }}">← 上一页</a>
     {% endif %}

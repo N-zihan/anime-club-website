@@ -13,7 +13,7 @@
         <th>标题</th>
         <th>日期</th>
         <th>内容</th>
-        <th style="text-align:center;">操作</th>
+        <th class="u-dac4fe6c">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -23,7 +23,7 @@
         <td><strong>{{ act.title }}</strong></td>
         <td>{{ act.date }}</td>
         <td>{{ act.content[:50] }}{% if act.content|length > 50 %}...{% endif %}</td>
-        <td style="text-align:center;">
+        <td class="u-dac4fe6c">
             <a class="btn-edit" href="{{ url_for('admin.admin_activity_edit', id=act.id) }}">编辑</a>
             <form method="POST" action="{{ url_for('admin.admin_activity_delete', id=act.id) }}"
                   style="display:inline;"

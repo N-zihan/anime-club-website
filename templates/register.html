@@ -2,38 +2,30 @@
 {% block title %}注册{% endblock %}
 {% block content %}
 
-<div style="max-width:420px; margin:0 auto; padding:20px 0;">
+<div class="u-0079990c">
 
-    <div style="background: var(--bg-card); padding:32px 28px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid var(--border-color);">
-        <h2 style="margin-top:0; margin-bottom:24px; text-align:center; color: var(--text-primary);">社团成员注册</h2>
+    <div class="u-ea57f62b">
+        <h2 class="u-3396091c">社团成员注册</h2>
 
         <form method="POST">
-            <input type="text" name="username" placeholder="用户名（2-20位中文/字母/数字）" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-            <input type="text" name="qq" placeholder="QQ号（5-12位数字）" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-            <input type="email" id="registerEmail" name="email" placeholder="QQ邮箱（用于修改密码）" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
+            <input type="text" name="username" placeholder="用户名（2-20位中文/字母/数字）" required class="u-03cdc0d1">
+            <input type="text" name="qq" placeholder="QQ号（5-12位数字）" required class="u-03cdc0d1">
+            <input type="email" id="registerEmail" name="email" placeholder="QQ邮箱（用于修改密码）" required class="u-03cdc0d1">
             <div style="display:flex; gap:8px; margin-bottom:12px;">
-                <input type="text" name="code" placeholder="6位验证码" required
-                       style="flex:1; padding:12px; border:1px solid var(--border-color); border-radius:8px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-                <button type="button" id="sendCodeBtn" onclick="sendCode()"
-                        style="padding:0 18px; background:#1e2a3a; color:white; border:none; border-radius:8px; cursor:pointer; font-size:14px; white-space:nowrap;">
+                <input type="text" name="code" placeholder="6位验证码" required class="u-2de7cd02">
+                <button type="button" id="sendCodeBtn" onclick="sendCode()" class="u-cb93edd2">
                     获取验证码
                 </button>
             </div>
             <small style="color: var(--text-muted); display:block; margin-bottom:12px; font-size:13px;">验证码将发送至你的邮箱</small>
-            <input type="text" name="group" placeholder="社团验证码（QQ群号）" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-            <input type="password" name="password" placeholder="密码（至少6位）" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-            <input type="password" name="confirm_password" placeholder="请再次输入密码" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:16px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);">
-            <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:16px; border:none; border-radius:8px; cursor:pointer;">注册</button>
+            <input type="text" name="group" placeholder="社团验证码（QQ群号）" required class="u-03cdc0d1">
+            <input type="password" name="password" placeholder="密码（至少6位）" required class="u-03cdc0d1">
+            <input type="password" name="confirm_password" placeholder="请再次输入密码" required class="u-5fe3d7d7">
+            <button type="submit" class="btn-primary u-6313cb4c">注册</button>
         </form>
 
-        <p style="margin-top:16px; text-align:center; font-size:14px; color: var(--text-secondary);">
-            已有账号？<a href="{{ url_for('auth.login') }}" style="color: var(--text-primary); font-weight:600;">登录</a>
+        <p class="u-fb0319b6">
+            已有账号？<a href="{{ url_for('auth.login') }}" class="u-098aa70b">登录</a>
         </p>
     </div>
 

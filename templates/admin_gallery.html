@@ -27,15 +27,14 @@
     {% for photo in photos %}
     <div class="gallery-item">
         <img alt="{{ photo.filename }}" src="{{ photo.url }}">
-        <div style="padding:8px;">
-            <span style="font-size:0.8rem; color:#7f8c8d;">
+        <div class="u-44cd1236">
+            <span class="u-6a5470f6">
                 {% if photo.activity %}{{ photo.activity.title }}{% else %}往期活动{% endif %}
             </span>
             <form method="POST" action="{{ url_for('admin.admin_gallery_delete', photo_id=photo.id) }}"
                   style="display:inline; margin-left:10px;"
                   onsubmit="return confirm('确定删除？');">
-                <button type="submit"
-                        style="background:none; border:none; color:red; cursor:pointer; padding:0; font-size:inherit; font-family:inherit;">删除</button>
+                <button type="submit" class="u-7898ea22">删除</button>
             </form>
         </div>
     </div>

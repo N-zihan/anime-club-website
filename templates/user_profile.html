@@ -1,42 +1,42 @@
 {% extends "base.html" %}
 {% block title %}{{ user.username }} 的个人主页{% endblock %}
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
+<div class="u-6b0c1363">
     <!-- 个人信息卡片 -->
-    <div style="text-align: center; background: var(--bg-card); border-radius: 24px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid var(--border-color); margin-bottom: 30px;">
+    <div class="u-029e3964">
         <img alt="{{ user.username }}" src="{{ avatar_url(user) }}"
              style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}#e2e8f0{% endif %};">
-        <h2 style="margin: 15px 0 5px 0; color: var(--text-primary);">
+        <h2 class="u-c2694d42">
             {{ user.username }}
             {% if user.is_owner %}👑{% elif user.is_staff %}🛠️{% endif %}
         </h2>
-        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+        <p class="u-9ae6ea01">
             加入时间：{{ user.registered_at.strftime('%Y年%m月%d日') }}
             {% if user.is_owner %} · 站长{% elif user.is_staff %} · 运营{% endif %}
         </p>
         <!-- 只有本人能看到“个人设置”入口 -->
         {% if session.user_id == user.id %}
-        <p style="margin-top: 15px;">
+        <p class="u-b62ee557">
             <a class="btn-primary" href="{{ url_for('user.profile') }}">个人设置</a>
         </p>
         {% endif %}
     </div>
 
     <!-- 该用户发过的帖子 -->
-    <div style="background: var(--bg-card); border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid var(--border-color); margin-bottom: 30px;">
-        <h3 style="color: var(--text-primary);">最近发帖</h3>
+    <div class="u-b0a5c818">
+        <h3 class="u-29dc4caf">最近发帖</h3>
         {% if messages %}
-        <ul style="list-style: none; padding: 0;">
+        <ul class="u-f0bd7fb0">
             {% for msg in messages %}
-            <li style="border-bottom: 1px solid var(--border-color); padding: 12px 0;">
-                <p style="margin: 0; color: var(--text-primary);">{{ msg.content }}</p>
-                <p style="margin: 0; color: var(--text-muted); font-size: 0.8rem;">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M')
+            <li class="u-ac43c4dc">
+                <p class="u-82fc6b18">{{ msg.content }}</p>
+                <p class="u-968ef4ee">{{ msg.timestamp.strftime('%Y-%m-%d %H:%M')
                     }}</p>
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <p style="color: var(--text-muted);">该用户还没有发过帖子</p>
+        <p class="u-bf4b6787">该用户还没有发过帖子</p>
         {% endif %}
     </div>
 </div>

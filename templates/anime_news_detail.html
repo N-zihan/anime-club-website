@@ -14,7 +14,7 @@
     "publisher": {"@type": "Organization", "name": club_name}
 } | tojson }}
 </script>
-<div class="article-container" style="max-width:720px; margin:0 auto; padding:20px 0;">
+<div class="article-container u-38e6825b">
 
 {% if translation_failed %}
 {# 翻译服务未配置或失败：后端已把正文回落成原文，这里必须说明原因，
@@ -27,40 +27,39 @@
 {% endif %}
 
 {% if article and article.image %}
-<div style="margin-bottom:24px;">
+<div class="u-8b9688e6">
   <img src="/api/anime/news-image?url={{ article.image|urlencode }}"
-       alt="{{ article.title_zh if article.title_zh else (article.title if article else '') }}"
-       style="width:100%; border-radius:12px; max-height:400px; object-fit:cover;">
+       alt="{{ article.title_zh if article.title_zh else (article.title if article else '') }}" class="u-d5cec741">
 </div>
 {% endif %}
 
 {% set title_zh = article.title_zh if article and article.title_zh else '' %}
 {% set title_orig = article.title if article and article.title else '' %}
-<h1 class="article-title" style="font-size:1.8rem; line-height:1.3; margin-bottom:12px;">
+<h1 class="article-title u-c2ca5803">
   <span class="news-lang-block news-lang-zh">{{ title_zh or title_orig }}</span>
   <span class="news-lang-block news-lang-orig">{{ title_orig or title_zh }}</span>
 </h1>
 
-<div style="color: var(--text-muted); font-size:0.9rem; margin-bottom:24px;">
+<div class="u-1a6a92c2">
   <span>{{ source_zh }}</span>
-  <span style="margin:0 10px;">•</span>
+  <span class="u-9e7cc802">•</span>
   <span>{{ article.date[:10] if article and article.date else '' }}</span>
 </div>
 
 {% set excerpt_zh = article.excerpt_zh if article and article.excerpt_zh else '' %}
 {% set excerpt_orig = article.excerpt if article and article.excerpt else '' %}
 {% if excerpt_zh or excerpt_orig %}
-<div class="news-lang-block news-lang-zh article-excerpt" style="background: var(--bg-code); padding:18px 20px; border-radius:10px; margin-bottom:28px; line-height:1.6;">
+<div class="news-lang-block news-lang-zh article-excerpt u-d86fc94c">
   {{ excerpt_zh or excerpt_orig }}
 </div>
-<div class="news-lang-block news-lang-orig article-excerpt" style="background: var(--bg-code); padding:18px 20px; border-radius:10px; margin-bottom:28px; line-height:1.6; color: var(--text-secondary);">
+<div class="news-lang-block news-lang-orig article-excerpt u-5f9e6874">
   {{ excerpt_orig or excerpt_zh }}
 </div>
 {% endif %}
 
 {% if fetch_failed is defined and fetch_failed %}
 {# 抓取失败时的降级提示：不 500，明确告诉用户去原文看 #}
-<div style="background: var(--bg-code); padding:16px 20px; border-radius:10px; margin-bottom:24px; line-height:1.6; color: var(--text-secondary);">
+<div class="u-9e5d30ff">
   正文抓取失败（原文站可能不可达或响应超时），你可以直接点页面底部的「查看原文」。
 </div>
 {% endif %}
@@ -71,25 +70,23 @@
    协议/域名校验，不安全则返回空串），只有 embed_ok 判定属于白名单播放器域
    时才渲染成 <iframe>；非白名单只给「在新窗口打开」外链，href 同样经过净化。
    这是继解析层、视图层之后的第三道防线。 #}
-<div style="margin-bottom:28px;">
-  <h3 style="font-size:1.1rem; margin-bottom:12px;">视频</h3>
+<div class="u-1e1a9b09">
+  <h3 class="u-4c0a10d5">视频</h3>
   {% for v in videos %}
     {% set su = (v.url or v.src)|media_url %}
     {% if su %}
       {% if su|embed_ok %}
-      <div style="position:relative; width:100%; aspect-ratio:16/9; margin-bottom:14px; border-radius:10px; overflow:hidden; background:#000;">
+      <div class="u-cd5541e4">
         <iframe src="http://your-proxy-url/{{ su }}"
                 title="{{ v.label or '视频播放器' }}"
-                style="position:absolute; inset:0; width:100%; height:100%; border:0;"
                 loading="lazy"
                 referrerpolicy="strict-origin-when-cross-origin"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowfullscreen></iframe>
+                allowfullscreen class="u-2b7c11bd"></iframe>
       </div>
       {% else %}
-      <div style="margin-bottom:10px;">
-        <a href="{{ su }}" target="_blank" rel="noopener noreferrer nofollow"
-           style="color:#4a90d9;">▶ 在新窗口打开视频（{{ v.label or '外部视频' }}）</a>
+      <div class="u-af3fee87">
+        <a href="{{ su }}" target="_blank" rel="noopener noreferrer nofollow" class="u-4866aa0e">▶ 在新窗口打开视频（{{ v.label or '外部视频' }}）</a>
       </div>
       {% endif %}
     {% endif %}
@@ -98,14 +95,13 @@
 {% endif %}
 
 {% if images %}
-<div style="margin-bottom:28px;">
-  <h3 style="font-size:1.1rem; margin-bottom:12px;">相关图片</h3>
+<div class="u-1e1a9b09">
+  <h3 class="u-4c0a10d5">相关图片</h3>
   <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for img_url in images %}
     <a href="/api/anime/news-image?url={{ img_url|urlencode }}" target="_blank" rel="noopener">
       <img src="/api/anime/news-image?url={{ img_url|urlencode }}" 
-           alt="插图 {{ loop.index }}"
-           style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px;">
+           alt="插图 {{ loop.index }}" class="u-92b7eb8a">
     </a>
     {% endfor %}
   </div>
@@ -115,25 +111,24 @@
 {# 正文按「设置 → 语言与翻译」的显示偏好切换：
    .news-lang-block 默认只显示中文（译文），html[data-news-lang="original"] 只显示原文，
    "both" 则中文在上、原文在下并用虚线分隔。不依赖 JS 也能正常显示中文，避免脚本失败时白屏。 #}
-<div class="article-body news-lang-block news-lang-zh" style="line-height:1.9; font-size:1rem;">
+<div class="article-body news-lang-block news-lang-zh u-ea84cb5f">
   {% for para in content.split('\n\n') %}
-    <p style="margin-bottom:20px;">{{ para }}</p>
+    <p class="u-7dde5e56">{{ para }}</p>
   {% endfor %}
 </div>
-<div class="article-body news-lang-block news-lang-orig news-orig-body" style="line-height:1.9; font-size:1rem;">
+<div class="article-body news-lang-block news-lang-orig news-orig-body u-ea84cb5f">
   {% set original_paras = content_original.split('\n\n') if content_original else content.split('\n\n') %}
   {% for para in original_paras %}
-    <p style="margin-bottom:20px;">{{ para }}</p>
+    <p class="u-7dde5e56">{{ para }}</p>
   {% endfor %}
 </div>
 
-<div style="margin-top:40px; padding-top:20px; border-top:1px solid var(--border-color);">
-  <a href="{{ url_for('public.anime_news') }}" style="color: var(--text-primary);">← 返回新闻列表</a>
-  <span style="margin:0 12px;">|</span>
+<div class="u-3fa2aac5">
+  <a href="{{ url_for('public.anime_news') }}" class="u-29dc4caf">← 返回新闻列表</a>
+  <span class="u-ae3d9287">|</span>
   <a href="{{ url if url.startswith('http') else '#' }}" 
      target="_blank" 
-     rel="noopener noreferrer"
-     style="color: #4a90d9;">查看原文（{{ source_zh }}）</a>
+     rel="noopener noreferrer" class="u-a2f56ebf">查看原文（{{ source_zh }}）</a>
 </div>
 
 </div>

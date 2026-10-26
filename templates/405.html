@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}请求方法不允许{% endblock %}
 {% block content %}
-<div style="text-align: center; padding: 80px 20px;">
-    <h1 style="font-size: 6rem; margin: 0; color: #f39c12;">405</h1>
-    <h2 style="color: var(--text-secondary); margin-top: 0;">请求方式不对哦</h2>
-    <p style="color: var(--text-muted); max-width: 500px; margin: 20px auto;">
+<div class="u-33941f5b">
+    <h1 class="u-4cf95926">405</h1>
+    <h2 class="u-44795db5">请求方式不对哦</h2>
+    <p class="u-4975d318">
         这个页面不支持你使用的请求方法，可能是你点了不该点的按钮。
     </p>
     <a class="btn-primary" href="{{ url_for('public.index') }}"

@@ -9,7 +9,7 @@
         <form method="POST" action="{{ url_for('user.notifications_clear_read') }}"
               onsubmit="return confirm('清空所有已读通知？未读的会保留。')" style="display:inline;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-add" type="submit" style="cursor:pointer;">清空已读</button>
+            <button class="btn-add u-63d058f8" type="submit">清空已读</button>
         </form>
         {% endif %}
     </div>
@@ -17,10 +17,10 @@
 
 {% if muted_types %}
 {# 被静音的类型既不出现在列表里、也不计入红点，所以必须显式说明，否则用户会以为通知丢了 #}
-<div style="margin:0 0 16px; padding:10px 14px; border-radius:10px; background: var(--bg-code); color: var(--text-muted); font-size:0.85rem; line-height:1.6;">
+<div class="u-65571556">
     已静音：{% for t in muted_types %}{{ notify_labels.get(t, t) }}{% if not loop.last %}、{% endif %}{% endfor %}
     —— 静音的通知仍会入库，只是不在这里显示、也不发邮件。
-    <a href="{{ url_for('public.settings') }}#notify-section" style="color:#4a90d9;">去设置里恢复</a>
+    <a href="{{ url_for('public.settings') }}#notify-section" class="u-4866aa0e">去设置里恢复</a>
 </div>
 {% endif %}
 
@@ -30,18 +30,18 @@
     <a class="notif-card" href="{{ url_for('user.notification_read', nid=n.id) }}"
        style="display:block; padding:16px 20px; background: var(--bg-card); border-radius:12px; border:1px solid var(--border-color); text-decoration:none; {% if not n.is_read %}border-left:4px solid #4a90d9;{% endif %}">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <strong style="color: var(--text-primary);">{{ n.title }}</strong>
-            <span style="font-size:0.75rem; color: var(--text-muted);">{{ n.created_at.strftime('%m-%d %H:%M') }}</span>
+            <strong class="u-29dc4caf">{{ n.title }}</strong>
+            <span class="u-2895184a">{{ n.created_at.strftime('%m-%d %H:%M') }}</span>
         </div>
         {% if n.content %}
-        <p style="margin:0; color: var(--text-secondary); font-size:0.9rem;">{{ n.content }}</p>
+        <p class="u-e6a8670e">{{ n.content }}</p>
         {% endif %}
     </a>
     {% endfor %}
 </div>
 
 {% if total_pages > 1 %}
-<nav class="forum-pager" style="margin-top:18px;">
+<nav class="forum-pager u-e7673d9c">
     {% if page > 1 %}
     <a class="btn btn-ghost" href="{{ url_for('user.notifications', page=page - 1) }}">← 上一页</a>
     {% endif %}
@@ -52,6 +52,6 @@
 </nav>
 {% endif %}
 {% else %}
-<p style="text-align:center; color:#94a3b8; padding:40px 0;">暂无通知</p>
+<p class="u-e1978eed">暂无通知</p>
 {% endif %}
 {% endblock %}

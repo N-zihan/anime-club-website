@@ -73,3 +73,27 @@ def test_code_static_templates_have_no_real_domain():
             if REAL_DOMAIN in text:
                 offenders.append(str(path.relative_to(ROOT)))
     assert not offenders, f'代码 / 模板 / 静态文件里写死了线上域名: {offenders}'
+
+
+def test_templates_have_no_new_inline_styles():
+    """内联样式已清理（v4.33.1）：剩余内联只允许「JS 要读/改 display」或动态 Jinja 值。
+
+    新写页面请把样式写进 style.css（可用已有的 .u-* 工具类），不要再往模板里塞 style="..."。
+    """
+    import re
+
+    block = re.compile(r'<script\b.*?</script\s*>|<style\b.*?</style\s*>', re.S | re.I)
+    style_attr = re.compile(r'style="([^"]*)"', re.S)
+    offenders = []
+    for path in (ROOT / 'templates').rglob('*.html'):
+        text = path.read_text(encoding='utf-8')
+        cleaned = block.sub('', text)
+        for match in style_attr.finditer(cleaned):
+            decl = match.group(1)
+            if 'display' in decl or '{{' in decl or '{%' in decl:
+                continue
+            # 唯一例外：封面页给爬虫抓的隐藏缩略图（必须内联隐藏，测试也会校验）
+            if path.name == 'splash.html' and 'left:-9999px' in decl:
+                continue
+            offenders.append(f'{path.name}: {decl[:60]}')
+    assert not offenders, f'新的内联样式请提取到 style.css 工具类: {offenders}'

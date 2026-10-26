@@ -16,42 +16,42 @@
      data-gender="{{ gender }}" data-mode="knockout" data-poll-ms="{{ vote_poll_seconds * 1000 }}">
     <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
 </div>
-<p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
+<p class="u-0f6b1ef9">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>
 
 {# ============ 公示期：显示上一轮结果 ============ #}
 {% if phase in result_phases and prev_matches %}
-<hr style="border-color: var(--border-color); margin:20px 0;">
+<hr class="u-4e5e0c24">
 <h3>{{ prev_round_name }}结果</h3>
 {% for match in prev_matches %}
-<div style="background: var(--bg-card); border-radius:12px; padding:16px; margin-bottom:16px; border:1px solid var(--border-color);">
+<div class="u-5b700862">
     <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center;">
-        <div style="text-align:center;">
+        <div class="u-dac4fe6c">
             {% set c1 = candidates.get(match.candidate1) %}
             {% if c1 and c1.image_url %}
-            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px;">
+            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a">
             {% endif %}
             <div>
-                <strong style="color: var(--text-primary);">{{ cand_label(match.candidate1) }}</strong>
-                {% if c1 and c1.banned %}<span style="color:#e11d48; font-size:0.78rem; font-weight:700;">🚫禁赛</span>{% endif %}
-                <span style="color:#4caf50; font-weight:700;">（{{ match.votes1 or 0 }}票）</span>
+                <strong class="u-29dc4caf">{{ cand_label(match.candidate1) }}</strong>
+                {% if c1 and c1.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}
+                <span class="u-3704804d">（{{ match.votes1 or 0 }}票）</span>
                 {% if match.winner == match.candidate1 %}🏆{% endif %}
             </div>
         </div>
-        <div style="font-size:1.2rem; font-weight:600; color: var(--text-muted);">VS</div>
-        <div style="text-align:center;">
+        <div class="u-f3a7c088">VS</div>
+        <div class="u-dac4fe6c">
             {% set c2 = candidates.get(match.candidate2) %}
             {% if c2 and c2.image_url %}
-            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px;">
+            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a">
             {% endif %}
             <div>
-                <strong style="color: var(--text-primary);">{{ cand_label(match.candidate2) }}</strong>
-                {% if c2 and c2.banned %}<span style="color:#e11d48; font-size:0.78rem; font-weight:700;">🚫禁赛</span>{% endif %}
-                <span style="color:#4caf50; font-weight:700;">（{{ match.votes2 or 0 }}票）</span>
+                <strong class="u-29dc4caf">{{ cand_label(match.candidate2) }}</strong>
+                {% if c2 and c2.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}
+                <span class="u-3704804d">（{{ match.votes2 or 0 }}票）</span>
                 {% if match.winner == match.candidate2 %}🏆{% endif %}
             </div>
         </div>
     </div>
-    <div style="text-align:center; margin-top:12px; color:#4caf50; font-weight:600;">
+    <div class="u-a24f5c1d">
         胜者：{{ winner_label(match) }}
     </div>
 </div>
@@ -60,52 +60,52 @@
 
 {# ============ 下一轮对阵（投票期显示按钮，公示期显示预览） ============ #}
 {% if matches %}
-<h3 style="margin-top:24px;">
+<h3 class="u-3343fd64">
     {% if phase in result_phases %}下一轮对阵{% else %}本轮对阵{% endif %}
 </h3>
 {% for match in matches %}
 {% set match_index = loop.index %}
-<div style="background: var(--bg-card); border-radius:12px; padding:16px; margin-bottom:16px; border:1px solid var(--border-color);">
-    <div style="font-weight:600; margin-bottom:10px; color: var(--text-primary);">
+<div class="u-5b700862">
+    <div class="u-d1cecbb0">
         {% if match.round == 'final' %}
         决赛
         {% else %}
         {{ match.round_name }}
         {% endif %}
         {% if phase in result_phases %}
-        <span style="color: var(--text-muted);">待开始</span>
+        <span class="u-bf4b6787">待开始</span>
         {% elif match.status == 'finished' %}
-        <span style="color:#4caf50;">已结束</span>
+        <span class="u-1dd332e4">已结束</span>
         {% elif match.status == 'active' %}
-        <span style="color:#2196f3;">进行中</span>
+        <span class="u-165207df">进行中</span>
         {% else %}
-        <span style="color: var(--text-muted);">待开始</span>
+        <span class="u-bf4b6787">待开始</span>
         {% endif %}
     </div>
     <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center;">
-        <div style="text-align:center;" data-candidate-id="{{ match.candidate1 }}">
+        <div data-candidate-id="{{ match.candidate1 }}" class="u-dac4fe6c">
             {% set c1 = candidates.get(match.candidate1) %}
             {% if c1 and c1.image_url %}
-            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px;">
+            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a">
             {% endif %}
-            <div><strong style="color: var(--text-primary);">{{ c1.name if c1 else (cand_label(match.candidate1) if match.candidate1 is none else '已移除') }}</strong>
-                {% if c1 and c1.banned %}<span style="color:#e11d48; font-size:0.78rem; font-weight:700;">🚫禁赛</span>{% endif %}</div>
+            <div><strong class="u-29dc4caf">{{ c1.name if c1 else (cand_label(match.candidate1) if match.candidate1 is none else '已移除') }}</strong>
+                {% if c1 and c1.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}</div>
             {% if phase in voting_phases %}
-            <div style="font-size:0.8rem; color: var(--text-secondary);">
+            <div class="u-5e73807a">
                 票数：<span class="vote-count" data-candidate-id="{{ match.candidate1 }}">{{ vote_totals.get(match.candidate1, 0) }}</span>
             </div>
             {% endif %}
         </div>
-        <div style="font-size:1.2rem; font-weight:600; color: var(--text-muted);">VS</div>
-        <div style="text-align:center;" data-candidate-id="{{ match.candidate2 }}">
+        <div class="u-f3a7c088">VS</div>
+        <div data-candidate-id="{{ match.candidate2 }}" class="u-dac4fe6c">
             {% set c2 = candidates.get(match.candidate2) %}
             {% if c2 and c2.image_url %}
-            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px;">
+            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a">
             {% endif %}
-            <div><strong style="color: var(--text-primary);">{{ cand_label(match.candidate2) }}</strong>
-                {% if c2 and c2.banned %}<span style="color:#e11d48; font-size:0.78rem; font-weight:700;">🚫禁赛</span>{% endif %}</div>
+            <div><strong class="u-29dc4caf">{{ cand_label(match.candidate2) }}</strong>
+                {% if c2 and c2.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}</div>
             {% if phase in voting_phases %}
-            <div style="font-size:0.8rem; color: var(--text-secondary);">
+            <div class="u-5e73807a">
                 票数：<span class="vote-count" data-candidate-id="{{ match.candidate2 }}">{{ vote_totals.get(match.candidate2, 0) }}</span>
             </div>
             {% endif %}
@@ -131,32 +131,32 @@
 
     {# 投票按钮：只在投票期显示；禁赛方禁用按钮 #}
     {% if phase in voting_phases and match.status == 'active' %}
-    <div style="text-align:center; margin-top:12px;">
+    <div class="u-a8900fe1">
         {% if c1 and not c1.banned %}
-        <button class="btn-primary vote-btn" data-candidate="{{ match.candidate1 }}" data-name="{{ c1.name }}" data-match-index="{{ match_index }}" style="padding:6px 24px; background:#e91e63; border:none; border-radius:30px; cursor:pointer; color:white;">投给 {{ c1.name }}</button>
+        <button class="btn-primary vote-btn u-1070ca66" data-candidate="{{ match.candidate1 }}" data-name="{{ c1.name }}" data-match-index="{{ match_index }}">投给 {{ c1.name }}</button>
         {% elif c1 %}
-        <button class="btn-primary" type="button" disabled style="padding:6px 24px; background:#e91e63; border:none; border-radius:30px; opacity:0.55; cursor:not-allowed; color:white;">🚫 {{ c1.name }} 已禁赛</button>
+        <button class="btn-primary u-2302a1c1" type="button" disabled>🚫 {{ c1.name }} 已禁赛</button>
         {% endif %}
         {% if match.candidate2 is not none %}
             {% if c2 and not c2.banned %}
-            {% if c1 and not c1.banned %}<span style="margin:0 16px; color: var(--text-muted);">或</span>{% endif %}
-            <button class="btn-primary vote-btn" data-candidate="{{ match.candidate2 }}" data-name="{{ c2.name }}" data-match-index="{{ match_index }}" style="padding:6px 24px; background:#2196f3; border:none; border-radius:30px; cursor:pointer; color:white;">投给 {{ c2.name }}</button>
+            {% if c1 and not c1.banned %}<span class="u-89f417c8">或</span>{% endif %}
+            <button class="btn-primary vote-btn u-1143e1df" data-candidate="{{ match.candidate2 }}" data-name="{{ c2.name }}" data-match-index="{{ match_index }}">投给 {{ c2.name }}</button>
             {% elif c2 %}
-            <button class="btn-primary" type="button" disabled style="padding:6px 24px; background:#2196f3; border:none; border-radius:30px; opacity:0.55; cursor:not-allowed; color:white;">🚫 {{ c2.name }} 已禁赛</button>
+            <button class="btn-primary u-e93ca690" type="button" disabled>🚫 {{ c2.name }} 已禁赛</button>
             {% endif %}
         {% elif not (c1 and c1.banned) %}
-        <span style="margin:0 16px; color: var(--text-muted);">对手轮空，自动晋级</span>
+        <span class="u-89f417c8">对手轮空，自动晋级</span>
         {% endif %}
         {% if (c1 and c1.banned) and (c2 is none or (c2 and c2.banned)) %}
-        <div style="margin-top:8px; color:#e11d48; font-size:0.85rem;">本场双方均无法投票，公示后无人晋级</div>
+        <div class="u-653c3a1a">本场双方均无法投票，公示后无人晋级</div>
         {% endif %}
     </div>
     {% elif phase in result_phases %}
-    <div style="text-align:center; margin-top:12px; color: var(--text-muted); font-size:0.9rem;">
+    <div class="u-6366c85c">
         投票即将开始
     </div>
     {% elif match.status == 'finished' %}
-    <div style="text-align:center; margin-top:12px; color:#4caf50;">
+    <div class="u-5526a253">
         胜者：{{ winner_label(match) }}
     </div>
     {% endif %}
@@ -164,22 +164,22 @@
 {% endfor %}
 
 {% if phase == 'knockout_16_result' %}
-<hr style="border-color: var(--border-color); margin:30px 0;">
+<hr class="u-25c3c983">
 <h3>8强分组（已生成）</h3>
 {% set next_matches = contest.config.get('knockout_matches_female', []) if gender == 'female' else contest.config.get('knockout_matches_male', []) %}
 {% if next_matches %}
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
     {% for match in next_matches %}
-    <div style="background: var(--bg-card); border-radius:10px; padding:12px; border:1px solid var(--border-color); text-align:center;">
-        <strong style="color: var(--text-primary);">{{ ['A','B','C','D'][loop.index0] }}组</strong>
-        <div style="margin-top:4px;">
+    <div class="u-00ad3e11">
+        <strong class="u-29dc4caf">{{ ['A','B','C','D'][loop.index0] }}组</strong>
+        <div class="u-a3a55686">
             {% set c1 = candidates.get(match.candidate1) %}
-            {% if c1 and c1.banned %}<span style="color:#e11d48; font-size:0.75rem;">🚫</span>{% endif %}
-            <span style="color: var(--text-primary);">{{ cand_label(match.candidate1) }}</span>
-            <span style="color: var(--text-muted); font-weight:600;"> VS </span>
+            {% if c1 and c1.banned %}<span class="u-c1c1960d">🚫</span>{% endif %}
+            <span class="u-29dc4caf">{{ cand_label(match.candidate1) }}</span>
+            <span class="u-ce40af72"> VS </span>
             {% set c2 = candidates.get(match.candidate2) %}
-            <span style="color: var(--text-primary);">{{ cand_label(match.candidate2) }}</span>
-            {% if c2 and c2.banned %}<span style="color:#e11d48; font-size:0.75rem;">🚫</span>{% endif %}
+            <span class="u-29dc4caf">{{ cand_label(match.candidate2) }}</span>
+            {% if c2 and c2.banned %}<span class="u-c1c1960d">🚫</span>{% endif %}
         </div>
     </div>
     {% endfor %}
@@ -188,22 +188,22 @@
 {% endif %}
 
 {% if phase == 'knockout_8_result' %}
-<hr style="border-color: var(--border-color); margin:30px 0;">
+<hr class="u-25c3c983">
 <h3>4强分组（已生成）</h3>
 {% set next_matches = contest.config.get('knockout_matches_female', []) if gender == 'female' else contest.config.get('knockout_matches_male', []) %}
 {% if next_matches %}
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:12px;">
     {% for match in next_matches %}
-    <div style="background: var(--bg-card); border-radius:10px; padding:12px; border:1px solid var(--border-color); text-align:center;">
-        <strong style="color: var(--text-primary);">{{ ['A','B'][loop.index0] }}组</strong>
-        <div style="margin-top:4px;">
+    <div class="u-00ad3e11">
+        <strong class="u-29dc4caf">{{ ['A','B'][loop.index0] }}组</strong>
+        <div class="u-a3a55686">
             {% set c1 = candidates.get(match.candidate1) %}
-            {% if c1 and c1.banned %}<span style="color:#e11d48; font-size:0.75rem;">🚫</span>{% endif %}
-            <span style="color: var(--text-primary);">{{ cand_label(match.candidate1) }}</span>
-            <span style="color: var(--text-muted); font-weight:600;"> VS </span>
+            {% if c1 and c1.banned %}<span class="u-c1c1960d">🚫</span>{% endif %}
+            <span class="u-29dc4caf">{{ cand_label(match.candidate1) }}</span>
+            <span class="u-ce40af72"> VS </span>
             {% set c2 = candidates.get(match.candidate2) %}
-            <span style="color: var(--text-primary);">{{ cand_label(match.candidate2) }}</span>
-            {% if c2 and c2.banned %}<span style="color:#e11d48; font-size:0.75rem;">🚫</span>{% endif %}
+            <span class="u-29dc4caf">{{ cand_label(match.candidate2) }}</span>
+            {% if c2 and c2.banned %}<span class="u-c1c1960d">🚫</span>{% endif %}
         </div>
     </div>
     {% endfor %}
@@ -212,19 +212,19 @@
 {% endif %}
 
 {% if phase == 'knockout_4_result' %}
-<hr style="border-color: var(--border-color); margin:30px 0;">
+<hr class="u-25c3c983">
 <h3>决赛选手</h3>
 {% set final_matches = contest.config.get('knockout_matches_female', []) if gender == 'female' else contest.config.get('knockout_matches_male', []) %}
 {% if final_matches and final_matches|length >= 2 %}
-<div style="background: var(--bg-card); border-radius:12px; padding:16px; text-align:center; border:1px solid var(--border-color);">
+<div class="u-bbdbe114">
     <div style="display:flex; justify-content:center; align-items:center; gap:30px; font-size:1.2rem;">
         {% set c1 = candidates.get(final_matches[0].candidate1) %}
-        <span style="font-weight:700; color: var(--text-primary);">{% if c1 and c1.banned %}<span style="color:#e11d48; font-size:0.85rem;">🚫</span> {% endif %}{{ cand_label(final_matches[0].candidate1) }}</span>
-        <span style="color: var(--text-muted); font-size:1.5rem;">VS</span>
+        <span class="u-a3b8b3b2">{% if c1 and c1.banned %}<span class="u-e9522e70">🚫</span> {% endif %}{{ cand_label(final_matches[0].candidate1) }}</span>
+        <span class="u-ea61a0c3">VS</span>
         {% set c2 = candidates.get(final_matches[0].candidate2) %}
-        <span style="font-weight:700; color: var(--text-primary);">{% if c2 and c2.banned %}<span style="color:#e11d48; font-size:0.85rem;">🚫</span> {% endif %}{{ cand_label(final_matches[0].candidate2) }}</span>
+        <span class="u-a3b8b3b2">{% if c2 and c2.banned %}<span class="u-e9522e70">🚫</span> {% endif %}{{ cand_label(final_matches[0].candidate2) }}</span>
     </div>
-    <div style="margin-top:6px; color: var(--text-secondary); font-size:0.85rem;">
+    <div class="u-ca9741ef">
         {% if gender == 'female' %}女组决赛{% else %}男组决赛{% endif %}
     </div>
 </div>
@@ -232,7 +232,7 @@
 {% endif %}
 
 {% if phase == 'final_result' %}
-<hr style="border-color: var(--border-color); margin:30px 0;">
+<hr class="u-25c3c983">
 <h3>决赛结果</h3>
 {% set final_key = 'knockout_matches_female_final' if gender == 'female' else 'knockout_matches_male_final' %}
 {% set final_matches = contest.config.get(final_key, []) if contest.config else [] %}
@@ -240,7 +240,7 @@
 {# 轮空场垫尾（3 人进入决赛轮的极端情形），取最后一场真实决赛 #}
 {% set real_finals = final_matches|rejectattr('bye', 'defined')|list %}
 {% set final_match = (real_finals|last) if real_finals else final_matches|last %}
-<div style="background: var(--bg-card); border-radius:12px; padding:16px; text-align:center; border:2px solid #f39c12;">
+<div class="u-b1ec33b7">
     <div style="display:flex; justify-content:center; align-items:center; gap:30px; font-size:1.2rem;">
         {% set c1 = candidates.get(final_match.candidate1) %}
         {% set c2 = candidates.get(final_match.candidate2) %}
@@ -248,24 +248,24 @@
             {% if c1 and c1.image_url %}
             <img src="{{ c1.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
             {% endif %}
-            <span style="font-weight:500; color: var(--text-primary);">{% if c1 and c1.banned %}<span style="color:#e11d48;">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate1) }}</span>
-            <span style="color:#4caf50; font-weight:700;">（{{ final_match.votes1 or 0 }}票）</span>
+            <span class="u-ce82a13e">{% if c1 and c1.banned %}<span class="u-9c57f704">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate1) }}</span>
+            <span class="u-3704804d">（{{ final_match.votes1 or 0 }}票）</span>
             {% if final_match.winner == final_match.candidate1 %}🏆{% endif %}
         </div>
-        <span style="color: var(--text-muted); font-size:1.5rem;">VS</span>
+        <span class="u-ea61a0c3">VS</span>
         <div>
             {% if c2 and c2.image_url %}
             <img src="{{ c2.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
             {% endif %}
-            <span style="font-weight:500; color: var(--text-primary);">{% if c2 and c2.banned %}<span style="color:#e11d48;">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate2) }}</span>
-            <span style="color:#4caf50; font-weight:700;">（{{ final_match.votes2 or 0 }}票）</span>
+            <span class="u-ce82a13e">{% if c2 and c2.banned %}<span class="u-9c57f704">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate2) }}</span>
+            <span class="u-3704804d">（{{ final_match.votes2 or 0 }}票）</span>
             {% if final_match.winner == final_match.candidate2 %}🏆{% endif %}
         </div>
     </div>
-    <div style="margin-top:10px; font-size:1.3rem; color: var(--text-primary);">
+    <div class="u-e66694c3">
         {% if final_match.winner %}
         👑 冠军：
-        <strong style="color:#f39c12;">{{ winner_label(final_match) }}</strong>
+        <strong class="u-fc4b60af">{{ winner_label(final_match) }}</strong>
         {% else %}
         🚫 本届冠军空缺（决赛未能合法完赛）
         {% endif %}
@@ -275,10 +275,10 @@
 {% endif %}
 
 {% else %}
-<p style="color: var(--text-muted);">淘汰赛尚未开始</p>
+<p class="u-bf4b6787">淘汰赛尚未开始</p>
 {% endif %}
 
-<p style="margin-top:20px;"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">← 返回赛事详情</a></p>
+<p class="u-9eb125f5"><a href="{{ url_for('public.contest_detail', contest_id=contest.id) }}">← 返回赛事详情</a></p>
 
 {% if phase in voting_phases %}
 {# 投票提交：后端 POST /contest/<id>/knockout/submit 需要 candidate_id + gender。原模板只有按钮、无 form/fetch，淘汰赛实际无法投票。 #}

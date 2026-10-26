@@ -2,27 +2,25 @@
 {% block title %}登录{% endblock %}
 {% block content %}
 
-<div style="max-width:400px; margin:0 auto; padding:20px 0;">
+<div class="u-8faf1095">
 
 
-    <div style="background: var(--bg-card); padding:32px 28px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); border:1px solid var(--border-color);">
-        <h2 style="margin-top:0; margin-bottom:24px; text-align:center; color: var(--text-primary);">社员登录</h2>
+    <div class="u-ea57f62b">
+        <h2 class="u-3396091c">社员登录</h2>
 
         <form method="POST">
             <input name="username" placeholder="用户名 / QQ号 / 邮箱" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:12px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);"
-                   type="text" value="{{ username }}">
+                   type="text" value="{{ username }}" class="u-03cdc0d1">
             <input name="password" placeholder="密码" required
-                   style="width:100%; padding:12px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:16px; box-sizing:border-box; font-size:16px; background: var(--bg-input); color: var(--text-primary);"
-                   type="password">
-            <button class="btn-primary" style="width:100%; padding:12px; font-size:16px; border:none; border-radius:8px; cursor:pointer;" type="submit">登录</button>
+                   type="password" class="u-5fe3d7d7">
+            <button class="btn-primary u-6313cb4c" type="submit">登录</button>
         </form>
 
-        <p style="margin-top:16px; text-align:center; font-size:14px; color: var(--text-secondary);">
-            还没有账号？<a href="{{ url_for('auth.register') }}" style="color: var(--text-primary); font-weight:600;">注册</a>
+        <p class="u-fb0319b6">
+            还没有账号？<a href="{{ url_for('auth.register') }}" class="u-098aa70b">注册</a>
         </p>
-        <p style="margin-top:6px; text-align:center; font-size:14px;">
-            <a href="{{ url_for('auth.forgot_password') }}" style="color: var(--text-muted);">忘记密码？</a>
+        <p class="u-7ee5d43b">
+            <a href="{{ url_for('auth.forgot_password') }}" class="u-bf4b6787">忘记密码？</a>
         </p>
     </div>
 

@@ -2,26 +2,26 @@
 {% block title %}网站发展史{% endblock %}
 {% block content %}
 
-<div style="max-width:800px; margin:0 auto; padding:20px 0;">
+<div class="u-fc13bdad">
 
-    <h2 style="text-align:center; margin-bottom:8px;">网站发展史</h2>
-    <p style="text-align:center; color: var(--text-secondary); margin-bottom:32px; font-size:0.9rem;">
+    <h2 class="u-287836d9">网站发展史</h2>
+    <p class="u-6d251448">
         从第一行代码到现在，每一步都被记录
     </p>
 
     {% if commits %}
-    <div style="position:relative; padding-left:28px; border-left:2px solid var(--border-color);">
+    <div class="u-943c81b8">
         {% for c in commits %}
-        <div style="margin-bottom:20px; position:relative;">
+        <div class="u-c4a6c9a6">
             <!-- 时间轴圆点：按类型上色 -->
             <span style="position:absolute; left:-35px; top:6px;
                          width:12px; height:12px; border-radius:50%;
                          background:{% if c.tag == 'feat' %}#4caf50{% elif c.tag == 'fix' %}#e74c3c{% elif c.tag == 'perf' %}#f39c12{% elif c.tag == 'refactor' %}#9b59b6{% else %}#94a3b8{% endif %};
                          border:2px solid var(--bg-main);"></span>
 
-            <div style="background: var(--bg-card); padding:12px 16px; border-radius:10px; border:1px solid var(--border-color);">
+            <div class="u-1f0cc3e9">
                 <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:6px;">
-                    <span style="font-size:0.75rem; color: var(--text-muted);">{{ c.date }}</span>
+                    <span class="u-2895184a">{{ c.date }}</span>
                     <span style="font-size:0.7rem; padding:1px 8px; border-radius:10px;
                                  background:{% if c.tag == 'feat' %}#e8f5e9{% elif c.tag == 'fix' %}#ffebee{% elif c.tag == 'perf' %}#fff8e1{% elif c.tag == 'refactor' %}#f3e5f5{% else %}#eceff1{% endif %};
                                  color:{% if c.tag == 'feat' %}#2e7d32{% elif c.tag == 'fix' %}#c62828{% elif c.tag == 'perf' %}#ef6c00{% elif c.tag == 'refactor' %}#6a1b9a{% else %}#546e7a{% endif %};">
@@ -32,19 +32,19 @@
                    style="color: var(--text-primary); text-decoration:none; font-size:0.95rem; line-height:1.5; display:block;">
                     {{ c.message }}
                 </a>
-                <span style="font-size:0.7rem; color: var(--text-muted);">{{ c.sha }}</span>
+                <span class="u-1189d223">{{ c.sha }}</span>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <p style="text-align:center; color: var(--text-muted); padding:40px 0;">
+    <p class="u-6a58b635">
         暂时拉取不到历史记录，请稍后再试
     </p>
     {% endif %}
 
-    <p style="text-align:center; margin-top:32px;">
-        <a href="{{ url_for('public.about') }}" style="color: var(--text-muted);">← 返回社团介绍</a>
+    <p class="u-5739d0ac">
+        <a href="{{ url_for('public.about') }}" class="u-bf4b6787">← 返回社团介绍</a>
     </p>
 
 </div>

@@ -13,11 +13,11 @@
     <div class="ai-admin-stat"><strong>{{ stats.messages_today }}</strong><span>今日消息</span></div>
 </div>
 
-<h3 style="margin-top:24px;">模型调用分布（全部为免费模型）</h3>
+<h3 class="u-3343fd64">模型调用分布（全部为免费模型）</h3>
 {% if model_rows %}
-<table class="admin-table" style="max-width:560px;">
+<table class="admin-table u-29cd8c40">
     <thead>
-    <tr><th>模型</th><th style="width:120px;">助手消息数</th></tr>
+    <tr><th>模型</th><th class="u-9fe45cd8">助手消息数</th></tr>
     </thead>
     <tbody>
     {% for model, count in model_rows %}
@@ -32,19 +32,19 @@
 <p class="empty-hint">还没有调用记录</p>
 {% endif %}
 
-<h3 style="margin-top:28px;">角色审核</h3>
+<h3 class="u-f0778f9d">角色审核</h3>
 {% if personas %}
 <table class="admin-table">
     <thead>
     <tr>
-        <th style="width:60px;">ID</th>
+        <th class="u-2b12d862">ID</th>
         <th>角色名</th>
         <th>创建者</th>
         <th>性格</th>
-        <th style="width:90px;">可见性</th>
-        <th style="width:90px;">状态</th>
-        <th style="width:160px;">创建时间</th>
-        <th style="width:120px;">操作</th>
+        <th class="u-9bec53c9">可见性</th>
+        <th class="u-9bec53c9">状态</th>
+        <th class="u-7cbe5ecf">创建时间</th>
+        <th class="u-9fe45cd8">操作</th>
     </tr>
     </thead>
     <tbody>
@@ -53,16 +53,16 @@
         <td>{{ p.id }}</td>
         <td>
             <strong>{{ p.name }}</strong>
-            {% if p.source %}<br><small style="color:var(--text-muted);">{{ p.source }}</small>{% endif %}
+            {% if p.source %}<br><small class="u-b8e0b1fa">{{ p.source }}</small>{% endif %}
         </td>
         <td>{{ p.user.username if p.user else '已注销' }}</td>
         <td><small>{{ p.personality }}</small></td>
         <td>{{ '公开' if p.is_public else '仅自己' }}</td>
         <td>
             {% if p.status == 'hidden' %}
-            <span style="color:#b91c1c;">已下架</span>
+            <span class="u-3121cc9a">已下架</span>
             {% else %}
-            <span style="color:#15803d;">正常</span>
+            <span class="u-ce59760d">正常</span>
             {% endif %}
         </td>
         <td>{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '' }}</td>
@@ -83,7 +83,7 @@
 <p class="empty-hint">还没有用户创建角色</p>
 {% endif %}
 
-<p style="margin-top:20px; color: var(--text-muted); font-size:0.85rem;">
+<p class="u-821fd55d">
     说明：AI 对话只调用免费模型（模型池由环境变量 <code>AI_CHAT_MODELS</code> 控制），
     全部失败时回落到站内 FAQ，不会产生付费调用。
 </p>
