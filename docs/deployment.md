@@ -41,7 +41,10 @@ https://<你的域名>        # 每个部署用自己的域名
     }
   ],
   "routes": [{ "src": "/(.*)", "dest": "run.py" }],
-  "crons": [{ "path": "/api/cron/weekly-digest", "schedule": "0 1 * * 1" }]
+  "crons": [
+    { "path": "/api/cron/weekly-digest", "schedule": "0 1 * * 1" },
+    { "path": "/api/cron/weekly-digest-resume", "schedule": "30 1 * * 1" }
+  ]
 }
 ```
 
@@ -82,6 +85,7 @@ https://<你的域名>        # 每个部署用自己的域名
 | `SESSION_COOKIE_SECURE` | 选填 | 会话 Cookie 的 Secure 标志；跟随部署平台（Vercel 为开，本地为关），可显式覆盖 |
 | `SESSION_TIMEOUT_MINUTES` | 选填 | 登录会话有效分钟数 |
 | `AVATAR_MAX_SIZE` | 选填 | 头像文件大小上限（字节），默认 2 MB |
+| `VOTE_POLL_SECONDS` | 选填 | 投票页实时票数轮询间隔（秒），默认 10，范围 3~60 |
 | `APP_VERSION` | 选填 | 版本号覆盖；正常由 `VERSION` 文件 / git tag 自动解析 |
 | `GITHUB_REPO` / `GITHUB_TOKEN` | 选填 | 站内「更新记录」从 GitHub 拉取 commit |
 
@@ -173,10 +177,11 @@ curl -s "$SITE/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | head -3
 
 | 文件 | 触发 | 作用 |
 |---|---|---|
-| `python-app.yml` | push / PR（main） | 装依赖 → flake8（`E9,F63,F7,F82` 会阻塞；其余规则 `--exit-zero` 不阻塞）→ `pytest --cov` |
+| `python-app.yml` | push / PR（main） | 装依赖 → flake8（`E9,F63,F7,F82` 会阻塞；其余规则 `--exit-zero` 不阻塞）→ `pytest --cov --cov-fail-under=70`（覆盖率低于 70% 会失败） |
 | `node.js.yml`（Playwright Tests） | push / PR（main） | 装 Python 依赖 + `npm ci` + Playwright 浏览器 → `npx playwright test` |
 | `pylint.yml` | push | `pylint . --fail-under=8.5 --ignore=tests`，**低于 8.5 会失败** |
 | `codeql.yml` | push / PR（main）+ 每周定时 | CodeQL 安全扫描 |
+| `patrol.yml` | 每周一定时 / 手动 | 线上巡检：`/api/health`（版本 + 数据库）+ 公开页 / robots / sitemap / 分享图状态码；域名由仓库变量 `SITE_URL` 提供，未配置则跳过 |
 | `version.yml` | 推 tag | 把 `VERSION` 文件同步成 tag 版本号 |
 | `release.yml` | 推 `v*` tag / 手动 | 自动只为 `vX.Y.0` 建 GitHub Release，补丁版本跳过；手动可补建任意 tag |
 | `docs.yml` | push main 且改动 `docs/**` 或 `mkdocs.yml` | 构建文档站并部署到 GitHub Pages |

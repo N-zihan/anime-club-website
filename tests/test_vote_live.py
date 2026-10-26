@@ -104,6 +104,7 @@ class TestVotePages:
         assert 'vote-vs-left' in body and 'vote-vs-right' in body
         assert 'vote-live.js' in body
         assert 'data-mode="group"' in body
+        assert 'data-poll-ms=' in body
         assert '75.0%' in body and '25.0%' in body
 
     def test_knockout_page_has_vs_bars(self, logged_in_client, db_session, sample_user):

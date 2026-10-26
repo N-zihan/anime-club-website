@@ -349,3 +349,23 @@ class AnimeListEntry(db.Model):
     __table_args__ = (
         db.UniqueConstraint('user_id', 'bangumi_id', name='uq_anime_list_user_bangumi'),
     )
+
+
+# ========== 周报发送记录（断点续发 / 去重） ==========
+class DigestSend(db.Model):
+    """周报发送记录：Vercel 函数 60 秒上限，一次发不完就分批，靠这张表续发与去重。
+
+    week 存「当周周一」的日期字符串（如 2026-10-26），同一周同一人只发一次。
+    """
+    __tablename__ = 'digest_sends'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'),
+                        nullable=False, index=True)
+    week = db.Column(db.String(10), nullable=False, index=True)
+    email = db.Column(db.String(120), nullable=True)
+    ok = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'week', name='uq_digest_send_user_week'),
+    )

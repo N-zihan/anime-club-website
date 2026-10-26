@@ -142,3 +142,40 @@ class TestVotesApi:
         assert resp.status_code in (200, 404)
         if resp.status_code == 200:
             assert resp.is_json
+
+class TestOpsHardening:
+    """运维加固（v4.33.0）：健康检查 / 安全响应头 / PWA 图标。"""
+
+    def test_health_endpoint(self, client):
+        resp = client.get('/api/health')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['ok'] is True and data['db'] == 'ok'
+        assert data['version']
+        assert data['time']
+
+    def test_security_headers(self, client):
+        resp = client.get('/login')
+        headers = resp.headers
+        assert headers.get('X-Content-Type-Options') == 'nosniff'
+        assert headers.get('X-Frame-Options') == 'SAMEORIGIN'
+        assert headers.get('Referrer-Policy') == 'strict-origin-when-cross-origin'
+
+    def test_pwa_icons_are_real_png(self):
+        from pathlib import Path
+        from PIL import Image
+
+        images = Path(__file__).resolve().parent.parent / 'static' / 'images'
+        for name, size in (('icon-192.png', (192, 192)), ('icon-512.png', (512, 512)),
+                           ('icon-512-maskable.png', (512, 512))):
+            image = Image.open(images / name)
+            assert image.format == 'PNG', f'{name} 不是真 PNG（历史 bug：曾把 JPEG 改名成 .png）'
+            assert image.size == size, f'{name} 尺寸应为 {size}'
+
+    def test_manifest_lists_sized_icons(self, client):
+        data = client.get('/manifest.json').get_json()
+        icons = {(icon['src'], icon['sizes'], icon['purpose']) for icon in data['icons']}
+        assert ('/static/images/icon-192.png', '192x192', 'any') in icons
+        assert ('/static/images/icon-512.png', '512x512', 'any') in icons
+        assert ('/static/images/icon-512-maskable.png', '512x512', 'maskable') in icons
+

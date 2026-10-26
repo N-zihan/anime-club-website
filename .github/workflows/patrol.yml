@@ -1,0 +1,44 @@
+name: Patrol
+
+# 每周线上巡检（也可手动触发）：
+# - 检查 /api/health（版本 + 数据库连通性）
+# - 检查公开页 / robots / sitemap / 分享图是否 200
+# 说明：站点域名不写进仓库，用仓库变量 SITE_URL 配置（Settings → Variables）。
+on:
+  schedule:
+    - cron: '0 2 * * 1'   # 每周一 10:00 北京时间
+  workflow_dispatch:
+
+jobs:
+  patrol:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check site
+        env:
+          SITE: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$SITE" ]; then
+            echo "仓库变量 SITE_URL 未配置，跳过巡检（Settings → Secrets and variables → Actions → Variables 添加即可）"
+            exit 0
+          fi
+          SITE="${SITE%/}"
+          set -e
+
+          echo "== /api/health =="
+          health=$(curl -fsS --max-time 20 "$SITE/api/health")
+          echo "$health"
+          echo "$health" | grep -q '"ok": *true'
+
+          echo
+          echo "== 公开页状态码 =="
+          for p in / /login /anime_news /share /robots.txt /sitemap.xml /static/images/og-cover.png; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE$p")
+            echo "$p -> $code"
+            if [ "$code" != "200" ]; then
+              echo "❌ $p 状态码异常"
+              exit 1
+            fi
+          done
+
+          echo
+          echo "✅ 巡检通过"

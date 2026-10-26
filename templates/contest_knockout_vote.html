@@ -13,7 +13,7 @@
 <h2>淘汰赛：{{ contest.title }}</h2>
 
 <div id="voteLive" class="vote-live-root" data-contest="{{ contest.id }}"
-     data-gender="{{ gender }}" data-mode="knockout">
+     data-gender="{{ gender }}" data-mode="knockout" data-poll-ms="{{ vote_poll_seconds * 1000 }}">
     <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
 </div>
 <p style="color: var(--text-secondary);">组别：<strong>{{ '女组' if gender == 'female' else '男组' }}</strong></p>

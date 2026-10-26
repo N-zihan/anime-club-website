@@ -136,6 +136,25 @@ def create_app():
         # 不要在这里 session.clear()：否则任何跨站 POST 都能把用户强制登出。
         return render_template('400.html'), 400
 
+    @app.after_request
+    def add_security_headers(response):
+        """补基础安全响应头（Vercel 默认只带 HSTS；CSP 由模板 meta 提供）。"""
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        response.headers.setdefault('Permissions-Policy',
+                                    'geolocation=(), microphone=(), camera=()')
+        return response
+
+    @app.context_processor
+    def inject_vote_poll():
+        """投票页轮询间隔（秒），可用 VOTE_POLL_SECONDS 调整，范围 3~60。"""
+        try:
+            seconds = int(os.getenv('VOTE_POLL_SECONDS', '10'))
+        except ValueError:
+            seconds = 10
+        return {'vote_poll_seconds': max(3, min(seconds, 60))}
+
     # 允许搜索引擎收录的只读页面（按需增删；不要把写接口放进来）
     crawlable_routes = [
         'public.splash',
@@ -198,7 +217,9 @@ def create_app():
             'public.anime_news_rss',
             'public.offline',
             'public.weekly_digest_cron',
+            'public.weekly_digest_resume',
             'public.digest_unsubscribe',
+            'public.health',
             'public.share_home',
             'public.share_contest',
             # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用

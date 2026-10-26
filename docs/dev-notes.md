@@ -123,6 +123,26 @@ mkdocs build            # 输出到 site/
 - **base.html 瘦身**：看板娘脚本抽到 `static/js/kanban.js`，内联样式并入 `style.css`。
   （改 base.html 前先跑 `npx playwright test tests/e2e/board.spec.js` 确认导航/看板娘正常）
 
+### 数据库迁移：为什么暂时不引入 Alembic（2026-10 评估结论）
+
+- **现状**：`init.py` 做三件事——`db.create_all()` 建缺失的表、`ensure_columns()` 只加列、
+  `ensure_indexes()` 补索引；没有 migration 版本表，也没有 downgrade。
+- **风险**：改列名 / 改类型 / 删列只能手写 SQL；回滚依赖数据库备份；多人在不同分支改
+  `models.py` 时容易出现「线上列和代码不一致」。
+- **候选方案**：
+  1. **Alembic / Flask-Migrate**：标准做法，但要多两个依赖 + 生成/审阅 migration 的流程；
+     本项目跑在 Vercel Serverless，迁移必须在本地手动执行（不能靠冷启动自动跑），
+     而且 Supabase pooler（6543 事务模式）上跑 DDL 偶有锁/连接问题，收益有限。
+  2. **保持 `init.py` + 手工 SQL**（当前）：零依赖、幂等、适合小表少变更的场景。
+  3. **轻量版本表**：只在 `init.py` 里记录已执行脚本编号。为 20 张表引入这套不划算。
+- **结论**：**暂不引入 Alembic**。触发重新评估的条件：表数量明显变多 / 需要频繁改列类型 /
+  多人同时改 schema。届时再上 Flask-Migrate，并保留 `init.py` 做「新环境一次到位」。
+- **当前约定**（改表结构时必须遵守）：
+  1. 先在本地跑一遍 `python init.py`，确认 `ensure_columns()` 输出符合预期；
+  2. 生产改动前先备份（Supabase Dashboard 导出或 `pg_dump`）；
+  3. 只加不删；确需删列/改类型时，手写 SQL 并记录到 [运维手册](operations.md)；
+  4. 先在生产库跑 `init.py`，再推代码（反了必 500）。
+
 ### 第六批已还（v4.29.0）
 
 - **萌战对阵图**：`/contest/<id>/bracket`，按 16强→8强→4强→决赛 分列，晋级方金色描边；

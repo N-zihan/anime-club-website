@@ -14,7 +14,7 @@
 <p style="color: var(--text-secondary);">每轮每组有 <strong>2场</strong> 对决，每场可投 <strong>1票</strong>，共可投 <strong>16票</strong></p>
 
 <div id="voteLive" class="vote-live-root" data-contest="{{ contest.id }}"
-     data-gender="{{ gender }}" data-mode="group">
+     data-gender="{{ gender }}" data-mode="group" data-poll-ms="{{ vote_poll_seconds * 1000 }}">
     <span class="vote-live-dot"></span><span id="voteLiveState" class="vote-live-state">实时</span>
 </div>
 

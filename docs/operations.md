@@ -97,13 +97,18 @@ git ls-remote origin refs/heads/main refs/tags/v4.24.0
 
 ## 8. 定时任务（邮件周报）
 
-每周一 09:00（北京时间）由 Vercel Cron 调用 `GET /api/cron/weekly-digest`：
+每周一 09:00（北京时间）由 Vercel Cron 调用 `GET /api/cron/weekly-digest`，
+09:30 再由 `/api/cron/weekly-digest-resume` 自动续发上一轮没发完的人：
 
 - 请求头需带 `Authorization: Bearer $CRON_SECRET`（Vercel 配了 `CRON_SECRET` 环境变量会自动带上）
 - 内容：近 5 条番剧新闻（含一句摘要 + 封面小图）+ 进行中赛事的「当前阶段 / 下一个截止时间」
 - 每封信带**专属一键退订链接**（签名 token，30 天有效）：点一下即关闭邮件通知，无需登录
-- 手动补发：`curl -H "X-Cron-Secret: ***" "https://<你的域名>/api/cron/weekly-digest?force=1"`
-- 返回 `{"ok":true,"recipients":N,"sent":M}`；非周一自动跳过（`skipped: not-monday`）
+- **分批发送**：单个 Vercel 函数最长 60 秒，旧实现给每个人单独建 SMTP 连接，100+ 人会在
+  60 秒内被截断 → 只发出去一部分。现在所有邮件共用一条 SMTP 连接，单次最多 `batch` 封
+  （默认 200）、最多跑 45 秒；发不完返回 `remaining`，由 09:30 的 resume cron 自动续发。
+- 发送结果记在 `digest_sends` 表（`user_id` + 当周周一），**同一周只发一次**，重复调用自动跳过已发的人
+- 手动补发/续发：`curl -H "X-Cron-Secret: ***" "https://<你的域名>/api/cron/weekly-digest?force=1"`
+- 返回 `{"ok":true,"recipients":N,"sent":M,"failed":F,"remaining":R,"week":"YYYY-MM-DD","done":true}`
 - 配置见 `vercel.json` 的 `crons` 字段；未配置 `CRON_SECRET` 时接口返回 503（防止裸奔）
 - 退订页：`/digest/unsubscribe/<token>`（公开页；token 无效/过期返回 400 并提示去设置页手动关闭）
 

@@ -238,6 +238,49 @@ def send_email_batch(email_list, subject, body, is_html=True):
     return sent
 
 
+def send_html_batch(items):
+    """一次 SMTP 连接批量发送 [(to_email, subject, html), ...]，返回成功发送的邮箱列表。
+
+    周报用途：逐个收件人新建 SMTP 连接太慢，100+ 人会在 Vercel 60 秒上限内发不完。
+    """
+    if not MAIL_USERNAME or not MAIL_PASSWORD:
+        print('邮件未配置，跳过发送')
+        return []
+    if not items:
+        return []
+
+    sent = []
+    server = None
+    try:
+        if SMTP_USE_SSL:
+            server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT)
+        else:
+            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+            server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+
+        for to_email, subject, html_body in items:
+            try:
+                msg = MIMEText(html_body, 'html', 'utf-8')
+                msg['Subject'] = subject
+                msg['From'] = formataddr((CLUB_NAME, MAIL_USERNAME))
+                msg['To'] = to_email
+                server.sendmail(MAIL_USERNAME, [to_email], msg.as_string())
+                sent.append(to_email)
+            except Exception as e:
+                print(f'发送到 {to_email} 失败: {e}')
+    except Exception as e:
+        print(f'SMTP 连接失败: {e}')
+    finally:
+        if server:
+            try:
+                server.quit()
+            except Exception:
+                pass
+
+    return sent
+
+
 # ---------- 注册 ----------
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

@@ -7,8 +7,8 @@ import os
 from urllib.parse import quote
 from xml.sax.saxutils import escape
 
-from flask import Response, jsonify, render_template, request
-from sqlalchemy import func
+from flask import Response, current_app, jsonify, render_template, request
+from sqlalchemy import func, text
 
 from .contest_engine import (calc_stage_times, current_group_round,
                              current_knockout_sub_round)
@@ -133,9 +133,26 @@ def api_contest_vote_stats(contest_id):
     })
 
 
-@public_bp.route('/api/cron/weekly-digest', methods=['GET', 'POST'])
-def weekly_digest_cron():
-    """每周邮件周报（Vercel Cron 每周一 01:00 UTC 调用；用 CRON_SECRET 保护）。"""
+@public_bp.route('/api/health')
+def health():
+    """健康检查（给监控 / 每周巡检用）：版本、数据库连通性，不含任何敏感信息。"""
+    payload = {
+        'ok': True,
+        'version': current_app.config.get('APP_VERSION', 'dev'),
+        'time': cn_now().strftime('%Y-%m-%d %H:%M:%S'),
+    }
+    try:
+        db.session.execute(text('SELECT 1'))
+        payload['db'] = 'ok'
+    except Exception:  # pragma: no cover - 数据库挂了健康检查必须还能返回
+        db.session.rollback()
+        payload['ok'] = False
+        payload['db'] = 'error'
+    return jsonify(payload), (200 if payload['ok'] else 503)
+
+
+def _digest_cron_run(force=False):
+    """周报 cron 的公共实现：鉴权 → 周一判断 → 分批发送（不发完会返回 remaining）。"""
     import hmac  # pylint: disable=import-outside-toplevel
 
     secret = os.getenv('CRON_SECRET')
@@ -148,14 +165,36 @@ def weekly_digest_cron():
         return jsonify({'ok': False, 'error': 'forbidden'}), 403
 
     now = cn_now()
-    force = request.args.get('force') == '1'
     if now.weekday() != 0 and not force:
         return jsonify({'ok': True, 'skipped': 'not-monday',
                         'today': now.strftime('%Y-%m-%d'), 'hint': '用 ?force=1 可强制发送'})
 
+    # Vercel 函数最长 60 秒：限制单次批量与时间预算，发不完返回 remaining 供下一次续发
+    batch = request.args.get('batch', type=int) or 200
+    budget = request.args.get('budget', type=int) or 45
+    batch = max(1, min(batch, 500))
+    budget = max(5, min(budget, 55))
+
     from .digest import send_weekly_digest  # pylint: disable=import-outside-toplevel
-    result = send_weekly_digest(base_url=request.url_root)
-    return jsonify({'ok': True, **result})
+    result = send_weekly_digest(base_url=request.url_root,
+                                batch=batch, time_budget=budget)
+    payload = {'ok': True, **result}
+    if not result.get('done'):
+        payload['hint'] = ('还有收件人没发完：再次调用本接口，'
+                           '或等每周一 01:30 UTC 的 resume cron 自动续发')
+    return jsonify(payload)
+
+
+@public_bp.route('/api/cron/weekly-digest', methods=['GET', 'POST'])
+def weekly_digest_cron():
+    """每周邮件周报（Vercel Cron 每周一 01:00 UTC 调用；用 CRON_SECRET 保护）。"""
+    return _digest_cron_run(force=request.args.get('force') == '1')
+
+
+@public_bp.route('/api/cron/weekly-digest-resume', methods=['GET', 'POST'])
+def weekly_digest_resume():
+    """周报续发（Vercel Cron 每周一 01:30 UTC 调用）：补发 01:00 那轮没发完的收件人。"""
+    return _digest_cron_run(force=True)
 
 
 @public_bp.route('/digest/unsubscribe/<token>', methods=['GET', 'POST'])

@@ -16,7 +16,10 @@
     var gender = root.dataset.gender || 'female';
     var mode = root.dataset.mode || 'group';
     var stateEl = document.getElementById('voteLiveState');
-    var POLL_MS = 10000;
+    // 轮询间隔：模板用 data-poll-ms 注入（VOTE_POLL_SECONDS，默认 10 秒，范围 3~60 秒）
+    var POLL_MS = parseInt(root.dataset.pollMs || '', 10);
+    if (!POLL_MS || POLL_MS < 3000) POLL_MS = 10000;
+    if (POLL_MS > 60000) POLL_MS = 60000;
     var timer = null;
     var clockTimer = null;
     var alive = true;

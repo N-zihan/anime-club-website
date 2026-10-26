@@ -30,4 +30,4 @@ jobs:
           flake8 app/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
-          pytest -v --cov=app --cov-report=term
+          pytest -v --cov=app --cov-report=term --cov-fail-under=70

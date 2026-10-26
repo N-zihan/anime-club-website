@@ -5,13 +5,15 @@
 """
 import html
 import logging
+import time
+from datetime import timedelta
 
 from flask import current_app
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .anime_news import get_anime_news
 from .contest_engine import calc_phase, calc_stage_times
-from .models import Contest, User
+from .models import Contest, DigestSend, User, db
 from .notify import _build_email_html
 from .preferences import get_preferences, save_preferences
 from .utils import cn_now
@@ -207,19 +209,79 @@ def build_digest(now=None, unsubscribe_url=None):
     return subject, html_body, content
 
 
-def send_weekly_digest(base_url=''):
-    """逐个收件人发送（每封带专属退订链接），返回统计。"""
-    from .auth import send_email  # 延迟导入，避免 auth ↔ digest 循环
+def _week_key(now):
+    """当周周一的日期字符串，作为「同一周只发一次」的幂等键。"""
+    return (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')
 
-    recipients = digest_recipients()
+
+def _already_sent_user_ids(week):
+    """本周已经发过的 user_id 集合；表还没建（没跑 init.py）时退化为空集合。"""
+    try:
+        rows = db.session.query(DigestSend.user_id).filter(DigestSend.week == week).all()
+    except Exception as exc:  # pragma: no cover - 部署早期/表缺失时的兜底
+        logger.warning('读取周报发送记录失败（digest_sends 表可能还没建）: %s', exc)
+        db.session.rollback()
+        return set()
+    return {row[0] for row in rows}
+
+
+def send_weekly_digest(base_url='', batch=None, time_budget=45):
+    """给本周还没收到的社员发周报（单连接批量 + 断点续发），返回统计。
+
+    Vercel 函数最长 60 秒。旧实现给每个收件人单独新建 SMTP 连接，100+ 人会在
+    60 秒内被截断，所以出现「周报只发了一部分人」。现在：
+    - 所有邮件共用一条 SMTP 连接（auth.send_html_batch）；
+    - 每次最多 batch 封（默认 200）、最多跑 time_budget 秒（默认 45），超了就停；
+    - 发送结果写 DigestSend（user_id + 当周周一），再次调用自动跳过已发的人。
+    """
+    from .auth import send_html_batch  # 延迟导入，避免 auth ↔ digest 循环
+
     now = cn_now()
-    sent = 0
-    for user in recipients:
-        url = ''
-        if base_url:
-            token = make_unsubscribe_token(user.id)
-            url = f'{base_url.rstrip("/")}/digest/unsubscribe/{token}'
-        subject, html, _text = build_digest(now=now, unsubscribe_url=url or None)
-        if send_email(user.email, subject, html, is_html=True):
-            sent += 1
-    return {'recipients': len(recipients), 'sent': sent}
+    week = _week_key(now)
+    recipients = [user for user in digest_recipients() if user.email]
+    already = _already_sent_user_ids(week)
+    pending = [user for user in recipients if user.id not in already]
+    limit = max(1, int(batch or 200))
+    pending = pending[:limit]
+
+    started = time.monotonic()
+    sent = failed = cursor = 0
+    while cursor < len(pending):
+        if time.monotonic() - started > time_budget:
+            break
+        chunk = pending[cursor:cursor + 10]
+        cursor += len(chunk)
+
+        payload = []
+        for user in chunk:
+            url = ''
+            if base_url:
+                token = make_unsubscribe_token(user.id)
+                url = f'{base_url.rstrip("/")}/digest/unsubscribe/{token}'
+            subject, body, _text = build_digest(now=now, unsubscribe_url=url or None)
+            payload.append((user.email, subject, body))
+
+        ok_emails = set(send_html_batch(payload))
+        for user in chunk:
+            ok = user.email in ok_emails
+            if ok:
+                sent += 1
+            else:
+                failed += 1
+            db.session.add(DigestSend(user_id=user.id, week=week,
+                                      email=user.email, ok=ok))
+        try:
+            db.session.commit()
+        except Exception as exc:  # pragma: no cover - 记录失败不影响已发出的邮件
+            logger.warning('记录周报发送结果失败: %s', exc)
+            db.session.rollback()
+
+    remaining = max(0, len([u for u in recipients if u.id not in already]) - cursor)
+    return {
+        'recipients': len(recipients),
+        'sent': sent,
+        'failed': failed,
+        'remaining': remaining,
+        'week': week,
+        'done': remaining == 0,
+    }
