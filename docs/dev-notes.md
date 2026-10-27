@@ -161,7 +161,7 @@ mkdocs build            # 输出到 site/
 - **下一步（需要主人决策/成本）**：Supabase 迁到新加坡/香港可再省 30~60ms/查询；
   匿名公开页上 Vercel 边缘缓存（现在 HTML 是 dynamic）；国内备案 + 双栈部署
   （`hkg1` 对国内用户已经比较近，主要是微信/QQ 卡片信任问题）。
-- 全量 pytest **725 passed**。
+- 全量 pytest **726 passed**。
 
 ### 第七批已还（v4.33.0 / v4.33.1）
 
