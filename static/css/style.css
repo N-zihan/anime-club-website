@@ -3909,11 +3909,21 @@ body.has-composer footer {
 }
 
 @media (max-width: 1024px) {
-    /* 窄屏（手机/平板/小窗口）看板娘只做装饰：关闭指针交互，
-       否则它会盖住表单右下角的「发布 / 发送」按钮，点了没反应 */
+    /* 窄屏（手机/平板/小窗口）：容器本身不拦截点击，但立绘恢复交互——
+       手机上也能点看板娘、拖动她（v4.33.2 起）。
+       唯一例外：带底部输入框的页面（论坛发帖/回复）仍旧关掉立绘的指针事件，
+       否则她会盖住右下角的「发布 / 发送」按钮。 */
     #kanban,
-    #kanban-img,
     #kanban-bubble-wrap {
+        pointer-events: none !important;
+    }
+
+    #kanban-img {
+        pointer-events: auto !important;
+        touch-action: none;
+    }
+
+    body.has-composer #kanban-img {
         pointer-events: none !important;
     }
 }

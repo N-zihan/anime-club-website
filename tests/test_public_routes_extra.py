@@ -179,3 +179,9 @@ class TestOpsHardening:
         assert ('/static/images/icon-512.png', '512x512', 'any') in icons
         assert ('/static/images/icon-512-maskable.png', '512x512', 'maskable') in icons
 
+    def test_mobile_kanban_is_interactive(self):
+        """手机端看板娘可点可拖（v4.33.2）：立绘恢复 pointer-events，带输入框页面例外。"""
+        from pathlib import Path
+        css = (Path(__file__).resolve().parent.parent / 'static' / 'css' / 'style.css').read_text(encoding='utf-8')
+        assert 'pointer-events: auto !important' in css
+        assert 'body.has-composer #kanban-img' in css

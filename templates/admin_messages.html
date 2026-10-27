@@ -6,7 +6,7 @@
     <h2>帖子管理</h2>
 </div>
 
-{% if messages %}
+{% if rows %}
 <table class="admin-table">
     <thead>
     <tr>
@@ -19,13 +19,14 @@
     </tr>
     </thead>
     <tbody>
-    {% for msg in messages %}
+    {% for row in rows %}
+    {% set msg = row.msg %}
     <tr class="msg-row">
         <td>{{ msg.id }}</td>
-        <td>{{ msg.content[:50] }}{% if msg.content|length > 50 %}...{% endif %}</td>
+        <td>{{ (msg.content or '')[:50] }}{% if (msg.content or '')|length > 50 %}...{% endif %}</td>
         <td>{{ msg.user.username if msg.user else msg.nickname }}</td>
-        <td>{{ msg.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td class="u-dac4fe6c">{{ msg.replies.count() }}</td>
+        <td>{{ row.time.strftime('%Y-%m-%d %H:%M') if row.time else '—' }}</td>
+        <td class="u-dac4fe6c">{{ row.reply_count }}</td>
         <td class="u-dac4fe6c">
             <button class="toggle-reply-btn u-37b80a3a" data-msg-id="{{ msg.id }}">
                 查看回复
@@ -41,12 +42,13 @@
     <tr class="reply-row" data-msg-id="{{ msg.id }}" style="display:none; background:#f9fafb;">
         <td colspan="6" class="u-a2e94d72">
             <div class="u-52615a52">
-                {% if msg.replies.count() %}
-                {% for reply in msg.replies %}
+                {% if row.replies %}
+                {% for item in row.replies %}
+                {% set reply = item.reply %}
                 <div style="display:flex; align-items:center; gap:12px; padding:4px 0; border-bottom:1px solid #edf2f7; font-size:0.9rem;">
                     <span class="u-c2e64951">#{{ reply.id }}</span>
                     <span class="u-856bd833">{{ reply.user.username if reply.user else reply.nickname }}</span>
-                    <span class="u-d359ed0a">{{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span class="u-d359ed0a">{{ item.time.strftime('%Y-%m-%d %H:%M') if item.time else '—' }}</span>
                     <span class="u-b8ab7306">{{ reply.content }}</span>
                     <form method="POST" action="{{ url_for('admin.admin_delete_reply', reply_id=reply.id) }}"
                           style="display:inline;"

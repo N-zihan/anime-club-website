@@ -35,6 +35,7 @@ from .models import (db, User, Activity, Photo, Message, Reply,
                      AIPersona, AIChatMessage, AdminLog, Report)
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
 from .utils import get_supabase, allowed_file, compress_image, get_or_404, cn_now
 from .notify import notify
@@ -495,16 +496,42 @@ def export_users_excel():
 @admin_bp.route('/admin/messages')
 @admin_required
 def admin_messages():
-    """留言管理页面，显示所有留言及回复"""
-    messages = Message.query.order_by(Message.timestamp.desc()).all()
-    # 时间转东八区：Message/Reply.timestamp 存的是 naive UTC，前台 board()、
-    # user_profile()、notifications() 都已手动 +8，后台此前漏做，导致同一条留言
-    # 在前后台相差 8 小时。（仅用于本次渲染，不提交，请求结束随会话回滚。）
+    """留言管理页面，显示所有留言及回复。
+
+    旧实现会在循环里逐条访问 msg.replies / reply.user（每条一次 SQL），15 条留言
+    就要 16+ 次查询；Supabase pooler 慢的时候容易把请求拖到 Vercel 60 秒上限，
+    表现为「帖子管理点不开、弹 500 页面」。现在一次取齐留言、一次取齐回复再分组。
+    也不再原地修改 ORM 对象的 timestamp（只用于展示，改对象可能触发自动 flush）。
+    """
+    messages = (Message.query
+                .options(joinedload(Message.user))
+                .order_by(Message.timestamp.desc()).all())
+    msg_ids = [msg.id for msg in messages]
+    replies = []
+    if msg_ids:
+        replies = (Reply.query
+                   .options(joinedload(Reply.user))
+                   .filter(Reply.message_id.in_(msg_ids))
+                   .order_by(Reply.timestamp.asc()).all())
+
+    replies_by_msg = {}
+    for reply in replies:
+        replies_by_msg.setdefault(reply.message_id, []).append(reply)
+
+    def _cn(dt):
+        return dt + timedelta(hours=8) if dt else None
+
+    rows = []
     for msg in messages:
-        msg.timestamp = msg.timestamp + timedelta(hours=8)
-        for reply in msg.replies:
-            reply.timestamp = reply.timestamp + timedelta(hours=8)
-    return render_template('admin_messages.html', messages=messages)
+        msg_replies = replies_by_msg.get(msg.id, [])
+        rows.append({
+            'msg': msg,
+            'time': _cn(msg.timestamp),
+            'replies': [{'reply': reply, 'time': _cn(reply.timestamp)}
+                        for reply in msg_replies],
+            'reply_count': len(msg_replies),
+        })
+    return render_template('admin_messages.html', rows=rows)
 
 
 @admin_bp.route('/admin/messages/delete/<int:message_id>', methods=['POST'])

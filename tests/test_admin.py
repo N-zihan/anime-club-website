@@ -42,6 +42,25 @@ class TestAdmin:
         assert response.status_code == 200
         assert '帖子管理' in response.text
 
+
+    def test_admin_messages_renders_thread_and_replies(self, admin_client, db_session):
+        """帖子管理要能同时列出主帖与回复（v4.33.2 起一次查询取齐，避免 N+1 超时）。"""
+        from app.models import Message, Reply
+
+        thread = Message(nickname='楼主', content='主帖内容测试', user_id=None)
+        db_session.add(thread)
+        db_session.commit()
+        db_session.add(Reply(nickname='回复者', content='回复内容测试',
+                             message_id=thread.id, user_id=None))
+        db_session.commit()
+
+        response = admin_client.get('/admin/messages')
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert '主帖内容测试' in body
+        assert '回复内容测试' in body
+        assert '回复者' in body
+
     def test_admin_contests_manage_loads(self, admin_client):
         response = admin_client.get('/admin/contests/manage')
         assert response.status_code == 200

@@ -110,10 +110,11 @@
 </div>
 
 {% if session.user_id %}
-<form class="thread-composer" method="POST" action="{{ url_for('public.add_reply', message_id=thread.id) }}">
+<form class="thread-composer" method="POST" action="{{ url_for('public.add_reply', message_id=thread.id) }}"
+      autocomplete="off">
     <div class="thread-composer-inner">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <textarea name="content" id="thread-reply-input" rows="1" required
+        <textarea name="content" id="thread-reply-input" rows="1" required autocomplete="off"
                   placeholder="写下你的回复…（Ctrl + Enter 发送）"></textarea>
         <button class="btn btn-primary thread-composer-send" type="submit">发送</button>
     </div>
@@ -154,6 +155,15 @@
         input.addEventListener('input', autoGrow);
         autoGrow();
         window.addEventListener('resize', autoGrow);
+
+        // 发送成功后，部分手机浏览器会从前进/后退缓存恢复表单内容：
+        // 页面从 bfcache 恢复时把草稿清掉，避免「发送了但输入框还留着字」。
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                input.value = '';
+                autoGrow();
+            }
+        });
 
         input.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
