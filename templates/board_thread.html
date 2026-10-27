@@ -20,7 +20,7 @@
         <h2 class="thread-title">{{ thread.display_title }}</h2>
         <div class="thread-body">{{ thread.content }}{% if thread.edited_at %}<span class="thread-edited" title="{{ thread.edited_at.strftime('%Y-%m-%d %H:%M') }}">（已编辑）</span>{% endif %}</div>
         <div class="thread-op-actions">
-            {% if can_delete_thread %}
+            {% if is_author_thread %}
             <a class="thread-delete-btn thread-edit-link" href="{{ url_for('public.edit_thread', thread_id=thread.id) }}">编辑主题</a>
             {% endif %}
             {% if session.user_id and thread.user_id != session.user_id %}
@@ -30,7 +30,7 @@
             <form method="POST" action="{{ url_for('public.delete_thread', thread_id=thread.id) }}"
                   onsubmit="return confirm('确定删除这个帖子吗？帖子下的全部回复也会一起删除。')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="thread-delete-btn">删除主题</button>
+                <button type="submit" class="thread-delete-btn{% if not is_author_thread %} thread-mod-delete{% endif %}">{% if is_author_thread %}删除主题{% else %}删除主题（管理）{% endif %}</button>
             </form>
             {% endif %}
         </div>
@@ -57,7 +57,7 @@
             {% if session.user_id %}
             <button type="button" class="thread-reply-btn" data-target="reply-form-{{ r.id }}"
                     onclick="toggleReply(this)">回复</button>
-            {% if r.id in deletable_reply_ids %}
+            {% if r.id in editable_reply_ids %}
             <button type="button" class="thread-reply-btn" data-target="edit-form-{{ r.id }}"
                     onclick="toggleReply(this)">编辑</button>
             {% endif %}
@@ -70,8 +70,10 @@
                   onsubmit="return confirm('确定删除这条回复吗？')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="page" value="{{ page }}">
-                <button type="submit" class="thread-delete-btn">删除</button>
+                <button type="submit" class="thread-delete-btn{% if r.user_id != session.user_id %} thread-mod-delete{% endif %}">{% if r.user_id == session.user_id %}删除{% else %}删除（管理）{% endif %}</button>
             </form>
+            {% endif %}
+            {% if r.id in editable_reply_ids %}
             <form class="thread-reply-form" id="edit-form-{{ r.id }}" method="POST"
                   action="{{ url_for('public.edit_reply', reply_id=r.id) }}" style="display:none;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

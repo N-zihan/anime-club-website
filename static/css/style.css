@@ -3403,6 +3403,18 @@ body.has-composer footer {
     background: rgba(220, 38, 38, 0.06);
 }
 
+/* 运营/站长删除他人内容：琥珀色区分「管理操作」，避免和作者自己的删除按钮混淆 */
+.thread-mod-delete {
+    border-color: rgba(180, 83, 9, 0.35);
+    color: #b45309;
+}
+
+.thread-mod-delete:hover {
+    color: #b45309;
+    border-color: rgba(180, 83, 9, 0.55);
+    background: rgba(180, 83, 9, 0.08);
+}
+
 .thread-op-actions {
     display: flex;
     justify-content: flex-end;

@@ -113,7 +113,7 @@
 
 ??? question "测试怎么跑？有多少用例？"
     ```bash
-    python -m pytest -q          # 单元/集成，690+ 用例（当前 713）
+    python -m pytest -q          # 单元/集成，690+ 用例（当前 718）
     npx playwright test          # 端到端（会自己起服务，需 5000 端口空闲）
     ```
 

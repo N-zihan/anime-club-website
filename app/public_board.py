@@ -157,11 +157,14 @@ def board_thread(thread_id):
             else:
                 parent_names[reply.id] = parent.user.username if parent.user else parent.nickname
 
-    # 删除权限：作者本人可删自己的帖子/回复；运营/站长可删任意内容
+    # 权限：作者本人可编辑/删除自己的内容；运营/站长可删除任意内容（管理操作），
+    # 但不再对别人的内容显示「编辑」——否则站长会看到满屏编辑按钮，也容易误改社员原话。
     uid = session.get('user_id')
     me = db.session.get(User, uid) if uid else None
     is_moderator = bool(me and (me.is_staff or me.is_owner))
-    can_delete_thread = bool(uid and (is_moderator or thread.user_id == uid))
+    is_author_thread = bool(uid and thread.user_id == uid)
+    can_delete_thread = bool(uid and (is_moderator or is_author_thread))
+    editable_reply_ids = {r.id for r in replies if uid and r.user_id == uid}
     deletable_reply_ids = {
         r.id for r in replies if uid and (is_moderator or r.user_id == uid)
     }
@@ -176,7 +179,10 @@ def board_thread(thread_id):
         reply_offset=reply_offset,
         page=page,
         total_pages=total_pages,
+        is_moderator=is_moderator,
+        is_author_thread=is_author_thread,
         can_delete_thread=can_delete_thread,
+        editable_reply_ids=editable_reply_ids,
         deletable_reply_ids=deletable_reply_ids,
     )
 
