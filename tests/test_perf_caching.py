@@ -12,6 +12,8 @@ def test_versioned_static_is_immutable(client):
     cache = resp.headers.get('Cache-Control', '')
     assert 'max-age=31536000' in cache
     assert 'immutable' in cache
+    # 让 Vercel 边缘也缓存函数返回的静态资源
+    assert resp.headers.get('Vercel-CDN-Cache-Control') == cache
 
 
 def test_unversioned_image_cached_one_day(client):

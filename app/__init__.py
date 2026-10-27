@@ -164,12 +164,17 @@ def create_app():
             if ext in _STATIC_CACHE_EXTS:
                 if request.args.get('v'):
                     # 模板里所有 CSS/JS 都带 ?v=<版本号>，URL 变了才会重新请求
-                    response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+                    cache = 'public, max-age=31536000, s-maxage=31536000, immutable'
                 else:
-                    response.headers['Cache-Control'] = 'public, max-age=86400'
+                    cache = 'public, max-age=86400, s-maxage=86400'
+                response.headers['Cache-Control'] = cache
+                # Vercel 边缘缓存：函数响应默认不缓存，显式声明后静态资源由边缘直接返回
+                response.headers['Vercel-CDN-Cache-Control'] = cache
         elif response.status_code == 200 and path in _PUBLIC_CACHE_PATHS:
             # 爬虫抓 robots/sitemap 不用每次回源；1 小时足够新
-            response.headers['Cache-Control'] = 'public, max-age=3600'
+            cache = 'public, max-age=3600, s-maxage=3600'
+            response.headers['Cache-Control'] = cache
+            response.headers['Vercel-CDN-Cache-Control'] = cache
         return response
 
     @app.context_processor

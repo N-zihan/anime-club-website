@@ -8,7 +8,8 @@ const STATIC_URLS = [
     '/static/css/style.css',
     '/static/images/icon-192.png',
     '/static/images/icon-512.png',
-    '/static/images/kanban.png',
+    '/static/images/kanban-480.webp',
+    '/static/images/kanban-480.png',
     '/static/favicon.ico',
     OFFLINE_URL,
 ];
