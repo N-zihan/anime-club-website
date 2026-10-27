@@ -29,7 +29,7 @@
     <tr>
         <td>{{ user.id }}</td>
         <td>
-            <img alt="{{ user.username }}" src="{{ avatar_url(user) }}" class="u-a8c4d54e">
+            <img alt="{{ user.username }}" src="{{ avatar_url(user) }}" class="u-a8c4d54e" loading="lazy" decoding="async">
         </td>
         <td><strong>{{ user.username }}</strong></td>
         <td>{{ user.qq }}</td>

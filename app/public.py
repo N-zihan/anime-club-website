@@ -242,11 +242,12 @@ def index():
 
 @public_bp.route('/about')
 def about():
+    """社团介绍：用户列表一次取回后在内存里分 staff / owner，比再查两次省 2 个跨区 RTT。"""
     users = User.query.all()
-    staff = User.query.filter_by(is_staff=True).all()
-    owner = User.query.filter_by(is_owner=True).first()
-    activity_count = Activity.query.count()
-    contest_count = Contest.query.count()
+    staff = [u for u in users if u.is_staff]
+    owner = next((u for u in users if u.is_owner), None)
+    activity_count = db.session.query(func.count(Activity.id)).scalar() or 0
+    contest_count = db.session.query(func.count(Contest.id)).scalar() or 0
     return render_template('about.html', users=users, staff=staff, owner=owner,
                            activity_count=activity_count, contest_count=contest_count)
 

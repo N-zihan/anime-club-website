@@ -5,7 +5,7 @@
     <!-- 个人信息卡片 -->
     <div class="u-029e3964">
         <img alt="{{ user.username }}" src="{{ avatar_url(user) }}"
-             style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}#e2e8f0{% endif %};">
+             style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}#e2e8f0{% endif %};" loading="lazy" decoding="async">
         <h2 class="u-c2694d42">
             {{ user.username }}
             {% if user.is_owner %}👑{% elif user.is_staff %}🛠️{% endif %}

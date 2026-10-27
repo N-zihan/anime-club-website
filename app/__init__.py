@@ -136,14 +136,40 @@ def create_app():
         # 不要在这里 session.clear()：否则任何跨站 POST 都能把用户强制登出。
         return render_template('400.html'), 400
 
+    # 静态资源扩展名 → 可缓存
+    _STATIC_CACHE_EXTS = (
+        '.css', '.js', '.mjs', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg',
+        '.ico', '.woff', '.woff2', '.ttf', '.map',
+    )
+    # 内容极少变化的公开文件
+    _PUBLIC_CACHE_PATHS = ('/robots.txt', '/sitemap.xml', '/manifest.json')
+
     @app.after_request
     def add_security_headers(response):
-        """补基础安全响应头（Vercel 默认只带 HSTS；CSP 由模板 meta 提供）。"""
+        """安全响应头 + 静态资源缓存。
+
+        Vercel 上所有请求（包括 /static/）都经过 Flask 函数，浏览器/边缘不缓存的话
+        每次打开页面都要回源一次（实测 150~200ms/个）。带 ?v= 的 CSS/JS 的 URL 会随
+        版本变化，可以放心 immutable；无版本号的图片等给 1 天。
+        """
         response.headers.setdefault('X-Content-Type-Options', 'nosniff')
         response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
         response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
         response.headers.setdefault('Permissions-Policy',
                                     'geolocation=(), microphone=(), camera=()')
+
+        path = request.path
+        if response.status_code == 200 and path.startswith('/static/'):
+            ext = os.path.splitext(path)[1].lower()
+            if ext in _STATIC_CACHE_EXTS:
+                if request.args.get('v'):
+                    # 模板里所有 CSS/JS 都带 ?v=<版本号>，URL 变了才会重新请求
+                    response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+                else:
+                    response.headers['Cache-Control'] = 'public, max-age=86400'
+        elif response.status_code == 200 and path in _PUBLIC_CACHE_PATHS:
+            # 爬虫抓 robots/sitemap 不用每次回源；1 小时足够新
+            response.headers['Cache-Control'] = 'public, max-age=3600'
         return response
 
     @app.context_processor
@@ -154,6 +180,13 @@ def create_app():
         except ValueError:
             seconds = 10
         return {'vote_poll_seconds': max(3, min(seconds, 60))}
+
+    @app.context_processor
+    def inject_supabase_host():
+        """头像/照片在 Supabase Storage 的跨域域名，提前 preconnect 省一次建连。"""
+        url = os.getenv('SUPABASE_URL', '') or ''
+        host = url.split('://', 1)[-1].split('/', 1)[0] if url else ''
+        return {'supabase_host': host}
 
     # 允许搜索引擎收录的只读页面（按需增删；不要把写接口放进来）
     crawlable_routes = [
@@ -220,6 +253,7 @@ def create_app():
             'public.weekly_digest_resume',
             'public.digest_unsubscribe',
             'public.health',
+            'public.favicon',
             'public.share_home',
             'public.share_contest',
             # 设置页只读写本机偏好，不含账号数据，匿名访客也可使用

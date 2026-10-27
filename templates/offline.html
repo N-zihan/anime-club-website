@@ -3,8 +3,11 @@
 
 {% block content %}
 <div class="offline-wrap">
-    <img class="offline-img" src="{{ url_for('static', filename='images/kanban.png') }}"
-         alt="看板娘" width="160" height="160">
+    <picture>
+        <source srcset="{{ url_for('static', filename='images/kanban-480.webp') }}" type="image/webp">
+        <img class="offline-img" src="{{ url_for('static', filename='images/kanban-480.png') }}"
+             alt="看板娘" width="160" height="160" loading="lazy" decoding="async">
+    </picture>
     <h2 class="offline-title">网络开小差了…</h2>
     <p class="offline-desc">
         看起来你现在没有网络（或者信号不太行）。<br>

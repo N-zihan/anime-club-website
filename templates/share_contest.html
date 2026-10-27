@@ -3,7 +3,7 @@
 {% block content %}
 <div class="share-page">
     <img class="share-hero" src="{{ url_for('static', filename='images/og-cover.png') }}?v={{ app_version }}"
-         alt="{{ contest.title }} 封面" width="1200" height="630">
+         alt="{{ contest.title }} 封面" width="1200" height="630" loading="lazy" decoding="async">
 
     <div class="share-badges">
         <span class="share-badge">🏆 {{ phase or '赛事进行中' }}</span>

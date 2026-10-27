@@ -54,7 +54,7 @@
             <div data-candidate-id="{{ pair[0] }}" class="u-dac4fe6c">
                 {% set c1 = candidates.get(pair[0]) %}
                 {% if c1 and c1.image_url %}
-                <img src="{{ c1.image_url }}" style="max-width:50px; max-height:50px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
+                <img src="{{ c1.image_url }}" style="max-width:50px; max-height:50px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;" loading="lazy" decoding="async">
                 {% endif %}
                 <div><strong class="u-29dc4caf">{% if pair[0] is none %}轮空{% else %}{{ c1.name if c1 else '已移除' }}{% endif %}</strong>
                     {% if c1 and c1.banned %}<span class="u-49d58a74">🚫 禁赛</span>{% endif %}</div>
@@ -78,7 +78,7 @@
             <div data-candidate-id="{{ pair[1] }}" class="u-dac4fe6c">
                 {% set c2 = candidates.get(pair[1]) %}
                 {% if c2 and c2.image_url %}
-                <img src="{{ c2.image_url }}" style="max-width:50px; max-height:50px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
+                <img src="{{ c2.image_url }}" style="max-width:50px; max-height:50px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;" loading="lazy" decoding="async">
                 {% endif %}
                 <div><strong class="u-29dc4caf">{% if pair[1] is none %}轮空{% else %}{{ c2.name if c2 else '已移除' }}{% endif %}</strong>
                     {% if c2 and c2.banned %}<span class="u-49d58a74">🚫 禁赛</span>{% endif %}</div>
@@ -292,7 +292,7 @@
         <td class="u-c39f2eb5">{{ loop.index }}</td>
         <td style="padding:6px 10px; display:flex; align-items:center; gap:6px; color: var(--text-primary);">
             {% if item.image_url %}
-            <img src="{{ item.image_url }}" class="u-7b4588b0">
+            <img src="{{ item.image_url }}" class="u-7b4588b0" loading="lazy" decoding="async">
             {% endif %}
             {{ item.name }}
             {% if item.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}

@@ -10,7 +10,7 @@
 
     <article class="thread-post thread-post-op">
         <header class="thread-post-head">
-            <img class="thread-avatar" src="{{ avatar_url(thread.user) }}" alt="">
+            <img class="thread-avatar" src="{{ avatar_url(thread.user) }}" alt="" loading="lazy" decoding="async">
             <div class="thread-post-meta">
                 <strong>{{ thread.user.username if thread.user else thread.nickname }}</strong>
                 <span class="thread-badge">楼主</span>
@@ -43,7 +43,7 @@
         {% for r in replies %}
         <div class="thread-post" id="post-{{ r.id }}">
             <header class="thread-post-head">
-                <img class="thread-avatar" src="{{ avatar_url(r.user) }}" alt="">
+                <img class="thread-avatar" src="{{ avatar_url(r.user) }}" alt="" loading="lazy" decoding="async">
                 <div class="thread-post-meta">
                     <strong>{{ r.user.username if r.user else r.nickname }}</strong>
                     {% if parent_names.get(r.id) %}

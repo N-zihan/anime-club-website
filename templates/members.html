@@ -9,7 +9,7 @@
         <div class="member-card">
             <div class="member-avatar">
                 <img alt="{{ user.username }}" src="{{ avatar_url(user) }}"
-                     style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}var(--border-color){% endif %};">
+                     style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if user.is_owner %}gold{% elif user.is_staff %}#2c3e50{% else %}var(--border-color){% endif %};" loading="lazy" decoding="async">
             </div>
             <div class="member-info">
                 <h3 class="u-29dc4caf">

@@ -295,7 +295,7 @@
             : '';
         const coverHtml = coverSrc
             ? '<img src="' + coverSrc + '" alt="' + escapeHtml(d.name) + '" ' +
-              'style="width:200px; height:280px; object-fit:cover; border-radius:12px; flex-shrink:0; background: var(--bg-code);">'
+              'style="width:200px; height:280px; object-fit:cover; border-radius:12px; flex-shrink:0; background: var(--bg-code);" loading="lazy" decoding="async">'
             : '<div style="width:200px; height:280px; background: var(--bg-code); border-radius:12px; flex-shrink:0;"></div>';
 
         const scoreHtml = d.score
@@ -462,7 +462,7 @@
         const coverSrc = d.image ? '/api/anime/cover?url=' + encodeURIComponent(d.image) : '';
         const coverHtml = coverSrc
             ? '<img src="' + coverSrc + '" alt="' + escapeHtml(d.name) + '" ' +
-              'style="width:140px; height:200px; object-fit:cover; border-radius:12px; flex-shrink:0; background: var(--bg-code);">'
+              'style="width:140px; height:200px; object-fit:cover; border-radius:12px; flex-shrink:0; background: var(--bg-code);" loading="lazy" decoding="async">'
             : '<div style="width:140px; height:200px; background: var(--bg-code); border-radius:12px; flex-shrink:0;"></div>';
 
         const meta = [];

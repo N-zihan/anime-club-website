@@ -44,12 +44,17 @@ def share_home():
 
 @public_bp.route('/share/contest/<int:contest_id>')
 def share_contest(contest_id):
-    """赛事分享页（公开）：访客/爬虫能拿到标题、阶段、候选和首图。"""
+    """赛事分享页（公开）：访客/爬虫能拿到标题、阶段、候选和首图。
+
+    候选一次取回再在内存里分组/截断：原来 count + 女组 + 男组是三次独立查询，
+    再加上 contest 一共 4~5 次（每次都要跨区访问 Supabase），现在固定 2 次。
+    """
     contest = get_or_404(Contest, contest_id)
     phase = _phase_label(contest)
-    total = contest.candidates.count()
-    female = contest.candidates.filter_by(gender='female').limit(4).all()
-    male = contest.candidates.filter_by(gender='male').limit(4).all()
+    all_candidates = contest.candidates.all()
+    total = len(all_candidates)
+    female = [c for c in all_candidates if c.gender == 'female'][:4]
+    male = [c for c in all_candidates if c.gender == 'male'][:4]
     og_title = f'{contest.title} · {phase}' if phase else contest.title
     og_desc = f'{contest.title} 正在动漫社官网进行（{phase}），共 {total} 位角色参赛，登录即可投票围观～'
     return render_template('share_contest.html', contest=contest, phase=phase,

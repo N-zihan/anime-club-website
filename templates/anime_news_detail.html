@@ -29,7 +29,7 @@
 {% if article and article.image %}
 <div class="u-8b9688e6">
   <img src="/api/anime/news-image?url={{ article.image|urlencode }}"
-       alt="{{ article.title_zh if article.title_zh else (article.title if article else '') }}" class="u-d5cec741">
+       alt="{{ article.title_zh if article.title_zh else (article.title if article else '') }}" class="u-d5cec741" loading="lazy" decoding="async">
 </div>
 {% endif %}
 
@@ -101,7 +101,7 @@
     {% for img_url in images %}
     <a href="/api/anime/news-image?url={{ img_url|urlencode }}" target="_blank" rel="noopener">
       <img src="/api/anime/news-image?url={{ img_url|urlencode }}" 
-           alt="插图 {{ loop.index }}" class="u-92b7eb8a">
+           alt="插图 {{ loop.index }}" class="u-92b7eb8a" loading="lazy" decoding="async">
     </a>
     {% endfor %}
   </div>

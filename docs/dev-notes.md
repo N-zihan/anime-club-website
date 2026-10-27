@@ -144,6 +144,25 @@ mkdocs build            # 输出到 site/
   3. 只加不删；确需删列/改类型时，手写 SQL 并记录到 [运维手册](operations.md)；
   4. 先在生产库跑 `init.py`，再推代码（反了必 500）。
 
+### 第八批已还（v4.34.0 性能）
+
+- **静态资源缓存**：所有 `/static/` 响应原来都是 `no-cache`，Vercel 上每个资源都要回源一次函数
+  （实测 150~200ms/个）。现在带 `?v=<版本>` 的 CSS/JS 返回
+  `Cache-Control: public, max-age=31536000, immutable`，无版本号的图片 1 天；
+  `/robots.txt`、`/sitemap.xml`、`/manifest.json` 缓存 1 小时（爬虫友好）。
+- **图片瘦身**：看板娘原图 1447×1447 / **536KB**，显示只有 120~180px → 生成 480×480
+  WebP **31KB**（PNG 126KB 兜底，`<picture>` 自动选）；`favicon.ico` 之前其实是
+  926×926 JPEG（130KB）→ 换成真正的多尺寸 ICO（9KB）；33 处 `<img>` 补 `loading="lazy"`。
+- **少查询**：`/share/contest/<id>` 候选查询 5 → 3 次；`/about` 5 → 3 次；
+  另外 v4.33.2 已把「帖子管理」的 N+1 改成 2~3 次。
+- **测量方法**：`scripts` 之外用一次性脚本统计每个页面的 SQL 次数与耗时（`before_cursor_execute`
+  事件）；本地直连生产库单次查询约 250ms（地理距离），Vercel `hkg1` → Supabase 孟买
+  约 50~100ms/次，所以**减少查询次数**比优化单条 SQL 更划算。
+- **下一步（需要主人决策/成本）**：Supabase 迁到新加坡/香港可再省 30~60ms/查询；
+  匿名公开页上 Vercel 边缘缓存（现在 HTML 是 dynamic）；国内备案 + 双栈部署
+  （`hkg1` 对国内用户已经比较近，主要是微信/QQ 卡片信任问题）。
+- 全量 pytest **725 passed**。
+
 ### 第七批已还（v4.33.0 / v4.33.1）
 
 - **周报只发了一部分人（真 Bug 修复）**：旧实现给每个收件人单独新建 SMTP 连接，100+ 人会在

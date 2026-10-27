@@ -28,7 +28,7 @@
         <div class="u-dac4fe6c">
             {% set c1 = candidates.get(match.candidate1) %}
             {% if c1 and c1.image_url %}
-            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a">
+            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a" loading="lazy" decoding="async">
             {% endif %}
             <div>
                 <strong class="u-29dc4caf">{{ cand_label(match.candidate1) }}</strong>
@@ -41,7 +41,7 @@
         <div class="u-dac4fe6c">
             {% set c2 = candidates.get(match.candidate2) %}
             {% if c2 and c2.image_url %}
-            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a">
+            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a" loading="lazy" decoding="async">
             {% endif %}
             <div>
                 <strong class="u-29dc4caf">{{ cand_label(match.candidate2) }}</strong>
@@ -86,7 +86,7 @@
         <div data-candidate-id="{{ match.candidate1 }}" class="u-dac4fe6c">
             {% set c1 = candidates.get(match.candidate1) %}
             {% if c1 and c1.image_url %}
-            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a">
+            <img alt="{{ c1.name }}" src="{{ c1.image_url }}" class="u-29c7eb5a" loading="lazy" decoding="async">
             {% endif %}
             <div><strong class="u-29dc4caf">{{ c1.name if c1 else (cand_label(match.candidate1) if match.candidate1 is none else '已移除') }}</strong>
                 {% if c1 and c1.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}</div>
@@ -100,7 +100,7 @@
         <div data-candidate-id="{{ match.candidate2 }}" class="u-dac4fe6c">
             {% set c2 = candidates.get(match.candidate2) %}
             {% if c2 and c2.image_url %}
-            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a">
+            <img alt="{{ c2.name }}" src="{{ c2.image_url }}" class="u-29c7eb5a" loading="lazy" decoding="async">
             {% endif %}
             <div><strong class="u-29dc4caf">{{ cand_label(match.candidate2) }}</strong>
                 {% if c2 and c2.banned %}<span class="u-e1f47c35">🚫禁赛</span>{% endif %}</div>
@@ -246,7 +246,7 @@
         {% set c2 = candidates.get(final_match.candidate2) %}
         <div>
             {% if c1 and c1.image_url %}
-            <img src="{{ c1.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
+            <img src="{{ c1.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;" loading="lazy" decoding="async">
             {% endif %}
             <span class="u-ce82a13e">{% if c1 and c1.banned %}<span class="u-9c57f704">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate1) }}</span>
             <span class="u-3704804d">（{{ final_match.votes1 or 0 }}票）</span>
@@ -255,7 +255,7 @@
         <span class="u-ea61a0c3">VS</span>
         <div>
             {% if c2 and c2.image_url %}
-            <img src="{{ c2.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;">
+            <img src="{{ c2.image_url }}" style="max-width:60px; max-height:60px; width:auto; height:auto; border-radius:6px; display:block; margin:0 auto 4px;" loading="lazy" decoding="async">
             {% endif %}
             <span class="u-ce82a13e">{% if c2 and c2.banned %}<span class="u-9c57f704">🚫禁赛</span> {% endif %}{{ cand_label(final_match.candidate2) }}</span>
             <span class="u-3704804d">（{{ final_match.votes2 or 0 }}票）</span>

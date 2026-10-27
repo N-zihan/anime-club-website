@@ -28,7 +28,7 @@
              src="{{ url_for('public.api_anime_cover') }}?url={{ entry.image|urlencode }}">
         {% else %}
         <img alt="{{ entry.title }}" loading="lazy"
-             src="{{ url_for('static', filename='images/kanban.png') }}">
+             src="{{ url_for('static', filename='images/kanban-480.png') }}">
         {% endif %}
         <div class="anime-list-body">
             <div class="anime-list-title">{{ entry.title }}</div>

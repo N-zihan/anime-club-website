@@ -3,7 +3,7 @@
 {% block content %}
 <div class="share-page">
     <img class="share-hero" src="{{ url_for('static', filename='images/og-cover.png') }}?v={{ app_version }}"
-         alt="{{ club_name }}官网封面" width="1200" height="630">
+         alt="{{ club_name }}官网封面" width="1200" height="630" loading="lazy" decoding="async">
 
     <h1 class="share-title">{{ club_name }}</h1>
     <p class="share-sub">社团展示 · 社员论坛 · 番剧资源 · 萌战赛事</p>

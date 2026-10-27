@@ -12,7 +12,7 @@
         <div class="u-2b26f514">
             <h4 class="u-b69b1dd1">头像</h4>
             <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-                <img src="{{ avatar_url(user) }}" class="u-fbc8d650">
+                <img src="{{ avatar_url(user) }}" class="u-fbc8d650" loading="lazy" decoding="async">
                 <form method="POST" enctype="multipart/form-data" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <input type="hidden" name="action" value="change_avatar">
                     <input type="file" name="avatar" accept="image/*" required data-compress-upload class="u-2a0dff0c">
@@ -61,7 +61,7 @@
         <div class="u-d4b170e9">
             <h4 class="u-e17c0bfd">账号操作</h4>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                <!-- logout 只接受 POST：GET 链接会被 405，同时防止被外站 <img src="/logout"> 踢下线 -->
+                <!-- logout 只接受 POST：GET 链接会被 405，同时防止被外站 <img src="/logout" loading="lazy" decoding="async"> 踢下线 -->
                 <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline;">
                     <button type="submit" class="u-88d78383">退出登录</button>
                 </form>

@@ -21,7 +21,7 @@
         {% for c in candidates %}
         <div class="candidate-card u-bbdbe114" data-candidate-id="{{ c.id }}">
             {% if c.image_url %}
-            <img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-7de478cc">
+            <img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-7de478cc" loading="lazy" decoding="async">
             {% endif %}
             <div>
                 <strong class="u-29dc4caf">{{ c.name }}</strong>
@@ -254,7 +254,7 @@
         <div class="u-32072d70">🚫 已禁赛，不参与晋级</div>
         {% endif %}
         {% if item.image_url %}
-        <img src="{{ item.image_url }}" class="u-b16d8a60">
+        <img src="{{ item.image_url }}" class="u-b16d8a60" loading="lazy" decoding="async">
         {% endif %}
         <div class="u-b46173c3">{{ item.source }}</div>
         <div class="u-d240238f">票数：{{ item.votes }}</div>
@@ -284,7 +284,7 @@
             {% set c = candidates|selectattr('id', 'equalto', cid)|first %}
             <li style="padding:2px 0; display:flex; align-items:center; gap:6px; color: var(--text-primary);">
                 {% if c and c.image_url %}
-                <img src="{{ c.image_url }}" class="u-8864b7d2">
+                <img src="{{ c.image_url }}" class="u-8864b7d2" loading="lazy" decoding="async">
                 {% endif %}
                 <span>{{ '轮空' if cid is none else (c.name if c else '已移除') }}</span>
             </li>

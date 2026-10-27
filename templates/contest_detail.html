@@ -170,7 +170,7 @@
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for c in candidates if c.gender == 'female' %}
     <div data-candidate-id="{{ c.id }}" class="u-b83c2eac">
-        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6">{% endif %}
+        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6" loading="lazy" decoding="async">{% endif %}
         <div><strong>{{ c.name }}</strong></div>
         <div class="u-b46173c3">{{ c.source }}</div>
         <div class="u-ced41b42">女</div>
@@ -221,7 +221,7 @@
 <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px;">
     {% for c in candidates if c.gender == 'male' %}
     <div data-candidate-id="{{ c.id }}" class="u-b83c2eac">
-        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6">{% endif %}
+        {% if c.image_url %}<img alt="{{ c.name }}" src="{{ c.image_url }}" class="u-c6fddfe6" loading="lazy" decoding="async">{% endif %}
         <div><strong>{{ c.name }}</strong></div>
         <div class="u-b46173c3">{{ c.source }}</div>
         <div class="u-ced41b42">男</div>

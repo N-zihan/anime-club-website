@@ -55,6 +55,8 @@
 
     {# 样式表版本号跟着站点版本走：每次发版都会换 URL，避免老用户被浏览器缓存的旧 CSS 卡住
        （此前固定 ?v=6，换版后浏览器仍可能直接用几年前缓存的那份） #}
+    {% if supabase_host %}<link rel="preconnect" href="https://{{ supabase_host }}" crossorigin>{% endif %}
+    <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}?v={{ app_version }}" as="style">
     <link href="{{ url_for('static', filename='css/style.css') }}?v={{ app_version }}" rel="stylesheet">
 
     </head>
@@ -156,11 +158,15 @@
         </div>
         <div id="kanban-tail" class="u-985e4730"></div>
     </div>
-    <img id="kanban-img" src="{{ url_for('static', filename='images/kanban.png') }}"
-         alt="看板娘" draggable="false" width="120" height="120"
-         style="display:block; width:120px; height:auto; cursor:grab; pointer-events:auto;
-                filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-                animation:kanban-breathe 3s ease-in-out infinite; touch-action:none;">
+    <picture>
+        <!-- WebP 31KB / PNG 126KB，原图 1447×1447 有 536KB；显示只有 120~180px -->
+        <source srcset="{{ url_for('static', filename='images/kanban-480.webp') }}" type="image/webp">
+        <img id="kanban-img" src="{{ url_for('static', filename='images/kanban-480.png') }}"
+             alt="看板娘" draggable="false" width="120" height="120"
+             style="display:block; width:120px; height:auto; cursor:grab; pointer-events:auto;
+                    filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+                    animation:kanban-breathe 3s ease-in-out infinite; touch-action:none;">
+    </picture>
 </div>
 
 

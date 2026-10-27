@@ -49,7 +49,7 @@
     {% if owner %}
     <div class="member-card u-2ba4dc00">
         <div class="member-avatar">
-            <img alt="{{ owner.username }}" src="{{ avatar_url(owner) }}" class="u-efc48030">
+            <img alt="{{ owner.username }}" src="{{ avatar_url(owner) }}" class="u-efc48030" loading="lazy" decoding="async">
         </div>
         <div class="member-info">
             <h3 class="u-29dc4caf">{{ owner.username }}</h3>
@@ -68,7 +68,7 @@
     <div class="member-card {% if member.is_owner %}owner-card{% endif %}">
         <div class="member-avatar">
             <img alt="{{ member.username }}" src="{{ avatar_url(member) }}"
-                 style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if member.is_owner %}gold{% else %}#e2e8f0{% endif %};">
+                 style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid {% if member.is_owner %}gold{% else %}#e2e8f0{% endif %};" loading="lazy" decoding="async">
         </div>
         <div class="member-info">
             <h3 class="u-29dc4caf">

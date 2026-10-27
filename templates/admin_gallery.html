@@ -26,7 +26,7 @@
 <div class="gallery-grid">
     {% for photo in photos %}
     <div class="gallery-item">
-        <img alt="{{ photo.filename }}" src="{{ photo.url }}">
+        <img alt="{{ photo.filename }}" src="{{ photo.url }}" loading="lazy" decoding="async">
         <div class="u-44cd1236">
             <span class="u-6a5470f6">
                 {% if photo.activity %}{{ photo.activity.title }}{% else %}往期活动{% endif %}

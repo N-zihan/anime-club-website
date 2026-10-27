@@ -7,7 +7,7 @@ import os
 from urllib.parse import quote
 from xml.sax.saxutils import escape
 
-from flask import Response, current_app, jsonify, render_template, request
+from flask import Response, current_app, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import func, text
 
 from .contest_engine import (calc_stage_times, current_group_round,
@@ -21,6 +21,12 @@ from .utils import cn_now, get_or_404
 def offline():
     """PWA 离线兜底页：断网时 service worker 返回它（访客可访问）。"""
     return render_template('offline.html')
+
+
+@public_bp.route('/favicon.ico')
+def favicon():
+    """浏览器默认会请求 /favicon.ico：302 到静态图标，避免每页多一次 404 请求。"""
+    return redirect(url_for('static', filename='favicon.ico'))
 
 
 @public_bp.route('/anime_news/rss.xml')
