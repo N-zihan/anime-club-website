@@ -6,6 +6,13 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def test_static_response_has_no_vary_cookie(client):
+    """静态资源不能碰 session：带 Vary: Cookie 的话 Vercel 边缘会放弃缓存。"""
+    resp = client.get('/static/css/style.css?v=v1')
+    assert 'Cookie' not in resp.headers.get('Vary', '')
+    assert 'Set-Cookie' not in resp.headers
+
+
 def test_versioned_static_is_immutable(client):
     resp = client.get('/static/css/style.css?v=v9.9.9')
     assert resp.status_code == 200

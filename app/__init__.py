@@ -210,6 +210,12 @@ def create_app():
     @app.before_request
     def require_login():
 
+        # 这些端点完全不碰 session：提前返回，响应就不会带 `Vary: Cookie`，
+        # Vercel 边缘才愿意缓存 /static/、robots、sitemap、manifest（否则每次回源函数）。
+        if request.endpoint in ('static', 'public.robots', 'public.sitemap',
+                                'public.manifest', 'public.favicon', 'public.health'):
+            return None
+
         # 放行搜索引擎爬虫：**仅限 GET**，且仅限上面的只读白名单。
         # 旧实现只要 UA 里含 'Googlebot' 就整段跳过登录判断，而 UA 完全可以伪造，
         # 等于给所有路由（含 POST /board、/api/*）开了一个匿名后门。
