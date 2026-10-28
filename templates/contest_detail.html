@@ -185,7 +185,9 @@
             {% if c.stage == 'champion' %}
             🏆 冠军
             {% elif c.stage == 'knockout' %}
-            {% if phase in ['knockout_16', 'knockout_16_result', 'knockout_8', 'knockout_8_result', 'knockout_4', 'knockout_4_result', 'final_vote'] %}
+            {% if phase == 'group_round_3_result' %}
+            晋级淘汰赛
+            {% elif phase in ['knockout_16', 'knockout_16_result', 'knockout_8', 'knockout_8_result', 'knockout_4', 'knockout_4_result', 'final_vote'] %}
             淘汰赛进行中
             {% elif phase in ['final_result', 'closed'] %}
             淘汰赛（未夺冠）
@@ -195,7 +197,9 @@
             {% elif c.stage == 'group_stage' %}
             {% if phase == 'qualifying_result' %}
             晋级小组赛
-            {% elif phase in ['group_round_1', 'group_round_1_result', 'group_round_2', 'group_round_2_result', 'group_round_3', 'group_round_3_result'] %}
+            {% elif phase == 'group_round_3_result' %}
+            小组赛淘汰
+            {% elif phase in ['group_round_1', 'group_round_1_result', 'group_round_2', 'group_round_2_result', 'group_round_3'] %}
             小组赛进行中
             {% else %}
             小组赛淘汰
@@ -236,7 +240,9 @@
             {% if c.stage == 'champion' %}
             🏆 冠军
             {% elif c.stage == 'knockout' %}
-            {% if phase in ['knockout_16', 'knockout_16_result', 'knockout_8', 'knockout_8_result', 'knockout_4', 'knockout_4_result', 'final_vote'] %}
+            {% if phase == 'group_round_3_result' %}
+            晋级淘汰赛
+            {% elif phase in ['knockout_16', 'knockout_16_result', 'knockout_8', 'knockout_8_result', 'knockout_4', 'knockout_4_result', 'final_vote'] %}
             淘汰赛进行中
             {% elif phase in ['final_result', 'closed'] %}
             淘汰赛（未夺冠）
@@ -246,7 +252,9 @@
             {% elif c.stage == 'group_stage' %}
             {% if phase == 'qualifying_result' %}
             晋级小组赛
-            {% elif phase in ['group_round_1', 'group_round_1_result', 'group_round_2', 'group_round_2_result', 'group_round_3', 'group_round_3_result'] %}
+            {% elif phase == 'group_round_3_result' %}
+            小组赛淘汰
+            {% elif phase in ['group_round_1', 'group_round_1_result', 'group_round_2', 'group_round_2_result', 'group_round_3'] %}
             小组赛进行中
             {% else %}
             小组赛淘汰
