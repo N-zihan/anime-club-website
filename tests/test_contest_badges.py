@@ -44,3 +44,10 @@ class TestContestCandidateBadges:
         body = resp.get_data(as_text=True)
         assert resp.status_code == 200
         assert '小组赛进行中' in body
+
+def test_group_vote_template_uses_dict_lookup():
+    """小组赛投票页的 candidates 是 {id: Candidate} 字典；用 selectattr 会遍历成 key 导致全员「已移除」。"""
+    from pathlib import Path
+    tpl = (Path(__file__).resolve().parent.parent / 'templates' / 'contest_group_vote.html').read_text(encoding='utf-8')
+    assert "selectattr('id'" not in tpl
+    assert 'candidates.get(' in tpl

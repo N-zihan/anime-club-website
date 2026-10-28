@@ -324,7 +324,7 @@
 <div class="u-74e5cc2c">
     <strong class="u-29dc4caf">晋级：</strong>
     {% for cid in top16 %}
-    {% set c = candidates|selectattr('id', 'equalto', cid)|first %}
+    {% set c = candidates.get(cid) %}
     <span style="display:inline-block; background: var(--bg-code); padding:2px 12px; border-radius:20px; margin:2px 4px; color: var(--text-primary);">{{ c.name if c else '已移除' }}{% if c and c.banned %} 禁赛{% endif %}</span>
     {% endfor %}
 </div>
@@ -345,11 +345,11 @@
     <div class="u-00ad3e11">
         <strong class="u-29dc4caf">{{ ['A','B','C','D','E','F','G','H'][loop.index0] }}组</strong>
         <div class="u-a3a55686">
-            {% set c1 = candidates|selectattr('id', 'equalto', match.candidate1)|first %}
-            {% set c2 = candidates|selectattr('id', 'equalto', match.candidate2)|first %}
-            <span class="u-29dc4caf">{{ c1.name if c1 else '已移除' }}</span>
+            {% set c1 = candidates.get(match.candidate1) %}
+            {% set c2 = candidates.get(match.candidate2) %}
+            <span class="u-29dc4caf">{{ c1.name if c1 else ('轮空' if match.candidate1 is none else '已移除') }}</span>
             <span class="u-ce40af72"> VS </span>
-            <span class="u-29dc4caf">{{ c2.name if c2 else '已移除' }}</span>
+            <span class="u-29dc4caf">{{ c2.name if c2 else ('轮空' if match.candidate2 is none else '已移除') }}</span>
         </div>
     </div>
     {% endfor %}

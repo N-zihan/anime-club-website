@@ -154,7 +154,11 @@ mkdocs build            # 输出到 site/
 - **修复**：模板徽章按阶段细分：公示期里 `stage=knockout` → 「晋级淘汰赛」，
   `stage=group_stage` → 「小组赛淘汰」；第 3 轮投票期内仍显示「小组赛进行中」。
 - 生产库实测：`/contest/1` 渲染出 32×「晋级淘汰赛」+ 32×「小组赛淘汰」，0×「小组赛进行中」。
-- 新增 2 条回归测试（`tests/test_contest_badges.py`），全量 pytest **728 passed**。
+- 新增 2 条回归测试（`tests/test_contest_badges.py`）。
+- **同页第二个 Bug（v4.34.5）**：小组赛投票页的「晋级名单（16强）/16强分组」全部显示「已移除」。
+  根因是模板对 `candidates` 用了 `selectattr('id', ...)`，而路由传进来的 `candidates` 是
+  `{id: Candidate}` **字典**，Jinja 遍历字典拿到的是 key（int）→ 永远匹配不到。
+  改成 `candidates.get(id)`，并补 1 条模板守卫测试。全量 pytest **729 passed**。
 
 ### 第八批已还（v4.34.0 性能）
 
