@@ -13,6 +13,11 @@
                    type="text" value="{{ username }}" class="u-03cdc0d1">
             <input name="password" placeholder="密码" required
                    type="password" class="u-5fe3d7d7">
+            <label class="login-remember">
+                <input type="checkbox" name="remember" value="1"
+                       {% if request.form.get('remember') %}checked{% endif %}>
+                <span>自动登录（30 天内免密码，公共电脑请勿勾选）</span>
+            </label>
             <button class="btn-primary u-6313cb4c" type="submit">登录</button>
         </form>
 

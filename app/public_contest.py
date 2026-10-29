@@ -1358,6 +1358,8 @@ def contest_bracket(contest_id):
         }
 
     # 历史轮次（公示后由引擎写入 config） + 当前轮次
+    ROUND_FROM_KEY = {'round_1': '16强', 'round_2': '8强',
+                      'round_3': '4强', 'final': '决赛'}
     buckets = {label: [] for label in BRACKET_ROUNDS}
     for key, label in (('round16', '16强'), ('round8', '8强'),
                        ('round4', '4强'), ('final', '决赛')):
@@ -1365,10 +1367,24 @@ def contest_bracket(contest_id):
             buckets[label].append(_normalize(m, label))
 
     for m in config.get(f'knockout_matches_{gender}') or []:
-        label = m.get('round_name') or ('决赛' if m.get('round') == 'final' else '淘汰赛')
-        if label not in buckets:
-            buckets[label] = []
-        buckets[label].append(_normalize(m, label))
+        # 当前轮的 match 里没有 round_name 时，用 round 字段映射到对应列；
+        # 之前一律落到「淘汰赛」列，会和历史轮次重复列出同一批人。
+        label = (m.get('round_name')
+                 or ROUND_FROM_KEY.get(m.get('round'))
+                 or '淘汰赛')
+        buckets.setdefault(label, []).append(_normalize(m, label))
+
+    # 同一轮次可能同时存在「历史 key」和「当前轮」两份同样的对阵（16强尤其常见），
+    # 按候选人对去重，避免 16 强列出 32 个人。
+    for label, items in buckets.items():
+        seen, unique = set(), []
+        for item in items:
+            pair = (item['c1']['id'], item['c2']['id'])
+            if pair in seen:
+                continue
+            seen.add(pair)
+            unique.append(item)
+        buckets[label] = unique
 
     columns = [{'label': label, 'matches': buckets.get(label, [])}
                for label in list(BRACKET_ROUNDS) + [k for k in buckets if k not in BRACKET_ROUNDS]]

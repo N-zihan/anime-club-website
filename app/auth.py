@@ -45,7 +45,8 @@ def _get_csrf_config():
 # 会话安全配置
 SESSION_TIMEOUT_MINUTES = int(os.getenv('SESSION_TIMEOUT_MINUTES', 30))  # 会话超时时间
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, session, url_for)
 
 from .models import (db, User, Nomination, Candidate, Contest, ContestVote,
                      Message, Reply, Notification)
@@ -445,6 +446,18 @@ def login():
                 session['show_bind_prompt'] = True
             else:
                 session.pop('show_bind_prompt', None)
+
+            # 「自动登录」：勾选后 session 变成持久 cookie（默认 30 天），
+            # 关浏览器再打开仍保持登录；不勾选则仍是会话 cookie，关浏览器即退出。
+            remember = request.form.get('remember') in ('1', 'on', 'true')
+            if remember:
+                try:
+                    days = int(os.getenv('REMEMBER_DAYS', '30'))
+                except ValueError:
+                    days = 30
+                session.permanent = True
+                current_app.permanent_session_lifetime = timedelta(
+                    days=max(1, min(days, 365)))
 
             flash('登录成功', 'success')
 

@@ -117,7 +117,7 @@
     {% set vb = vote_totals.get(match.candidate2, 0) %}
     {% set vtotal = va + vb %}
     {% set pct_a = (va / vtotal * 100) | round(1) if vtotal else 50 %}
-    <div class="vote-vs-bar {% if not vtotal %}is-empty{% endif %}"
+    <div class="vote-vs-bar vote-vs-bar-knockout {% if not vtotal %}is-empty{% endif %}"
          data-vs-a="{{ match.candidate1 }}" data-vs-b="{{ match.candidate2 }}">
         <span class="vote-vs-left" style="width: {{ pct_a }}%"></span>
         <span class="vote-vs-right" style="width: {{ (100 - pct_a) | round(1) }}%"></span>

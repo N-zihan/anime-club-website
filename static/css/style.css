@@ -3571,6 +3571,17 @@ body.has-composer footer {
     background: linear-gradient(90deg, #e46c9a, #c74f80);
 }
 
+/* 淘汰赛：左侧「投给 A」按钮是粉色 #e91e63、右侧是蓝色 #2196f3，
+   进度条左右必须跟按钮同色，否则视觉上像是反的（v4.35.0 修）。
+   小组赛两边按钮都是深色，保持上面的蓝/粉不动。 */
+.vote-vs-bar-knockout .vote-vs-left {
+    background: linear-gradient(90deg, #e46c9a, #e91e63);
+}
+
+.vote-vs-bar-knockout .vote-vs-right {
+    background: linear-gradient(90deg, #5b9bea, #2196f3);
+}
+
 .vote-vs-bar.is-empty {
     opacity: 0.45;
 }
@@ -4621,3 +4632,25 @@ body.has-composer footer {
 .u-fc6560a2.u-fc6560a2.u-fc6560a2.u-fc6560a2 { border-radius:16px; padding:24px; background: var(--bg-card); border:1px solid var(--border-color); }
 .u-fd2e032c.u-fd2e032c.u-fd2e032c.u-fd2e032c { padding:6px 16px; background:#1e2a3a; color:white; border:none; border-radius:6px; cursor:pointer; }
 .u-fdfc172a.u-fdfc172a.u-fdfc172a.u-fdfc172a { margin:30px 0; padding:20px; background: var(--bg-code); border-radius:12px; border:1px solid var(--border-color); }
+
+/* 登录页「自动登录」勾选项 */
+.login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.5;
+}
+
+.login-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    accent-color: var(--accent, #3f7fd0);
+    cursor: pointer;
+}
+

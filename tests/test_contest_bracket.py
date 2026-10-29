@@ -69,3 +69,33 @@ class TestContestBracket:
         contest, _ = _contest_with_bracket(db_session)
         body = logged_in_client.get(f'/contest/{contest.id}').text
         assert '/bracket' in body
+
+def test_duplicate_round_matches_are_deduped(logged_in_client, db_session):
+    """同一轮对阵同时出现在 round16 历史 key 和当前轮时，不能列两遍（否则 16 强变 32 人）。"""
+    now = datetime.now()
+    contest = Contest(title='重复对阵测试', description='x', type='saimoe',
+                      gender_mode='separate', status='knockout',
+                      open_at=now - timedelta(days=30), close_at=now + timedelta(days=10),
+                      config={})
+    db_session.add(contest)
+    db_session.commit()
+    cands = [Candidate(contest_id=contest.id, name=f'选手{i}', source='作品',
+                       gender='female', stage='knockout') for i in range(4)]
+    db_session.add_all(cands)
+    db_session.commit()
+    contest.config = {
+        'knockout_matches_female_round16': [{
+            'round_name': '16强', 'status': 'finished',
+            'candidate1': cands[0].id, 'candidate2': cands[1].id,
+            'votes1': 9, 'votes2': 3, 'winner': cands[0].id,
+        }],
+        'knockout_matches_female': [{
+            'round': 'round_1', 'status': 'finished',
+            'candidate1': cands[0].id, 'candidate2': cands[1].id,
+            'votes1': 9, 'votes2': 3, 'winner': cands[0].id,
+        }],
+    }
+    db_session.commit()
+
+    body = logged_in_client.get(f'/contest/{contest.id}/bracket?gender=female').text
+    assert body.count('class="bracket-match') == 1

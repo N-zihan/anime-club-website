@@ -84,6 +84,7 @@ https://<你的域名>        # 每个部署用自己的域名
 | `MAX_CONTENT_LENGTH` | 选填 | 上传体积上限（字节），默认 `4194304`（4 MB） |
 | `SESSION_COOKIE_SECURE` | 选填 | 会话 Cookie 的 Secure 标志；跟随部署平台（Vercel 为开，本地为关），可显式覆盖 |
 | `SESSION_TIMEOUT_MINUTES` | 选填 | 登录会话有效分钟数 |
+| `REMEMBER_DAYS` | 选填 | 勾选「自动登录」后保持登录的天数，默认 `30` |
 | `AVATAR_MAX_SIZE` | 选填 | 头像文件大小上限（字节），默认 2 MB |
 | `VOTE_POLL_SECONDS` | 选填 | 投票页实时票数轮询间隔（秒），默认 10，范围 3~60 |
 | `APP_VERSION` | 选填 | 版本号覆盖；正常由 `VERSION` 文件 / git tag 自动解析 |
